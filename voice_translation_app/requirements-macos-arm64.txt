@@ -20,7 +20,8 @@ torchaudio>=2.1.0
 # Audio Capture - macOS CoreAudio via sounddevice
 # -----------------------------------------------------------------------------
 sounddevice>=0.4.6
-PortAudio>=19.0.0  # Installed via: brew install portaudio
+# NOTE: PortAudio is a system library, not a pip package
+# Install it via: brew install portaudio
 
 # -----------------------------------------------------------------------------
 # CoreML Tools (Optional - for model conversion)
