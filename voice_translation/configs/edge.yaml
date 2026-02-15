@@ -1,0 +1,53 @@
+# Edge Deployment Configuration
+# Optimized for local processing on consumer hardware
+
+asr:
+  provider: "whisper.cpp"  # Options: whisper.cpp, faster_whisper, mlx_whisper
+  model:
+    name: "medium"
+    path: "models/ggml-medium.bin"
+  options:
+    threads: 4
+    use_metal: true  # macOS only
+    compute_type: "int8"
+  
+translation:
+  provider: "nllb"  # Options: nllb, marian
+  model:
+    name: "facebook/nllb-200-distilled-600M"
+    # Alternative for edge: facebook/nllb-200-distilled-350M
+  options:
+    max_length: 256
+    num_beams: 4
+    batch_size: 4
+
+audio:
+  sample_rate: 16000
+  normalize: true
+  remove_silence: false
+  
+vad:
+  provider: "silero"  # Options: silero, webrtc
+  threshold: 0.5
+  min_speech_duration: 0.25
+  min_silence_duration: 0.5
+
+pipeline:
+  type: "realtime"  # Options: realtime, batch
+  confidence_threshold: 0.7
+  segment_duration: 30.0
+  overlap: 1.0
+
+languages:
+  source: "zh"
+  target: "en"
+  supported:
+    - "zh"
+    - "en"
+    - "ja"
+    - "fr"
+
+paths:
+  models: "./models"
+  temp: "./temp"
+  output: "./output"

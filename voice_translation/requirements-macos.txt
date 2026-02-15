@@ -1,0 +1,19 @@
+# Voice Translation System - macOS (Apple Silicon) Requirements
+
+# Include base requirements
+-r requirements.txt
+
+# Apple Silicon Optimized ASR
+mlx-whisper>=0.1.0
+lightning-whisper-mlx>=0.1.0
+
+# Core ML support (optional)
+coremltools>=7.0.0
+
+# Metal Performance Shaders
+pyobjc-framework-Metal>=9.0.0
+
+# Note: whisper.cpp must be built separately:
+# git clone https://github.com/ggerganov/whisper.cpp.git
+# cd whisper.cpp
+# make clean && WHISPER_METAL=1 make -j

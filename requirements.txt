@@ -1,0 +1,42 @@
+# Audio Processing Subsystem - Requirements
+# For Real-Time Voice Translation Application
+
+# Core Audio I/O
+sounddevice>=0.4.6
+soundfile>=0.12.1
+PyAudio>=0.2.13
+
+# VAD Libraries
+silero-vad>=5.1
+webrtcvad>=2.0.10
+onnxruntime>=1.16.0; platform_machine=='x86_64'  # ONNX for x86 only
+
+# Platform-specific Audio Capture
+pyaudiowpatch>=1.2.0; platform_system=='Windows'
+
+# Deep Learning (for Silero VAD)
+torch>=2.0.0
+torchaudio>=2.0.0
+
+# Audio Processing
+numpy>=1.24.0
+scipy>=1.10.0
+librosa>=0.10.1
+
+# Performance Optimization
+numba>=0.58.0
+
+# Video Processing
+ffmpeg-python>=0.2.0
+
+# System Monitoring (for benchmarking)
+psutil>=5.9.0
+
+# Utilities
+tqdm>=4.65.0
+
+# Development & Testing
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+black>=23.0.0
+mypy>=1.5.0

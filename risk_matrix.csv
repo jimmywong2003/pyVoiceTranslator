@@ -1,0 +1,46 @@
+Risk ID,Category,Risk Description,Severity,Probability,Risk Score,Impact,Mitigation Priority
+R1,Technical,End-to-end latency >500ms,HIGH,HIGH,9,User abandonment,Critical
+R2,Technical,Speech recognition errors in real-world conditions,HIGH,HIGH,9,Poor translation quality,Critical
+R3,Technical,Translation quality degradation for Asian languages,HIGH,HIGH,9,User dissatisfaction,Critical
+R4,Technical,Edge model RAM requirements exceed laptop specs,HIGH,HIGH,9,Application crashes,Critical
+R5,Technical,Real-time CPU usage causing system unresponsiveness,HIGH,HIGH,9,Poor UX and instability,Critical
+R6,Implementation,PyAudio installation failures,HIGH,HIGH,9,Cannot install/run app,Critical
+R7,Implementation,Large model downloads (2-5GB) on first run,HIGH,HIGH,9,User abandonment,Critical
+R8,Performance,Processing backlog causing unbounded delays,HIGH,HIGH,9,Real-time guarantee failure,Critical
+R9,Performance,Continuous high CPU load draining battery,HIGH,HIGH,9,Poor mobile experience,Critical
+R10,UX,Main thread blocking causing UI freezing,HIGH,HIGH,9,App appears broken,Critical
+R11,Technical,Buffer underruns causing audio dropouts,HIGH,MEDIUM,6,Audio quality degradation,High
+R12,Technical,Cloud API network latency spikes,HIGH,MEDIUM,6,Inconsistent performance,High
+R13,Technical,Code-switching (mixed languages) handling failures,HIGH,MEDIUM,6,Accuracy degradation,High
+R14,Technical,Memory leaks over long sessions,HIGH,MEDIUM,6,Application crashes,High
+R15,Technical,macOS system audio capture restrictions,HIGH,MEDIUM,6,Feature unavailability,High
+R16,Technical,Apple Silicon optimization gaps,MEDIUM,HIGH,6,Suboptimal performance,High
+R17,Implementation,macOS virtual audio driver complexity,MEDIUM,HIGH,6,Setup difficulties,High
+R18,Implementation,Qt/PyQt packaging issues,MEDIUM,HIGH,6,Distribution problems,High
+R19,Performance,Memory leak accumulation,MEDIUM,HIGH,6,Stability issues,High
+R20,Performance,GPU acceleration unavailable on many systems,MEDIUM,HIGH,6,Higher CPU usage,High
+R21,UX,Context loss in sentence-by-sentence translation,MEDIUM,HIGH,6,Poor translation flow,High
+R22,UX,Named entity mistranslation,MEDIUM,HIGH,6,Embarrassing errors,High
+R23,Technical,Audio capture latency variations,MEDIUM,MEDIUM,4,Inconsistent experience,Medium
+R24,Technical,Synchronization drift over time,MEDIUM,MEDIUM,4,Lip-sync issues,Medium
+R25,Technical,Domain adaptation for specialized vocabulary,MEDIUM,MEDIUM,4,Limited use cases,Medium
+R26,Technical,Low-resource language model quality,MEDIUM,MEDIUM,4,Uneven performance,Medium
+R27,Technical,Audio driver differences between platforms,MEDIUM,MEDIUM,4,Maintenance burden,Medium
+R28,Technical,Thermal throttling on sustained load,MEDIUM,MEDIUM,4,Performance degradation,Medium
+R29,Implementation,Sample rate mismatches,MEDIUM,MEDIUM,4,Audio quality issues,Medium
+R30,Implementation,Multi-device handling complexity,MEDIUM,MEDIUM,4,Setup difficulties,Medium
+R31,Implementation,Model versioning compatibility,MEDIUM,MEDIUM,4,Update issues,Medium
+R32,Performance,Context window limits for long speech,MEDIUM,MEDIUM,4,Truncation errors,Medium
+R33,Performance,Thread pool exhaustion,MEDIUM,MEDIUM,4,Resource limits,Medium
+R34,UX,Idiom literal translation,MEDIUM,MEDIUM,4,Translation awkwardness,Medium
+R35,UX,Technical terminology errors,MEDIUM,MEDIUM,4,Professional use limitations,Medium
+R36,UX,Visualization lag,MEDIUM,MEDIUM,4,Aesthetic issues,Medium
+R37,Technical,File path handling differences,LOW,LOW,1,Minor bugs,Low
+R38,Technical,Driver crashes,MEDIUM,LOW,2,Rare instability,Low
+R39,Implementation,CDN availability,LOW,LOW,1,Temporary unavailability,Low
+R40,Implementation,Driver instability,MEDIUM,LOW,2,Rare crashes,Low
+R41,Performance,Background processing when minimized,LOW,MEDIUM,2,Minor inefficiency,Low
+R42,UX,Volume normalization,LOW,MEDIUM,2,Minor quality issue,Low
+R43,UX,Codec quality,LOW,LOW,1,Minor recognition impact,Low
+R44,UX,High DPI scaling,LOW,MEDIUM,2,Visual issues,Low
+R45,UX,Theme inconsistencies,LOW,LOW,1,Aesthetic variations,Low

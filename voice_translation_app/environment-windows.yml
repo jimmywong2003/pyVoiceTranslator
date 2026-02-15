@@ -1,0 +1,106 @@
+# =============================================================================
+# Conda Environment for Windows 10/11
+# =============================================================================
+# Create: conda env create -f environment-windows.yml
+# Update: conda env update -f environment-windows.yml --prune
+# Activate: conda activate voice-translate-win
+# =============================================================================
+
+name: voice-translate-win
+channels:
+  - pytorch
+  - nvidia
+  - conda-forge
+  - defaults
+
+dependencies:
+  # Python version
+  - python=3.11
+  
+  # Build tools
+  - pip>=23.0
+  - setuptools>=68.0
+  - wheel>=0.40
+  
+  # Core scientific stack
+  - numpy>=1.24.0
+  - scipy>=1.10.0
+  - pandas>=2.0.0
+  
+  # PyTorch with CUDA 11.8
+  - pytorch>=2.1.0
+  - torchvision>=0.16.0
+  - torchaudio>=2.1.0
+  - pytorch-cuda=11.8
+  
+  # CUDA toolkit
+  - cuda-toolkit>=11.8
+  
+  # Audio processing
+  - librosa>=0.10.0
+  - soundfile>=0.12.0
+  - ffmpeg>=6.0
+  
+  # ML utilities
+  - transformers>=4.35.0
+  - tokenizers>=0.14.0
+  - sentencepiece>=0.1.99
+  - protobuf>=4.24.0
+  
+  # System utilities
+  - pyyaml>=6.0
+  - requests>=2.28.0
+  - tqdm>=4.65.0
+  
+  # Development
+  - pytest>=7.3.0
+  - pytest-asyncio>=0.21.0
+  - black>=23.0.0
+  - flake8>=6.0.0
+  - mypy>=1.3.0
+  
+  # Pip dependencies for packages not in conda
+  - pip:
+    # Audio capture - WASAPI
+    - pyaudio>=0.2.13
+    
+    # Whisper
+    - openai-whisper>=20231117
+    
+    # Voice Activity Detection
+    - silero-vad>=4.0.0
+    - webrtcvad>=2.0.10
+    - noisereduce>=3.0.0
+    
+    # Windows specific
+    - pywin32>=306
+    - comtypes>=1.2.0
+    - winsdk>=1.0.0
+    
+    # DirectML support (optional, for AMD/Intel GPUs)
+    - torch-directml>=0.2.0
+    - onnxruntime-directml>=1.16.0
+    
+    # Utilities
+    - python-dotenv>=1.0.0
+    - click>=8.1.0
+    - rich>=13.0.0
+    - pydantic>=2.0.0
+    - structlog>=23.0.0
+    
+    # Packaging
+    - pyinstaller>=6.0.0
+
+# =============================================================================
+# Post-creation setup commands (run manually after creation):
+# =============================================================================
+# 1. Verify CUDA installation:
+#    python -c "import torch; print(torch.cuda.is_available())"
+#
+# 2. If PyAudio fails to install, use:
+#    pip install pipwin
+#    pipwin install pyaudio
+#
+# 3. Test audio:
+#    python -c "import pyaudio; p = pyaudio.PyAudio(); print([p.get_device_info_by_index(i) for i in range(p.get_device_count())])"
+# =============================================================================

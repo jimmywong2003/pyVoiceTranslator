@@ -1,0 +1,75 @@
+# Cloud Deployment Configuration
+# Optimized for GPU servers and cloud APIs
+
+asr:
+  provider: "faster_whisper"
+  model:
+    name: "large-v3-turbo"  # Fastest high-quality model
+    # Alternative: large-v3 for maximum accuracy
+  options:
+    device: "cuda"
+    compute_type: "float16"
+    batch_size: 8
+    num_workers: 2
+  
+translation:
+  provider: "nllb"
+  model:
+    name: "facebook/nllb-200-1.3B"
+    # Alternative for maximum quality: facebook/nllb-200-3.3B
+  options:
+    max_length: 512
+    num_beams: 5
+    batch_size: 16
+
+# Optional: Cloud API Fallback
+cloud_apis:
+  openai:
+    enabled: false
+    api_key: "${OPENAI_API_KEY}"
+    model: "whisper-1"
+  
+  azure:
+    enabled: false
+    api_key: "${AZURE_SPEECH_KEY}"
+    region: "${AZURE_REGION}"
+  
+  deepl:
+    enabled: false
+    api_key: "${DEEPL_API_KEY}"
+
+audio:
+  sample_rate: 16000
+  normalize: true
+  remove_silence: true
+  
+vad:
+  provider: "silero"
+  threshold: 0.5
+  min_speech_duration: 0.25
+  min_silence_duration: 0.3
+
+pipeline:
+  type: "batch"
+  confidence_threshold: 0.8
+  segment_duration: 60.0
+  overlap: 2.0
+
+optimization:
+  use_tensorrt: true
+  use_onnx: true
+  quantization: "fp16"  # Options: fp32, fp16, int8
+  
+languages:
+  source: "auto"  # Auto-detect
+  target: "en"
+  supported:
+    - "zh"
+    - "en"
+    - "ja"
+    - "fr"
+
+paths:
+  models: "/models"
+  temp: "/tmp"
+  output: "/output"

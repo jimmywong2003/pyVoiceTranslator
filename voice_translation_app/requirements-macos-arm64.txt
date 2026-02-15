@@ -1,0 +1,46 @@
+# =============================================================================
+# macOS Apple Silicon (M1/M2/M3) - ARM64 Requirements
+# =============================================================================
+# This file contains Apple Silicon specific dependencies
+# Install with: pip install -r requirements-macos-arm64.txt
+# =============================================================================
+
+# Include base requirements
+-r requirements.txt
+
+# -----------------------------------------------------------------------------
+# PyTorch for macOS Apple Silicon (MPS Support)
+# -----------------------------------------------------------------------------
+# Pre-built ARM64 wheels with MPS support
+torch>=2.1.0
+torchvision>=0.16.0
+torchaudio>=2.1.0
+
+# -----------------------------------------------------------------------------
+# Audio Capture - macOS CoreAudio via sounddevice
+# -----------------------------------------------------------------------------
+sounddevice>=0.4.6
+PortAudio>=19.0.0  # Installed via: brew install portaudio
+
+# -----------------------------------------------------------------------------
+# CoreML Tools (Optional - for model conversion)
+# -----------------------------------------------------------------------------
+coremltools>=7.0; platform_machine == "arm64"
+
+# -----------------------------------------------------------------------------
+# Accelerate Framework Bindings
+# -----------------------------------------------------------------------------
+pyobjc-framework-Accelerate>=9.0; platform_system == "Darwin"
+
+# -----------------------------------------------------------------------------
+# Apple Silicon Optimized Libraries
+# -----------------------------------------------------------------------------
+# Use ARM64 native versions
+numpy>=1.24.0; platform_machine == "arm64"
+scipy>=1.10.0; platform_machine == "arm64"
+
+# -----------------------------------------------------------------------------
+# Development Dependencies for macOS
+# -----------------------------------------------------------------------------
+pytest>=7.3.0
+pytest-cov>=4.1.0

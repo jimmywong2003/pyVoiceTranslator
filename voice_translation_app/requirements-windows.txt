@@ -1,0 +1,55 @@
+# =============================================================================
+# Windows 10/11 Requirements
+# =============================================================================
+# This file contains Windows-specific dependencies
+# Install with: pip install -r requirements-windows.txt
+# =============================================================================
+
+# Include base requirements
+-r requirements.txt
+
+# -----------------------------------------------------------------------------
+# PyTorch for Windows (CUDA 11.8)
+# For CUDA 12.1: Use --index-url https://download.pytorch.org/whl/cu121
+# For CPU only: Use --index-url https://download.pytorch.org/whl/cpu
+# -----------------------------------------------------------------------------
+--index-url https://download.pytorch.org/whl/cu118
+torch>=2.1.0
+torchvision>=0.16.0
+torchaudio>=2.1.0
+
+# -----------------------------------------------------------------------------
+# Audio Capture - Windows WASAPI via PyAudio
+# -----------------------------------------------------------------------------
+pyaudio>=0.2.13
+# Note: On Windows, you may need to install PyAudio wheel manually:
+# pip install pipwin
+# pipwin install pyaudio
+
+# -----------------------------------------------------------------------------
+# Windows Audio Enhancements
+# -----------------------------------------------------------------------------
+comtypes>=1.2.0  # For Windows COM interface
+pywin32>=306     # For Windows API access
+
+# -----------------------------------------------------------------------------
+# DirectML Support (Optional - for AMD/Intel GPUs on Windows)
+# -----------------------------------------------------------------------------
+torch-directml>=0.2.0; platform_system == "Windows"
+
+# -----------------------------------------------------------------------------
+# ONNX Runtime with DirectML
+# -----------------------------------------------------------------------------
+onnxruntime-directml>=1.16.0; platform_system == "Windows"
+
+# -----------------------------------------------------------------------------
+# Windows-specific Utilities
+# -----------------------------------------------------------------------------
+winsdk>=1.0.0  # Windows SDK Python bindings
+
+# -----------------------------------------------------------------------------
+# Development Dependencies for Windows
+# -----------------------------------------------------------------------------
+pytest>=7.3.0
+pytest-cov>=4.1.0
+pyinstaller>=6.0.0  # For building Windows executables
