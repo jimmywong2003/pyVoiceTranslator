@@ -354,7 +354,8 @@ class VoiceTranslateMainWindow(QMainWindow):
             asr_language=source_code,
             source_language=source_code or "auto",
             target_language=target_code,
-            enable_translation=True
+            enable_translation=True,
+            audio_device_index=4  # Default to MacBook Pro Microphone
         )
         
         # Create and start worker

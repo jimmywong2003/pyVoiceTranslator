@@ -34,6 +34,7 @@ class PipelineConfig:
     sample_rate: int = 16000
     channels: int = 1
     chunk_duration_ms: int = 30
+    audio_device_index: Optional[int] = None  # None for default
     
     # VAD settings
     vad_threshold: float = 0.5

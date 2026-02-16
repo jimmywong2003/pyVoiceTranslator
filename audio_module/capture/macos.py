@@ -141,18 +141,31 @@ class MacOSAudioCapture(BaseAudioCapture):
                 if status:
                     logger.warning(f"Audio status: {status}")
                 
-                # Convert to mono if needed
-                audio_data = indata[:, 0].copy() if indata.shape[1] > 1 else indata.copy().flatten()
+                # Convert to mono if needed (average multiple channels)
+                if indata.shape[1] > 1:
+                    audio_data = np.mean(indata, axis=1).copy()
+                else:
+                    audio_data = indata.copy().flatten()
                 
                 # Convert to int16
                 audio_data = (audio_data * 32767).astype(np.int16)
                 
                 self._process_audio(audio_data)
             
-            # Open stream
+            # Get device info to determine actual channels
+            device_info = sd.query_devices(device_index)
+            actual_channels = device_info['max_input_channels']
+            
+            # Use device's actual channels (some devices don't support mono)
+            channels_to_use = min(actual_channels, 2)  # Use 1 or 2 channels
+            
+            logger.info(f"Opening stream: device={device_index}, "
+                       f"channels={channels_to_use}, samplerate={self.sample_rate}")
+            
+            # Open stream with device's native channels
             self._stream = sd.InputStream(
                 device=device_index,
-                channels=1,
+                channels=channels_to_use,
                 samplerate=self.sample_rate,
                 blocksize=self.chunk_samples,
                 dtype=np.float32,
