@@ -244,11 +244,11 @@ class VADMonitorThread(QThread):
             prob = self._vad._last_prob
         else:
             # Estimate from state
-            prob = 1.0 if self._vad._state == VADState.SPEECH else 0.0
+            prob = 1.0 if self._vad.state == VADState.SPEECH else 0.0
         
-        is_speech = self._vad._state == VADState.SPEECH
+        is_speech = self._vad.state == VADState.SPEECH
         self.vad_probability.emit(prob, is_speech)
-        self.state_changed.emit(self._vad._state.value.upper())
+        self.state_changed.emit(self._vad.state.value.upper())
         
         # Emit speech segment info
         if segment:
