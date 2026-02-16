@@ -38,20 +38,30 @@ logger = logging.getLogger(__name__)
 
 
 class AudioLevelMeter(QWidget):
-    """Custom VU-style audio level meter widget."""
+    """Custom VU-style audio level meter widget with speech detection highlight."""
     
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setMinimumSize(60, 300)
-        self.setMaximumWidth(80)
+        self.setMinimumSize(80, 300)
+        self.setMaximumWidth(100)
         self.level = 0.0  # 0.0 to 1.0
         self.peak = 0.0
         self.vad_threshold = 0.5
+        self.is_speech = False
+        self.speech_flash = 0
         
-    def set_level(self, level: float):
-        """Update audio level (0.0 to 1.0)."""
+    def set_level(self, level: float, is_speech: bool = False):
+        """Update audio level (0.0 to 1.0) and speech state."""
         self.level = max(0.0, min(1.0, level))
         self.peak = max(self.peak * 0.95, self.level)  # Decay peak
+        
+        # Flash effect when speech starts
+        if is_speech and not self.is_speech:
+            self.speech_flash = 15
+        self.is_speech = is_speech
+        if self.speech_flash > 0:
+            self.speech_flash -= 1
+        
         self.update()
     
     def set_vad_threshold(self, threshold: float):
@@ -66,52 +76,112 @@ class AudioLevelMeter(QWidget):
         width = self.width()
         height = self.height()
         
-        # Background
-        painter.fillRect(0, 0, width, height, QColor("#1e1e1e"))
+        # Background - flash bright when speech detected
+        if self.speech_flash > 0:
+            flash_alpha = int(100 * (self.speech_flash / 15.0))
+            bg_color = QColor(0, 255, 0, flash_alpha)
+        elif self.is_speech:
+            bg_color = QColor("#0d2810")  # Slight green tint during speech
+        else:
+            bg_color = QColor("#1e1e1e")
+        painter.fillRect(0, 0, width, height, bg_color)
+        
+        # Draw border - green when speech detected
+        border_color = QColor("#00ff00") if self.is_speech else QColor("#3c3c3c")
+        border_width = 3 if self.is_speech else 1
+        painter.setPen(QPen(border_color, border_width))
+        painter.drawRect(border_width//2, border_width//2, 
+                        width - border_width, height - border_width)
         
         # Create gradient (green -> yellow -> red)
         gradient = QLinearGradient(0, height, 0, 0)
-        gradient.setColorAt(0.0, QColor("#00ff00"))
-        gradient.setColorAt(0.6, QColor("#ffff00"))
-        gradient.setColorAt(0.85, QColor("#ff8800"))
-        gradient.setColorAt(1.0, QColor("#ff0000"))
+        if self.is_speech:
+            # Brighter colors during speech
+            gradient.setColorAt(0.0, QColor("#00ff00"))
+            gradient.setColorAt(0.5, QColor("#ccff00"))
+            gradient.setColorAt(0.75, QColor("#ffff00"))
+            gradient.setColorAt(1.0, QColor("#ff4400"))
+        else:
+            gradient.setColorAt(0.0, QColor("#00aa00"))
+            gradient.setColorAt(0.6, QColor("#aaaa00"))
+            gradient.setColorAt(0.85, QColor("#aa6600"))
+            gradient.setColorAt(1.0, QColor("#aa0000"))
         
-        # Draw level bar
+        # Draw level bar with glow effect during speech
         bar_height = int(height * self.level)
         if bar_height > 0:
-            painter.fillRect(10, height - bar_height, width - 20, bar_height, gradient)
+            x = 15
+            bar_width = width - 30
+            y = height - bar_height
+            
+            # Glow effect during speech
+            if self.is_speech:
+                painter.setPen(Qt.NoPen)
+                painter.setBrush(QColor(0, 255, 0, 50))
+                painter.drawRect(x - 4, y - 4, bar_width + 8, bar_height + 8)
+            
+            painter.fillRect(x, y, bar_width, bar_height, gradient)
         
         # Draw peak indicator
         peak_y = height - int(height * self.peak)
-        painter.fillRect(10, peak_y - 2, width - 20, 4, QColor("#ffffff"))
+        peak_color = QColor("#ffffff") if not self.is_speech else QColor("#00ff00")
+        painter.fillRect(15, peak_y - 2, width - 30, 4, peak_color)
         
-        # Draw VAD threshold line
+        # Draw VAD threshold line with label
         threshold_y = height - int(height * self.vad_threshold)
         painter.setPen(QPen(QColor("#00aaff"), 2, Qt.DashLine))
         painter.drawLine(5, threshold_y, width - 5, threshold_y)
+        
+        # Threshold label
+        painter.setPen(QColor("#00aaff"))
+        painter.setFont(QFont("Segoe UI", 8))
+        painter.drawText(5, threshold_y - 3, "VAD")
         
         # Draw scale markers
         painter.setPen(QPen(QColor("#666666"), 1))
         for i in range(0, 11):
             y = height - int(height * i / 10)
-            painter.drawLine(0, y, 8, y)
-            painter.drawLine(width - 8, y, width, y)
+            painter.drawLine(0, y, 10, y)
+            painter.drawLine(width - 10, y, width, y)
+            # Scale labels
+            if i % 2 == 0:
+                painter.setPen(QColor("#888888"))
+                painter.setFont(QFont("Segoe UI", 7))
+                painter.drawText(2, y + 3, f"{i}")
+                painter.setPen(QPen(QColor("#666666"), 1))
+        
+        # Draw SPEECH label when active
+        if self.is_speech:
+            painter.setPen(QColor("#00ff00"))
+            painter.setFont(QFont("Segoe UI", 10, QFont.Bold))
+            painter.drawText(10, 20, "🎤")
+            
+            # Draw level value
+            painter.setPen(QColor("#ffffff"))
+            painter.setFont(QFont("Segoe UI", 9, QFont.Bold))
+            painter.drawText(5, height - 10, f"{self.level:.2f}")
 
 
 class VADGraph(QWidget):
-    """Real-time VAD probability graph."""
+    """Real-time VAD probability graph with clear speech indication."""
     
     def __init__(self, history_size: int = 200, parent=None):
         super().__init__(parent)
-        self.setMinimumSize(400, 150)
+        self.setMinimumSize(400, 180)
         self.history = deque([0.0] * history_size, maxlen=history_size)
         self.threshold = 0.5
         self.is_speech = False
+        self.speech_flash = 0  # Flash counter for speech detection
         
     def add_value(self, prob: float, is_speech: bool):
         """Add new VAD probability value."""
         self.history.append(prob)
+        # Flash effect when speech starts
+        if is_speech and not self.is_speech:
+            self.speech_flash = 10  # Flash for 10 frames
         self.is_speech = is_speech
+        if self.speech_flash > 0:
+            self.speech_flash -= 1
         self.update()
     
     def set_threshold(self, threshold: float):
@@ -126,8 +196,17 @@ class VADGraph(QWidget):
         width = self.width()
         height = self.height()
         
-        # Background
-        bg_color = QColor("#2d2d30") if self.is_speech else QColor("#1e1e1e")
+        # Background - bright green flash when speech detected
+        if self.speech_flash > 0:
+            flash_intensity = self.speech_flash / 10.0
+            r = int(45 + 100 * flash_intensity)
+            g = int(200 + 55 * flash_intensity)
+            b = int(48 + 20 * flash_intensity)
+            bg_color = QColor(r, g, b)
+        elif self.is_speech:
+            bg_color = QColor("#1a3d1a")  # Dark green during speech
+        else:
+            bg_color = QColor("#1e1e1e")  # Normal dark
         painter.fillRect(0, 0, width, height, bg_color)
         
         # Draw grid
@@ -143,7 +222,9 @@ class VADGraph(QWidget):
         
         # Draw VAD probability line
         if len(self.history) > 1:
-            painter.setPen(QPen(QColor("#4ec9b0"), 2))
+            # Use bright color during speech
+            line_color = QColor("#00ff00") if self.is_speech else QColor("#4ec9b0")
+            painter.setPen(QPen(line_color, 3 if self.is_speech else 2))
             
             step = width / len(self.history)
             points = []
@@ -156,18 +237,32 @@ class VADGraph(QWidget):
                 painter.drawLine(points[i][0], points[i][1], 
                                points[i+1][0], points[i+1][1])
         
-        # Draw current value text
+        # Draw current value text with background
         if self.history:
             current = self.history[-1]
+            text = f"{current:.2f}"
+            
+            # Draw text background
+            painter.setPen(Qt.NoPen)
+            painter.setBrush(QColor("#000000"))
+            painter.drawRoundedRect(8, 5, 50, 22, 3, 3)
+            
+            # Draw text
             painter.setPen(QColor("#ffffff"))
-            painter.setFont(QFont("Segoe UI", 10, QFont.Bold))
-            painter.drawText(10, 20, f"{current:.2f}")
+            painter.setFont(QFont("Segoe UI", 11, QFont.Bold))
+            painter.drawText(12, 22, text)
+            
+            # Draw SPEECH indicator
+            if self.is_speech:
+                painter.setPen(QColor("#00ff00"))
+                painter.setFont(QFont("Segoe UI", 14, QFont.Bold))
+                painter.drawText(width - 100, 25, "🎤 SPEECH")
 
 
 class VADMonitorThread(QThread):
     """Thread to capture audio and process VAD."""
     
-    audio_level = Signal(float)  # 0.0 to 1.0
+    audio_level = Signal(float, bool)  # level (0.0-1.0), is_speech
     vad_probability = Signal(float, bool)  # prob, is_speech
     speech_detected = Signal(float, float)  # duration, confidence
     state_changed = Signal(str)  # State name
@@ -231,15 +326,15 @@ class VADMonitorThread(QThread):
             return
         
         # Calculate audio level (RMS)
-        rms = np.sqrt(np.mean(chunk ** 2))
-        # Normalize to 0-1 range (assuming 16-bit audio)
-        level = min(1.0, rms / 1000)
-        self.audio_level.emit(level)
+        rms = np.sqrt(np.mean(np.abs(chunk)))
+        # Normalize to 0-1 range (assuming 16-bit audio typical range)
+        # Typical speech is around 500-2000 RMS for 16-bit audio
+        level = min(1.0, rms / 3000)
         
         # Process through VAD
         segment = self._vad.process_chunk(chunk)
         
-        # Get VAD probability if available
+        # Get VAD probability and state
         if hasattr(self._vad, '_last_prob'):
             prob = self._vad._last_prob
         else:
@@ -247,6 +342,9 @@ class VADMonitorThread(QThread):
             prob = 1.0 if self._vad.state == VADState.SPEECH else 0.0
         
         is_speech = self._vad.state == VADState.SPEECH
+        
+        # Emit audio level with speech state
+        self.audio_level.emit(level, is_speech)
         self.vad_probability.emit(prob, is_speech)
         self.state_changed.emit(self._vad.state.value.upper())
         
@@ -485,10 +583,10 @@ class VADVisualizerWindow(QMainWindow):
         self.state_label.setText("● STOPPED")
         self.state_label.setStyleSheet("color: #666666;")
     
-    @Slot(float)
-    def _on_audio_level(self, level: float):
+    @Slot(float, bool)
+    def _on_audio_level(self, level: float, is_speech: bool):
         """Update audio level meter."""
-        self.level_meter.set_level(level)
+        self.level_meter.set_level(level, is_speech)
     
     @Slot(float, bool)
     def _on_vad_prob(self, prob: float, is_speech: bool):
@@ -497,13 +595,29 @@ class VADVisualizerWindow(QMainWindow):
     
     @Slot(str)
     def _on_state_change(self, state: str):
-        """Update state indicator."""
+        """Update state indicator with high contrast."""
         if state == "SPEECH":
-            self.state_label.setText("● SPEECH")
-            self.state_label.setStyleSheet("color: #4ec9b0;")
+            self.state_label.setText("🎤 SPEECH DETECTED")
+            self.state_label.setStyleSheet("""
+                color: #00ff00;
+                font-size: 20px;
+                font-weight: bold;
+                background-color: #1a3d1a;
+                padding: 10px;
+                border-radius: 5px;
+                border: 2px solid #00ff00;
+            """)
         else:
-            self.state_label.setText("● SILENCE")
-            self.state_label.setStyleSheet("color: #666666;")
+            self.state_label.setText("🔇 SILENCE")
+            self.state_label.setStyleSheet("""
+                color: #666666;
+                font-size: 16px;
+                font-weight: normal;
+                background-color: transparent;
+                padding: 10px;
+                border-radius: 5px;
+                border: 2px solid #3c3c3c;
+            """)
     
     @Slot(float, float)
     def _on_speech(self, duration: float, confidence: float):
