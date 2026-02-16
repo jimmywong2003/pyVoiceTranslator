@@ -100,21 +100,14 @@ class NLLBTranslator(BaseTranslator):
         # Load tokenizer and model
         self._tokenizer = AutoTokenizer.from_pretrained(self.model_name)
         
-        load_kwargs = {
-            "torch_dtype": dtype,
-        }
-        
-        # Use device_map for multi-GPU or large models
-        if self.device == "auto":
-            load_kwargs["device_map"] = "auto"
-        
+        # Load model - avoid device_map to prevent accelerate requirement
         self._model = AutoModelForSeq2SeqLM.from_pretrained(
             self.model_name,
-            **load_kwargs
+            torch_dtype=dtype
         )
         
-        if self.device != "auto":
-            self._model = self._model.to(device)
+        # Move to device
+        self._model = self._model.to(device)
         
         self._model.eval()
         self._is_initialized = True

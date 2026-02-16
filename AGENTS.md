@@ -1,20 +1,26 @@
 # VoiceTranslate Pro - Agent Documentation
 
-> **For AI Coding Agents**: This document provides essential context for working with this codebase.
+> **For AI Coding Agents**: This document provides essential context for working with this codebase. The information is based on actual project files and structure.
+
+---
 
 ## Project Overview
 
 **VoiceTranslate Pro** is a real-time voice translation application that enables seamless communication across language barriers. The system supports:
 
 - Real-time speech recognition and translation
-- Multi-source audio input (microphone + system audio)
+- Multi-source audio input (microphone + system audio via loopback)
 - Hybrid edge/cloud processing modes
+- Batch video translation with subtitle export
 - Cross-platform support (Windows, macOS with Apple Silicon optimization)
-- 50+ languages with focus on Chinese, English, Japanese, French
+- Focus languages: Chinese (zh), English (en), Japanese (ja), French (fr)
 
 ### Target Platforms
 - Windows 10/11 (x86_64)
-- macOS 11.0+ (Apple Silicon M1/M2 and Intel)
+- macOS 11.0+ (Apple Silicon M1/M2/M3 and Intel)
+
+### Development Status
+As of 2026-02-15: Phase 1 (Environment Setup) is complete. Phase 2 (Core Audio Pipeline) is in progress.
 
 ---
 
@@ -23,15 +29,16 @@
 | Component | Technology | Notes |
 |-----------|------------|-------|
 | **Language** | Python 3.9+ | Minimum version enforced |
-| **GUI** | PyQt6 / PySide6 | Microsoft Edge theme style |
 | **Audio I/O** | sounddevice, PyAudio | Cross-platform via PortAudio |
 | **System Audio** | pyaudiowpatch (Win), BlackHole (macOS) | Platform-specific loopback |
-| **VAD** | Silero VAD v5.1 | Primary; WebRTC VAD as fallback |
-| **ASR (Edge)** | faster-whisper, whisper.cpp | CTranslate2 backend |
-| **ASR (Apple)** | MLX Whisper | Apple Silicon optimized |
-| **Translation** | NLLB, MarianMT, ArgosMT | Local edge translation |
-| **Video** | FFmpeg, OpenCV | Audio extraction from video |
-| **ML Framework** | PyTorch, Transformers | With inference optimizations |
+| **VAD** | silero-vad, webrtcvad | Silero VAD v5.1 primary; WebRTC VAD fallback |
+| **ASR (Edge)** | openai-whisper, faster-whisper, whisper.cpp | CTranslate2 backend |
+| **ASR (Apple)** | mlx-whisper | Apple Silicon optimized (optional) |
+| **Translation** | NLLB-200, MarianMT | Via Hugging Face Transformers |
+| **Video** | FFmpeg, ffmpeg-python | Audio extraction from video |
+| **ML Framework** | PyTorch 2.0+ | With MPS (Apple Silicon) / CUDA (Windows) support |
+| **Testing** | pytest, unittest | Unit and integration tests |
+| **Packaging** | setuptools, py2app | macOS app bundle support |
 
 ---
 
@@ -40,14 +47,15 @@
 ```
 workspace_root/
 ├── interfaces.py                      # Core abstract interfaces and data classes
-│                                      # IAudioCapture, IVADEngine, IASREngine, etc.
+│                                      # IAudioCapture, IVADEngine, IASREngine, ITranslator, etc.
 │
+├── requirements.txt                   # Core audio module dependencies (sounddevice, silero-vad, etc.)
+├── setup_environment.py               # Automated environment setup script with validation
 ├── example_usage.py                   # Audio module usage examples and demos
 │
-├── requirements.txt                   # Python dependencies (audio-focused)
-│
-├── voice_translation/                 # Core translation system
+├── voice_translation/                 # Core translation system (CLI-focused)
 │   ├── main.py                        # CLI entry point with argument parsing
+│   ├── requirements.txt               # Module-specific requirements
 │   └── src/
 │       ├── audio/                     # Audio processing components
 │       │   ├── processor.py           # Audio preprocessing
@@ -56,7 +64,7 @@ workspace_root/
 │       ├── asr/                       # ASR implementations
 │       │   ├── base.py                # Abstract ASR interface
 │       │   ├── faster_whisper.py      # faster-whisper integration
-│       │   ├── mlx_whisper.py         # Apple Silicon optimized
+│       │   ├── mlx_whisper.py         # Apple Silicon optimized (optional)
 │       │   └── whisper_cpp.py         # whisper.cpp bindings
 │       ├── pipeline/                  # Translation pipelines
 │       │   ├── base.py                # Pipeline base class
@@ -68,13 +76,13 @@ workspace_root/
 │           ├── marian.py              # MarianMT implementation
 │           └── nllb.py                # NLLB-200 implementation
 │
-├── audio_module/                      # Audio processing subsystem (standalone)
+├── audio_module/                      # Audio processing subsystem (standalone module)
 │   ├── __init__.py                    # Exports: AudioManager, SileroVADProcessor, etc.
 │   ├── config.py                      # AudioConfig, AudioSource enums
 │   ├── capture/                       # Platform-specific audio capture
 │   │   ├── base.py                    # Abstract capture interface
-│   │   ├── windows.py                 # WASAPI loopback capture
-│   │   ├── macos.py                   # CoreAudio + BlackHole capture
+│   │   ├── windows.py                 # WASAPI loopback capture (Windows)
+│   │   ├── macos.py                   # CoreAudio + BlackHole capture (macOS)
 │   │   └── manager.py                 # Cross-platform AudioManager
 │   ├── vad/                           # Voice Activity Detection
 │   │   ├── silero_vad.py              # Silero VAD processor
@@ -90,8 +98,15 @@ workspace_root/
 │   └── benchmarking/                  # Performance benchmarks
 │       └── performance.py             # AudioBenchmark suite
 │
-├── voice_translation_app/             # Full application with packaging
+├── voice_translation_app/             # Full application with cross-platform support
 │   ├── setup.py                       # setuptools configuration, py2app for macOS
+│   ├── requirements.txt               # Base requirements
+│   ├── requirements-macos-arm64.txt   # macOS Apple Silicon specific
+│   ├── requirements-windows.txt       # Windows specific
+│   ├── environment-macos-arm64.yml    # Conda environment (macOS)
+│   ├── environment-windows.yml        # Conda environment (Windows)
+│   ├── config/                        # App configuration files
+│   │   └── entitlements.plist         # macOS entitlements for app bundle
 │   ├── src/
 │   │   ├── main.py                    # Application entry point
 │   │   ├── platform_utils.py          # Cross-platform utilities and detection
@@ -101,12 +116,14 @@ workspace_root/
 │       └── test_platform.py           # Unit tests for platform utilities
 │
 └── docs/                              # Comprehensive documentation
-    ├── user-guide.md                  # End-user documentation
-    ├── installation.md                # Platform-specific installation
     ├── architecture.md                # System architecture
-    ├── api-reference.md               # REST API documentation
+    ├── contributing.md                # Contribution guidelines
+    ├── gui-documentation.md           # GUI design specification
+    ├── installation.md                # Platform-specific installation
     ├── test-plan.md                   # Testing strategy
-    └── ...
+    ├── troubleshooting.md             # Troubleshooting guide
+    ├── user-guide.md                  # End-user documentation
+    └── video-testing.md               # Video feature testing
 ```
 
 ---
@@ -123,8 +140,17 @@ python voice_translation/main.py --mode realtime --source zh --target en
 python voice_translation/main.py --mode batch -i video.mp4 --source ja --target en
 
 # Hybrid edge-cloud mode
-python voice_translation/main.py --mode hybrid -i audio.wav --source fr --target en
+python voice_translation/main.py --mode hybrid -i audio.wav --source fr --target en --asr whisper.cpp
 ```
+
+**CLI Arguments:**
+- `--mode`: Processing mode (`realtime`, `batch`, `hybrid`)
+- `--source/-s`: Source language (`zh`, `en`, `ja`, `fr`, `auto`)
+- `--target/-t`: Target language (`zh`, `en`, `ja`, `fr`)
+- `--asr`: ASR implementation (`whisper.cpp`, `faster-whisper`, `mlx-whisper`)
+- `--model-size`: Whisper model size (`tiny`, `base`, `small`, `medium`, `large-v3`, etc.)
+- `--device`: Compute device (`auto`, `cpu`, `cuda`, `mps`)
+- `--system-audio`: Capture system audio instead of microphone
 
 ### 2. Application Usage (voice_translation_app)
 
@@ -140,9 +166,22 @@ python voice_translation_app/src/main.py --check-deps
 
 # Capture system audio
 python voice_translation_app/src/main.py --system-audio
+
+# Verbose logging
+python voice_translation_app/src/main.py --verbose
 ```
 
-### 3. Audio Module (standalone)
+### 3. Environment Setup
+
+```bash
+# Run automated environment setup
+python setup_environment.py
+
+# Skip checks and install all
+python setup_environment.py --install-all
+```
+
+### 4. Audio Module (standalone)
 
 ```python
 from audio_module import AudioManager, AudioConfig, AudioSource, SileroVADProcessor
@@ -160,43 +199,11 @@ def on_audio(chunk):
 manager.start_capture(AudioSource.MICROPHONE, on_audio)
 ```
 
----
+### 5. Examples
 
-## Core Interfaces
-
-All core interfaces are defined in `interfaces.py`. Key abstractions:
-
-### IAudioCapture
-```python
-class IAudioCapture(ABC):
-    def initialize(self, sample_rate=16000, channels=1) -> bool
-    def start_capture(self, callback: Callable[[np.ndarray], None]) -> bool
-    def stop_capture(self) -> None
-    def test_input(self, duration_ms=3000) -> AudioTestResult
-```
-
-### IVADEngine
-```python
-class IVADEngine(ABC):
-    def initialize(self, model_path=None, use_gpu=False) -> bool
-    def process(self, audio_chunk: np.ndarray, sample_rate=16000) -> VADResult
-    def set_threshold(self, threshold: float) -> None
-```
-
-### IASREngine
-```python
-class IASREngine(ABC):
-    def initialize(self, config: ASRModelConfig) -> bool
-    def transcribe(self, audio_segment: AudioSegment) -> TranscriptionResult
-    def get_supported_languages(self) -> List[str]
-```
-
-### ITranslator
-```python
-class ITranslator(ABC):
-    def initialize(self, config: TranslationConfig) -> bool
-    def translate(self, text: str, source_lang: str, target_lang: str) -> TranslationResult
-    def detect_language(self, text: str) -> str
+```bash
+# Run interactive examples
+python example_usage.py
 ```
 
 ---
@@ -211,8 +218,10 @@ python -m venv venv
 source venv/bin/activate  # macOS/Linux
 venv\Scripts\activate     # Windows
 
-# Install dependencies
-pip install -r requirements.txt
+# Install dependencies (platform-specific)
+pip install -r voice_translation_app/requirements-macos-arm64.txt  # macOS Apple Silicon
+pip install -r voice_translation_app/requirements-windows.txt      # Windows
+pip install -r requirements.txt                                    # Core only
 
 # Install the package in development mode (voice_translation_app)
 cd voice_translation_app
@@ -228,6 +237,9 @@ python -m pytest tests/ -v
 
 # Or run directly
 python tests/test_platform.py
+
+# Run all tests with coverage
+pytest --cov=voice_translation_app --cov-report=html
 ```
 
 ### Building Application
@@ -237,9 +249,51 @@ python tests/test_platform.py
 cd voice_translation_app
 python setup.py py2app
 
-# Windows (PyInstaller - typical approach)
+# Windows (PyInstaller - typical approach, not yet configured)
 cd voice_translation_app
 pyinstaller --onefile src/main.py
+```
+
+---
+
+## Core Interfaces
+
+All core interfaces are defined in `interfaces.py`. Key abstractions:
+
+### IAudioCapture
+```python
+class IAudioCapture(ABC):
+    def initialize(self, sample_rate=16000, channels=1) -> bool
+    def start_capture(self, callback: Callable[[np.ndarray], None]) -> bool
+    def stop_capture(self) -> None
+    def test_input(self, duration_ms=3000) -> AudioTestResult
+    def get_available_devices(self) -> List[DeviceInfo]
+```
+
+### IVADEngine
+```python
+class IVADEngine(ABC):
+    def initialize(self, model_path=None, use_gpu=False) -> bool
+    def process(self, audio_chunk: np.ndarray, sample_rate=16000) -> VADResult
+    def set_threshold(self, threshold: float) -> None
+    def reset(self) -> None
+```
+
+### IASREngine
+```python
+class IASREngine(ABC):
+    def initialize(self, config: ASRModelConfig) -> bool
+    def transcribe(self, audio_segment: AudioSegment) -> TranscriptionResult
+    def get_supported_languages(self) -> List[str]
+    def unload(self) -> None  # Free memory
+```
+
+### ITranslator
+```python
+class ITranslator(ABC):
+    def initialize(self, config: TranslationConfig) -> bool
+    def translate(self, text: str, source_lang: str, target_lang: str) -> TranslationResult
+    def detect_language(self, text: str) -> str
 ```
 
 ---
@@ -282,6 +336,11 @@ def process_audio(
 - **Abstract Interfaces**: Start with 'I' (`IAudioCapture`, `IVADEngine`)
 - **Private Members**: Leading underscore (`_audio_buffer`, `_process_internal`)
 
+### Platform-Specific Code
+- Use `platform_utils.py` patterns for platform detection
+- Use `@macos_only`, `@windows_only`, `@apple_silicon_only` decorators
+- Keep platform-specific implementations in separate files (e.g., `windows.py`, `macos.py`)
+
 ---
 
 ## Testing Strategy
@@ -296,15 +355,16 @@ voice_translation_app/tests/
 - Use `unittest` framework
 - Mock platform-specific dependencies
 - Test cross-platform compatibility with mocked platform detection
+- Run with: `python -m pytest voice_translation_app/tests/ -v`
 
-### Running Tests
-```bash
-# All tests
-python -m pytest voice_translation_app/tests/ -v
-
-# Specific test class
-python -m pytest voice_translation_app/tests/test_platform.py::TestPlatformDetection -v
-```
+### Test Classes in test_platform.py:
+- `TestPlatformDetection` - Platform type detection
+- `TestPlatformInfo` - PlatformInfo dataclass
+- `TestPlatformDecorators` - @macos_only, @windows_only decorators
+- `TestPlatformPaths` - Cross-platform path management
+- `TestAudioPlatformHelper` - Audio settings per platform
+- `TestDependencyChecker` - Dependency validation
+- `TestCrossPlatformCompatibility` - General compatibility
 
 ---
 
@@ -326,21 +386,34 @@ DEFAULT_SAMPLE_RATE = 16000
 DEFAULT_CHANNELS = 1
 DEFAULT_CHUNK_DURATION_MS = 30
 
+# VAD parameters
+DEFAULT_VAD_THRESHOLD = 0.5
+DEFAULT_VAD_FRAME_MS = 30
+
 # Performance targets
 TARGET_END_TO_END_LATENCY_MS = 1000
 TARGET_VAD_LATENCY_MS = 50
 TARGET_ASR_LATENCY_MS = 500
 TARGET_TRANSLATION_LATENCY_MS = 200
 
-# Model paths
+# Model URLs and paths
 MODEL_CACHE_DIR = "~/.voice_translate/models"
 CONFIG_DIR = "~/.voice_translate/config"
+LOG_DIR = "~/.voice_translate/logs"
+
+# Whisper model URLs (from Hugging Face)
+WHISPER_MODEL_URLS = {
+    "tiny": "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny.bin",
+    "base": "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.bin",
+    "small": "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-small.bin",
+    "medium": "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-medium.bin",
+}
 ```
 
 ### Configuration Files
-- No central config file in repository
-- Runtime configuration via `IConfigurationManager` interface
-- User settings stored in platform-specific directories
+- `voice_translation_app/config/entitlements.plist` - macOS app entitlements
+- `voice_translation_app/config/` - Other app configuration files
+- No central runtime config file in repository (runtime config via `IConfigurationManager`)
 
 ---
 
@@ -350,6 +423,7 @@ CONFIG_DIR = "~/.voice_translate/config"
 2. **Cloud Mode**: Only sends data to cloud APIs when explicitly enabled
 3. **Model Downloads**: Models downloaded from trusted sources (Hugging Face)
 4. **Permissions**: Requires microphone access (platform-specific prompts)
+5. **macOS App Sandboxing**: `entitlements.plist` configures sandbox permissions
 
 ---
 
@@ -358,45 +432,59 @@ CONFIG_DIR = "~/.voice_translate/config"
 ### Adding a New ASR Engine
 1. Create class in `voice_translation/src/asr/` inheriting from `BaseASR`
 2. Implement `initialize()` and `transcribe()` methods
-3. Register in factory if applicable
-4. Update `interfaces.py` ASRFactory if needed
+3. Add to `voice_translation/src/asr/__init__.py` exports
+4. Update CLI in `voice_translation/main.py` to support the new engine
 
 ### Adding a New Audio Capture Source
-1. Create class in `audio_module/capture/` inheriting from `IAudioCapture`
+1. Create class in `audio_module/capture/` inheriting from `IAudioCapture` (or base.py)
 2. Implement all abstract methods
-3. Register in `AudioCaptureFactory` in `interfaces.py`
+3. Register in `AudioCaptureFactory` in `interfaces.py` if needed
+4. Update `audio_module/capture/manager.py` if cross-platform support needed
 
 ### Adding a New VAD Engine
 1. Create class in `audio_module/vad/` inheriting from `IVADEngine`
 2. Implement `process()`, `set_threshold()`, `reset()`
 3. Register in `VADFactory` in `interfaces.py`
+4. Add to `audio_module/__init__.py` exports
 
-### Platform-Specific Code
-- Use `platform_utils.py` patterns for platform detection
-- Use `@macos_only`, `@windows_only` decorators for platform-specific functions
-- Keep platform-specific implementations in separate files (e.g., `windows.py`, `macos.py`)
+### Adding Platform-Specific Code
+1. Use decorators from `platform_utils.py`:
+   - `@macos_only` - macOS only functions
+   - `@windows_only` - Windows only functions
+   - `@apple_silicon_only` - Apple Silicon specific
+2. Keep implementations in platform-specific files (`macos.py`, `windows.py`)
+3. Use `detect_platform()` to check current platform at runtime
 
 ---
 
 ## Important Notes
 
 1. **Audio Format**: All internal audio processing uses:
-   - Sample rate: 16000 Hz (configurable)
-   - Format: numpy float32, range [-1.0, 1.0]
+   - Sample rate: 16000 Hz (configurable, but 16kHz is standard)
+   - Format: numpy float32, range [-1.0, 1.0] OR int16 depending on component
    - Channels: Mono (1 channel) by default
 
 2. **Threading**: Audio capture runs in separate threads
    - Use thread-safe queues for data passing
    - Pipeline uses thread pools for processing
 
-3. **Memory Management**: 
+3. **Memory Management**:
    - Models can be large (Whisper Medium = 769MB)
    - Implement `unload()` methods to free memory
    - Use buffer pooling to reduce GC pressure
 
-4. **Dependencies**: Some dependencies are platform-specific:
-   - `pyaudiowpatch` - Windows only
-   - `blackhole` - macOS only (external install)
+4. **Platform-Specific Dependencies**:
+   - **macOS**: PortAudio (via Homebrew: `brew install portaudio`), BlackHole (`brew install blackhole-2ch`)
+   - **Windows**: pyaudiowpatch (pip installable)
+
+5. **Python Environment**:
+   - Minimum Python 3.9 required
+   - Virtual environment strongly recommended
+   - PyTorch should be installed with platform-specific index URL for CUDA/MPS support
+
+6. **Model Caching**:
+   - Models cached at `~/.voice_translate/models/` and `~/.cache/torch/hub/`
+   - First run will download models (requires internet)
 
 ---
 
@@ -404,13 +492,20 @@ CONFIG_DIR = "~/.voice_translate/config"
 
 | Document | Description |
 |----------|-------------|
-| `README.md` | Main project overview |
-| `voice_translation_system_architecture.md` | System architecture |
+| `README.md` | Main project overview and user guide |
+| `STATUS.md` | Current development status and phase tracking |
+| `SETUP_GUIDE.md` | Detailed environment setup instructions |
+| `DOCUMENTATION_SUMMARY.md` | Index of all documentation |
+| `AUDIO_SUBSYSTEM_SUMMARY.md` | Audio module documentation |
+| `voice_translation_system_architecture.md` | Detailed system architecture |
 | `audio_processing_subsystem_design.md` | Audio system design |
 | `voice_translation_gui_design.md` | GUI design specification |
-| `DOCUMENTATION_SUMMARY.md` | Documentation index |
-| `docs/` | Full documentation suite |
+| `voice_translation_design.md` | Translation system design |
+| `docs/architecture.md` | Architecture details |
+| `docs/installation.md` | Platform-specific installation |
+| `docs/test-plan.md` | Testing strategy |
 
 ---
 
 *This file should be updated when significant architectural changes are made.*
+*Last updated: 2026-02-16*

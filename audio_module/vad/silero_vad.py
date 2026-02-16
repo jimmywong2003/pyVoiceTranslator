@@ -121,13 +121,13 @@ class SileroVADProcessor:
         # Disable gradient computation for inference
         torch.set_grad_enabled(False)
         
-        # State tracking
-        self._reset_state()
-        
         # Pre-compute thresholds
         self._min_speech_chunks = max(1, min_speech_duration_ms // 30)
         self._min_silence_chunks = max(1, min_silence_duration_ms // 30)
         self._speech_pad_chunks = speech_pad_ms // 30
+        
+        # State tracking (must be after threshold computation)
+        self._reset_state()
         
         logger.info(f"VAD initialized: threshold={threshold}, "
                    f"min_speech={min_speech_duration_ms}ms, "
@@ -158,12 +158,16 @@ class SileroVADProcessor:
             AudioSegment if speech segment completed, None otherwise
         """
         # Validate input
+        # Silero VAD requires minimum chunk size: sample_rate / 31.25
+        # For 16kHz: 16000 / 31.25 = 512 samples minimum
+        min_samples = max(512, int(self.sample_rate * 0.03))
         expected_samples = int(self.sample_rate * 0.03)  # 30ms
-        if len(audio_chunk) < expected_samples:
-            # Pad if necessary
+        
+        if len(audio_chunk) < min_samples:
+            # Pad to minimum required size
             audio_chunk = np.pad(
                 audio_chunk,
-                (0, expected_samples - len(audio_chunk)),
+                (0, min_samples - len(audio_chunk)),
                 mode='constant'
             )
         
