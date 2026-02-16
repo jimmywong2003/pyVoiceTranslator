@@ -1,7 +1,32 @@
 # VoiceTranslate Pro - Project Status
 
-> Last updated: 2026-02-16
+> Last updated: 2026-02-17
 > Version: 0.6.0
+
+---
+
+## 📝 Changelog v0.6.0
+
+### New Features
+- **VAD Visualizer** (`vad_visualizer.py`) - Real-time GUI with audio meter and VAD probability graph
+- **VAD Simple Test** (`test_vad_simple.py`) - CLI tool that captures and saves speech segments
+- **Video Translation** (`demo_video_translation.py`) - CLI and GUI support for video file translation
+- **Subtitle Export** - SRT/VTT export for video translations
+- **Audio Level Indicator** - Added to main GUI for visual feedback
+
+### Improvements
+- **ASR Accuracy**: Default model changed from `tiny` to `base`
+- **ASR Deduplication**: Prevents repeated phrase hallucinations
+- **Translation Caching**: LRU cache with TTL and disk persistence
+- **VAD Tuning**: Threshold increased from 0.5 to 0.7 to reduce false triggers
+- **VAD Visualizer UI**: Enhanced visual feedback with bright green flash effects
+
+### Bug Fixes
+- Fixed layout variable name error in GUI
+- Fixed VAD state attribute access in visualizer
+- Fixed audio level calculation for better speech detection
+
+---
 
 ## 🎯 Overview
 
