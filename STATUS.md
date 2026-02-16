@@ -33,9 +33,10 @@ Real-time voice translation application with hybrid edge-cloud processing suppor
 - [x] Implement streaming ASR pipeline
 - [x] Handle multiple languages (zh, en, ja, fr)
 
-### Phase 4: Translation Engine ✅ COMPLETE
+### Phase 4: Translation Engine 🔄 IN PROGRESS
 - [x] Set up local translation model (MarianMT for zh↔en)
-- [x] Test translation accuracy
+- [x] Models cached (zh↔en, ja↔en, NLLB-600M)
+- [~] Test translation accuracy (test script created)
 - [ ] Implement translation caching
 - [ ] Add cloud translation fallback (optional)
 - [ ] Benchmark translation latency
