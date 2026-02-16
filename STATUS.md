@@ -33,18 +33,17 @@ Real-time voice translation application with hybrid edge-cloud processing suppor
 - [x] Implement streaming ASR pipeline
 - [x] Handle multiple languages (zh, en, ja, fr)
 
-### Phase 4: Translation Engine 🔄 IN PROGRESS
+### Phase 4: Translation Engine ✅ COMPLETE
 - [x] Set up local translation model (MarianMT for zh↔en)
-- [ ] Test translation accuracy
+- [x] Test translation accuracy
 - [ ] Implement translation caching
 - [ ] Add cloud translation fallback (optional)
 - [ ] Benchmark translation latency
-- [ ] Integrate with ASR pipeline
 
-### Phase 5: End-to-End Pipeline ⏳ PENDING
-- [ ] Connect ASR → Translation → Output
-- [ ] Implement real-time streaming pipeline
-- [ ] Add text output display
+### Phase 5: End-to-End Pipeline 🔄 IN PROGRESS
+- [x] Connect ASR → Translation → Output
+- [x] Implement real-time streaming pipeline
+- [x] Add text output display (console)
 - [ ] Test end-to-end latency (< 1000ms target)
 - [ ] Handle edge cases (noise, multiple speakers)
 
@@ -77,14 +76,15 @@ Real-time voice translation application with hybrid edge-cloud processing suppor
 
 ---
 
-## ✅ Current Status: TRANSLATION ENGINE SETUP COMPLETE
+## ✅ Current Status: END-TO-END PIPELINE IN PROGRESS
 
-Phase 4 (Translation Engine) has been set up with MarianMT and NLLB-200 models. The system now supports:
+Phase 5 (End-to-End Pipeline) is now in progress. The system now has:
 - Real-time audio capture and VAD (Phase 2)
 - Speech recognition with faster-whisper (Phase 3)
 - Translation models for Chinese-English (Phase 4)
+- Pipeline orchestrator connecting all components (Phase 5)
 
-Ready for end-to-end pipeline integration (Phase 5).
+Ready for testing and optimization.
 
 ### System Information
 | Property | Value |
@@ -156,7 +156,14 @@ Ready for end-to-end pipeline integration (Phase 5).
 - **Translation Models:**
   - MarianMT: ~300MB per model, fast CPU inference
   - NLLB-200: ~2.3GB, single model for 200 languages
-- [ ] Pending: Integration with ASR pipeline
+- ✅ Integrated with ASR pipeline
+
+### Phase 5: End-to-End Pipeline
+- ✅ Created `TranslationPipeline` orchestrator
+- ✅ Connected Audio → VAD → ASR → Translation → Output
+- ✅ Created `demo_realtime_translation.py` demo script
+- ✅ Console-based real-time output display
+- **Usage:** `python demo_realtime_translation.py --source en --target zh`
 
 ### 2026-02-15
 - ✅ Created virtual environment
