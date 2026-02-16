@@ -377,7 +377,7 @@ class VoiceTranslateMainWindow(QMainWindow):
         settings_layout.addWidget(self.model_combo)
         
         settings_layout.addStretch()
-        main_layout.addWidget(settings_group)
+        layout.addWidget(settings_group)
         
         # === Display Area ===
         display_group = QGroupBox("Live Translation")
@@ -386,7 +386,7 @@ class VoiceTranslateMainWindow(QMainWindow):
         self.translation_display = TranslationDisplay()
         display_layout.addWidget(self.translation_display)
         
-        main_layout.addWidget(display_group, stretch=1)
+        layout.addWidget(display_group, stretch=1)
         
         # === Audio Level Panel ===
         level_group = QGroupBox("Audio Input Level")
@@ -399,7 +399,7 @@ class VoiceTranslateMainWindow(QMainWindow):
         self.level_status_label.setStyleSheet("color: #858585; font-size: 11px;")
         level_layout.addWidget(self.level_status_label)
         
-        main_layout.addWidget(level_group)
+        layout.addWidget(level_group)
         
         # === Control Panel ===
         control_group = QGroupBox("Controls")
@@ -424,7 +424,7 @@ class VoiceTranslateMainWindow(QMainWindow):
         self.status_label.setStyleSheet("color: #858585; font-weight: bold;")
         control_layout.addWidget(self.status_label)
         
-        main_layout.addWidget(control_group)
+        layout.addWidget(control_group)
         
         # === Status Bar ===
         self.status_bar = QStatusBar()
