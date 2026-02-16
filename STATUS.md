@@ -45,15 +45,18 @@ Real-time voice translation application with hybrid edge-cloud processing suppor
 - [x] Connect ASR → Translation → Output
 - [x] Implement real-time streaming pipeline
 - [x] Add text output display (console)
+- [~] Add GUI output display (PySide6)
 - [ ] Test end-to-end latency (< 1000ms target)
 - [ ] Handle edge cases (noise, multiple speakers)
 
-### Phase 6: GUI Development ⏳ PENDING
-- [ ] Design GUI layout (PyQt6/PySide6)
+### Phase 6: GUI Development 🔄 IN PROGRESS
+- [x] Design GUI layout (PySide6)
+- [x] Implement language pair selection
+- [x] Create real-time subtitle display
+- [x] Add start/stop controls
 - [ ] Implement device selection UI
-- [ ] Add language pair selection
-- [ ] Create real-time subtitle display
 - [ ] Add settings/preferences panel
+- [ ] Add audio level indicator
 
 ### Phase 7: Video Support ⏳ PENDING
 - [ ] Test video file audio extraction

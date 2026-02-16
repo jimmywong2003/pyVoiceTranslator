@@ -26,6 +26,7 @@ As of 2026-02-16:
 - ✅ Phase 3 (ASR Integration) - Complete (faster-whisper)
 - 🔄 Phase 4 (Translation Engine) - In Progress (MarianMT, NLLB-200 setup)
 - 🔄 Phase 5 (End-to-End Pipeline) - In Progress (Pipeline Orchestrator)
+- 🔄 Phase 6 (GUI Development) - In Progress (PySide6 GUI created)
 
 ---
 
