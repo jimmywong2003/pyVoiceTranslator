@@ -1,6 +1,6 @@
 # VoiceTranslate Pro - Project Status
 
-> Last updated: 2026-02-15
+> Last updated: 2026-02-16
 
 ## 🎯 Overview
 
@@ -77,9 +77,14 @@ Real-time voice translation application with hybrid edge-cloud processing suppor
 
 ---
 
-## ✅ Current Status: ASR INTEGRATION COMPLETE
+## ✅ Current Status: TRANSLATION ENGINE SETUP COMPLETE
 
-The ASR integration has been successfully implemented and tested. The system now supports real-time speech recognition with faster-whisper. Ready to begin Translation Engine (Phase 4).
+Phase 4 (Translation Engine) has been set up with MarianMT and NLLB-200 models. The system now supports:
+- Real-time audio capture and VAD (Phase 2)
+- Speech recognition with faster-whisper (Phase 3)
+- Translation models for Chinese-English (Phase 4)
+
+Ready for end-to-end pipeline integration (Phase 5).
 
 ### System Information
 | Property | Value |
