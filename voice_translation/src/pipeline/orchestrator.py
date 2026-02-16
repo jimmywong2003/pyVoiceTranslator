@@ -13,6 +13,7 @@ from queue import Queue, Empty
 import numpy as np
 import tempfile
 import os
+from collections import deque
 
 # Audio components
 from audio_module import AudioManager, AudioConfig, AudioSource
@@ -23,6 +24,7 @@ from voice_translation.src.asr.faster_whisper import FasterWhisperASR
 
 # Translation components
 from voice_translation.src.translation.marian import MarianTranslator
+from voice_translation.src.translation.cache import CachedTranslator, TranslationCache
 
 logger = logging.getLogger(__name__)
 
@@ -37,17 +39,27 @@ class PipelineConfig:
     audio_device_index: Optional[int] = None  # None for default
     
     # VAD settings
-    vad_threshold: float = 0.5
+    vad_threshold: float = 0.7  # Increased from 0.5 to reduce false triggers
     min_speech_duration_ms: int = 250
     
     # ASR settings
-    asr_model_size: str = "tiny"  # tiny, base, small
+    asr_model_size: str = "base"  # Changed from "tiny" to "base" for better accuracy
     asr_language: Optional[str] = None  # Auto-detect if None
+    
+    # ASR Deduplication settings
+    enable_deduplication: bool = True
+    dedup_window_size: int = 3  # Number of recent texts to compare against
+    dedup_similarity_threshold: float = 0.85  # Similarity threshold (0-1)
     
     # Translation settings
     source_language: str = "en"
     target_language: str = "zh"
     translator_type: str = "marian"  # "marian" or "nllb"
+    
+    # Translation cache settings
+    enable_translation_cache: bool = True
+    translation_cache_size: int = 500
+    translation_cache_ttl: Optional[int] = 3600  # 1 hour
     
     # Pipeline settings
     max_queue_size: int = 10
@@ -92,7 +104,7 @@ class TranslationPipeline:
         self._audio_manager: Optional[AudioManager] = None
         self._vad: Optional[SileroVADProcessor] = None
         self._asr: Optional[FasterWhisperASR] = None
-        self._translator: Optional[MarianTranslator] = None
+        self._translator: Optional[CachedTranslator] = None
         
         # State
         self._is_running = False
@@ -102,9 +114,14 @@ class TranslationPipeline:
         # Queue for audio segments
         self._segment_queue: Queue = Queue(maxsize=self.config.max_queue_size)
         
+        # Deduplication: store recent transcriptions
+        self._recent_texts: deque = deque(maxlen=self.config.dedup_window_size)
+        
         # Statistics
         self._stats = {
             "segments_processed": 0,
+            "segments_deduped": 0,
+            "translation_cache_hits": 0,
             "total_audio_duration": 0.0,
             "total_processing_time": 0.0,
             "start_time": None
@@ -148,12 +165,23 @@ class TranslationPipeline:
             if self.config.enable_translation:
                 logger.info(f"  - Translator ({self.config.translator_type})...")
                 if self.config.translator_type == "marian":
-                    self._translator = MarianTranslator(
+                    base_translator = MarianTranslator(
                         source_lang=self.config.source_language,
                         target_lang=self.config.target_language,
                         device="auto"
                     )
-                    self._translator.initialize()
+                    base_translator.initialize()
+                    
+                    # Wrap with cache if enabled
+                    if self.config.enable_translation_cache:
+                        cache = TranslationCache(
+                            max_size=self.config.translation_cache_size,
+                            ttl=self.config.translation_cache_ttl
+                        )
+                        self._translator = CachedTranslator(base_translator, cache)
+                        logger.info("    (with translation caching)")
+                    else:
+                        self._translator = base_translator
                 else:
                     # Fallback to NLLB or raise error
                     raise NotImplementedError("NLLB translator not yet integrated")
@@ -197,6 +225,41 @@ class TranslationPipeline:
         
         logger.info("Processing loop stopped")
     
+    def _is_duplicate(self, text: str) -> bool:
+        """
+        Check if text is similar to recent transcriptions.
+        
+        Uses simple word overlap ratio for similarity check.
+        """
+        if not self.config.enable_deduplication or not self._recent_texts:
+            return False
+        
+        text_lower = text.lower().strip()
+        text_words = set(text_lower.split())
+        
+        if not text_words:
+            return False
+        
+        for recent_text in self._recent_texts:
+            recent_words = set(recent_text.lower().split())
+            
+            # Calculate Jaccard similarity
+            intersection = text_words & recent_words
+            union = text_words | recent_words
+            
+            if union:
+                similarity = len(intersection) / len(union)
+                if similarity >= self.config.dedup_similarity_threshold:
+                    logger.debug(f"Duplicate detected (similarity: {similarity:.2f}): '{text[:50]}...'")
+                    return True
+        
+        return False
+    
+    def _add_to_history(self, text: str):
+        """Add text to recent history for deduplication."""
+        if self.config.enable_deduplication:
+            self._recent_texts.append(text)
+    
     def _process_segment(self, segment):
         """Process a single speech segment through ASR and Translation."""
         start_time = time.time()
@@ -223,11 +286,25 @@ class TranslationPipeline:
                 source_text = asr_result.text.strip()
                 detected_language = asr_result.language
                 
-                # 2. Translation (if enabled and needed)
+                # 2. Deduplication check
+                if self._is_duplicate(source_text):
+                    self._stats["segments_deduped"] += 1
+                    logger.debug(f"Skipping duplicate: '{source_text[:50]}...'")
+                    return
+                
+                # Add to history
+                self._add_to_history(source_text)
+                
+                # 3. Translation (if enabled and needed)
                 translated_text = None
+                cache_hit = False
                 if (self.config.enable_translation and 
                     self._translator and 
                     detected_language != self.config.target_language):
+                    
+                    # Check if result was from cache
+                    if self.config.enable_translation_cache:
+                        cache_before = self._translator.cache._hits
                     
                     trans_result = self._translator.translate(
                         source_text,
@@ -235,8 +312,14 @@ class TranslationPipeline:
                         target_lang=self.config.target_language
                     )
                     translated_text = trans_result.translated_text
+                    
+                    # Track cache hit
+                    if self.config.enable_translation_cache:
+                        if self._translator.cache._hits > cache_before:
+                            cache_hit = True
+                            self._stats["translation_cache_hits"] += 1
                 
-                # 3. Create output
+                # 4. Create output
                 processing_time = (time.time() - start_time) * 1000
                 
                 output = TranslationOutput(
@@ -249,7 +332,7 @@ class TranslationPipeline:
                     processing_time_ms=processing_time
                 )
                 
-                # 4. Send to callback
+                # 5. Send to callback
                 if self._output_callback:
                     self._output_callback(output)
                 
@@ -258,10 +341,11 @@ class TranslationPipeline:
                 self._stats["total_audio_duration"] += segment.duration
                 self._stats["total_processing_time"] += processing_time
                 
+                cache_indicator = " [C]" if cache_hit else ""
                 logger.info(
                     f"[{output.source_language}] {source_text} -> "
                     f"[{output.target_language}] {translated_text} "
-                    f"({processing_time:.0f}ms)"
+                    f"({processing_time:.0f}ms){cache_indicator}"
                 )
                 
             finally:
@@ -355,6 +439,10 @@ class TranslationPipeline:
             print(f"\n📊 Pipeline Statistics:")
             print(f"   Runtime: {runtime:.1f}s")
             print(f"   Segments processed: {self._stats['segments_processed']}")
+            if self._stats["segments_deduped"] > 0:
+                print(f"   Segments deduplicated: {self._stats['segments_deduped']}")
+            if self._stats["translation_cache_hits"] > 0:
+                print(f"   Translation cache hits: {self._stats['translation_cache_hits']}")
             print(f"   Total audio duration: {self._stats['total_audio_duration']:.1f}s")
             if self._stats["segments_processed"] > 0:
                 avg_time = self._stats["total_processing_time"] / self._stats["segments_processed"]

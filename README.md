@@ -68,6 +68,10 @@
 - **Privacy Mode** - Local processing for sensitive conversations
 - **Batch Translation** - Translate recorded audio files
 - **Export Options** - Save translations as text, audio, or subtitles
+- **Translation Caching** - Fast repeated phrase translation
+- **ASR Deduplication** - Prevents repeated hallucinations
+- **Audio Level Indicator** - Visual feedback for microphone input
+- **VAD Visualization** - Real-time voice detection monitoring
 
 ---
 
@@ -386,6 +390,45 @@ For complete API documentation, see [API Reference](docs/api-reference.md).
 
 ---
 
+## 🔧 Verification Tools
+
+VoiceTranslate Pro includes tools to verify system components are working correctly.
+
+### VAD (Voice Activity Detection) Verification
+
+```bash
+# GUI visualizer with real-time audio meter and VAD graph
+python vad_visualizer.py
+
+# Simple CLI test that saves captured speech segments
+python test_vad_simple.py --device 4 --duration 30
+
+# List available audio devices
+python test_vad_simple.py --list
+```
+
+### Video Translation
+
+```bash
+# Translate a video file with subtitle export
+python demo_video_translation.py video.mp4 --source en --target zh --export-srt --export-vtt
+
+# Batch translate multiple videos
+python demo_video_translation.py *.mp4 --source en --target zh --export-srt
+```
+
+### Performance Benchmarks
+
+```bash
+# Benchmark translation latency
+python benchmark_translation.py
+
+# Test audio pipeline latency
+python -m audio_module.benchmarking.performance
+```
+
+---
+
 ## 🧪 Testing
 
 VoiceTranslate Pro includes comprehensive test coverage.
@@ -424,6 +467,9 @@ pytest --cov=voicetranslate_pro --cov-report=html
 
 # Run performance tests
 pytest tests/performance/ --benchmark-only
+
+# Test VAD functionality
+python test_vad_simple.py --device 4 --duration 10
 ```
 
 For detailed testing documentation, see [Test Plan](docs/test-plan.md).
