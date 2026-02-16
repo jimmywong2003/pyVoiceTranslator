@@ -358,8 +358,8 @@ class VoiceTranslateMainWindow(QMainWindow):
             audio_device_index=4  # Default to MacBook Pro Microphone
         )
         
-        # Create and start worker
-        self.worker = TranslationWorker(config)
+        # Create and start worker (use device from config)
+        self.worker = TranslationWorker(config, device_index=config.audio_device_index)
         self.worker.output_ready.connect(self._on_output)
         self.worker.status_changed.connect(self._on_status_changed)
         self.worker.error_occurred.connect(self._on_error)
