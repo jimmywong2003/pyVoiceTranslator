@@ -398,33 +398,33 @@ VoiceTranslate Pro includes tools to verify system components are working correc
 
 ```bash
 # GUI visualizer with real-time audio meter and VAD graph
-python vad_visualizer.py
+python cli/vad_visualizer.py
 
 # Simple CLI test that saves captured speech segments
-python test_vad_simple.py --device 4 --duration 30
+python tests/test_vad_simple.py --device 4 --duration 30
 
 # List available audio devices
-python test_vad_simple.py --list
+python tests/test_vad_simple.py --list
 ```
 
 ### Video Translation
 
 ```bash
 # Translate a video file with subtitle export
-python demo_video_translation.py video.mp4 --source en --target zh --export-srt --export-vtt
+python cli/demo_video_translation.py video.mp4 --source en --target zh --export-srt --export-vtt
 
 # Batch translate multiple videos
-python demo_video_translation.py *.mp4 --source en --target zh --export-srt
+python cli/demo_video_translation.py *.mp4 --source en --target zh --export-srt
 ```
 
 ### Performance Benchmarks
 
 ```bash
 # Benchmark translation latency
-python benchmark_translation.py
+python cli/benchmark_translation.py
 
 # Test audio pipeline latency
-python -m audio_module.benchmarking.performance
+python -m src.audio.benchmarking.performance
 ```
 
 ---
