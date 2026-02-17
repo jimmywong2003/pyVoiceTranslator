@@ -78,7 +78,7 @@ class EnvironmentAwareConfig:
     min_speech_duration_ms: int = 200  # Slightly shorter for responsiveness
     min_silence_duration_ms: int = 250
     speech_pad_ms: int = 400
-    max_segment_duration_ms: int = 8000
+    max_segment_duration_ms: int = 5000  # 5 seconds max (reduced from 8s for lower latency)
 
 
 @dataclass  
