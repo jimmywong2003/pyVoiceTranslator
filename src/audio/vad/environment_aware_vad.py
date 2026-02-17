@@ -71,7 +71,8 @@ class EnvironmentAwareConfig:
     
     # Energy pre-filter
     enable_energy_prefilter: bool = True
-    min_snr_db: float = 3.0  # Minimum SNR for speech consideration
+    min_snr_db: float = 0.0  # Minimum SNR for speech consideration (0 = disabled by default)
+    # Note: SNR check is environment-aware - see _should_skip_by_energy()
     
     # Timing (from improved VAD)
     min_speech_duration_ms: int = 200  # Slightly shorter for responsiveness
@@ -341,15 +342,12 @@ class EnvironmentAwareVADProcessor(ImprovedSileroVADProcessor):
         # Calculate RMS
         rms = np.sqrt(np.mean(audio_float ** 2))
         
-        # Energy pre-filter (quick check)
-        if self.adaptive_config.enable_energy_prefilter:
-            noise_floor = self._noise_estimator.noise_floor
-            snr_db = 20 * np.log10((rms + 1e-10) / (noise_floor + 1e-10))
-            
-            if snr_db < self.adaptive_config.min_snr_db:
-                # Likely just noise, skip expensive VAD
-                self._update_metrics(rms, noise_floor, 0.0, is_filtered=True)
-                return []
+        # Environment-aware energy pre-filter
+        noise_floor = self._noise_estimator.noise_floor
+        if self._should_skip_by_energy(rms, noise_floor):
+            # Skip expensive VAD - likely just noise
+            self._update_metrics(rms, noise_floor, 0.0, is_filtered=True)
+            return []
         
         # Run base VAD
         segments = super().process_chunk(audio_chunk)
@@ -383,6 +381,41 @@ class EnvironmentAwareVADProcessor(ImprovedSileroVADProcessor):
             self._last_log_time = current_time
         
         return segments
+    
+    def _should_skip_by_energy(self, rms: float, noise_floor: float) -> bool:
+        """
+        Environment-aware energy pre-filter.
+        
+        In very noisy environments (like system audio with background noise),
+        we need to be more permissive to catch speech that might only be
+        slightly above the noise floor.
+        
+        Returns:
+            True if chunk should be skipped (likely just noise)
+        """
+        if not self.adaptive_config.enable_energy_prefilter:
+            return False
+        
+        # Calculate SNR
+        snr_db = 20 * np.log10((rms + 1e-10) / (noise_floor + 1e-10))
+        
+        # Get current environment
+        env = self._noise_estimator.get_environment_state()
+        
+        # Environment-specific SNR thresholds
+        # More permissive in noisy environments
+        snr_thresholds = {
+            EnvironmentState.QUIET: 3.0,      # Need clear signal in quiet
+            EnvironmentState.MODERATE: 1.5,   # Moderate tolerance
+            EnvironmentState.NOISY: 0.5,      # Very permissive (speech close to noise)
+            EnvironmentState.VERY_NOISY: 0.0, # Accept anything (speech buried in noise)
+            EnvironmentState.TRANSITIONING: 1.0,
+        }
+        
+        threshold = snr_thresholds.get(env, self.adaptive_config.min_snr_db)
+        
+        # Skip if SNR is below environment-specific threshold
+        return snr_db < threshold
     
     def _update_metrics(self, rms: float, noise_floor: float, 
                        speech_prob: float, is_filtered: bool):
