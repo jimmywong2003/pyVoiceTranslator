@@ -69,10 +69,10 @@ class EnvironmentAwareConfig:
     min_threshold: float = 0.25
     max_threshold: float = 0.85
     
-    # Energy pre-filter
-    enable_energy_prefilter: bool = True
-    min_snr_db: float = 0.0  # Minimum SNR for speech consideration (0 = disabled by default)
-    # Note: SNR check is environment-aware - see _should_skip_by_energy()
+    # Energy pre-filter - DISABLED by default for better speech detection
+    # Enable only if you're getting too many false positives in quiet environments
+    enable_energy_prefilter: bool = False
+    min_snr_db: float = 0.0  # Not used when prefilter is disabled
     
     # Timing (from improved VAD)
     min_speech_duration_ms: int = 200  # Slightly shorter for responsiveness
@@ -107,6 +107,9 @@ class EnvironmentMetrics:
     total_chunks: int = 0
     filtered_chunks: int = 0
     
+    # Speech detection
+    speech_detected_count: int = 0
+    
     def to_dict(self) -> Dict:
         return {
             'environment': self.environment,
@@ -116,6 +119,7 @@ class EnvironmentMetrics:
             'threshold': f"{self.current_threshold:.2f}",
             'recent_change': self.recent_change_detected,
             'filter_rate': f"{100*self.filtered_chunks/max(1,self.total_chunks):.1f}%",
+            'speech_events': self.speech_detected_count,
         }
 
 
@@ -232,15 +236,27 @@ class RapidNoiseEstimator:
 class DynamicThreshold:
     """
     Dynamic threshold that responds to environment state.
+    
+    Key insight: In system audio capture with background noise,
+    we need to keep threshold LOW enough to catch speech that may
+    only be slightly above noise floor.
     """
     
     def __init__(self, config: EnvironmentAwareConfig):
         self.config = config
         self.current_threshold = config.base_threshold
+        self._stable_environment = False
+        self._stable_counter = 0
         
     def update(self, noise_floor: float, environment: EnvironmentState) -> float:
         """
         Calculate optimal threshold for current environment.
+        
+        Strategy:
+        - Use environment-specific base threshold
+        - CAP maximum threshold to ensure speech detection
+        - Only raise threshold slightly in very noisy conditions
+        - Lower threshold after environment stabilizes
         
         Args:
             noise_floor: Current noise floor estimate
@@ -249,27 +265,58 @@ class DynamicThreshold:
         Returns:
             Updated threshold
         """
-        # Base threshold by environment
-        env_thresholds = {
-            EnvironmentState.QUIET: 0.35,
-            EnvironmentState.MODERATE: 0.5,
-            EnvironmentState.NOISY: 0.65,
-            EnvironmentState.VERY_NOISY: 0.75,
-            EnvironmentState.TRANSITIONING: 0.55,
+        # Environment-specific thresholds (CAPPED for speech detection)
+        # These are MAXIMUM thresholds - we won't go higher
+        env_max_thresholds = {
+            EnvironmentState.QUIET: 0.45,      # Can afford higher threshold
+            EnvironmentState.MODERATE: 0.50,   # Balanced
+            EnvironmentState.NOISY: 0.55,      # Keep lower to catch speech
+            EnvironmentState.VERY_NOISY: 0.60, # Even in noise, don't go too high
+            EnvironmentState.TRANSITIONING: 0.50,  # Conservative during change
         }
         
-        target = env_thresholds.get(environment, self.config.base_threshold)
+        max_threshold = env_max_thresholds.get(environment, self.config.base_threshold)
         
-        # Fine-tune based on actual noise floor
+        # Track environment stability
+        if environment == EnvironmentState.TRANSITIONING:
+            self._stable_counter = 0
+            self._stable_environment = False
+        else:
+            self._stable_counter += 1
+            if self._stable_counter > 100:  # ~3 seconds stable
+                self._stable_environment = True
+        
+        # Calculate target threshold
+        # Start from base and only adjust slightly
+        target = self.config.base_threshold
+        
         noise_db = 20 * np.log10(noise_floor + 1e-10)
         
+        # Fine adjustments (very conservative)
         if noise_db < -55:  # Very quiet
-            target = max(target - 0.1, self.config.min_threshold)
-        elif noise_db > -25:  # Very noisy
-            target = min(target + 0.1, self.config.max_threshold)
+            target = 0.40  # Slightly higher for quiet
+        elif noise_db < -45:  # Quiet
+            target = 0.45
+        elif noise_db < -35:  # Moderate
+            target = 0.50
+        elif noise_db < -30:  # Noisy
+            target = 0.52  # Keep low!
+        else:  # Very noisy
+            target = 0.55  # Still keep relatively low
         
-        # Smooth transition
-        self.current_threshold = 0.8 * self.current_threshold + 0.2 * target
+        # Apply cap
+        target = min(target, max_threshold)
+        target = max(target, self.config.min_threshold)
+        
+        # Smooth transition (slower = more stable)
+        alpha = 0.1 if self._stable_environment else 0.3
+        self.current_threshold = (1 - alpha) * self.current_threshold + alpha * target
+        
+        # Final clamp
+        self.current_threshold = max(
+            self.config.min_threshold,
+            min(max_threshold, self.current_threshold)
+        )
         
         return self.current_threshold
 
@@ -374,11 +421,20 @@ class EnvironmentAwareVADProcessor(ImprovedSileroVADProcessor):
         self._metrics.current_threshold = new_threshold
         self._metrics.adaptation_rate = self._noise_estimator.adaptation_rate
         
-        # Log periodically
+        # Track speech detection for better logging
+        if is_speech:
+            self._metrics.speech_detected_count = getattr(self._metrics, 'speech_detected_count', 0) + 1
+        
+        # Log periodically or when speech detected
         current_time = time.time()
         if current_time - self._last_log_time > 5.0:  # Every 5 seconds
             self._log_status()
             self._last_log_time = current_time
+        elif is_speech and getattr(self, '_last_speech_log', 0) < current_time - 1.0:
+            # Log when speech detected (but not too frequently)
+            logger.info(f"🎤 Speech detected! Segments: {len(segments)}, "
+                       f"Duration: {sum(s.duration for s in segments):.2f}s")
+            self._last_speech_log = current_time
         
         return segments
     
@@ -436,13 +492,15 @@ class EnvironmentAwareVADProcessor(ImprovedSileroVADProcessor):
     def _log_status(self):
         """Log current status."""
         m = self._metrics
+        speech_info = f"🎤 {m.speech_detected_count} speech events | " if m.speech_detected_count > 0 else ""
         logger.info(
             f"Environment: {m.environment.upper()} | "
             f"Noise: {m.noise_floor_db:.1f}dB | "
             f"Signal: {m.current_db:.1f}dB | "
             f"SNR: {m.snr_db:.1f}dB | "
             f"Threshold: {m.current_threshold:.2f} | "
-            f"Filter: {m.filtered_chunks}/{m.total_chunks}"
+            f"{speech_info}"
+            f"Chunks: {m.total_chunks}"
         )
     
     def get_metrics(self) -> Dict:
