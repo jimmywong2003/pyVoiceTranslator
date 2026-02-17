@@ -344,7 +344,7 @@ class EnvironmentAwareVADProcessor(ImprovedSileroVADProcessor):
         # Energy pre-filter (quick check)
         if self.adaptive_config.enable_energy_prefilter:
             noise_floor = self._noise_estimator.noise_floor
-            snr_db = 20 * np.log10(rms / (noise_floor + 1e-10))
+            snr_db = 20 * np.log10((rms + 1e-10) / (noise_floor + 1e-10))
             
             if snr_db < self.adaptive_config.min_snr_db:
                 # Likely just noise, skip expensive VAD
