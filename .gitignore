@@ -1,1 +1,6 @@
 venv/
+
+# Generated README files
+assets/README.html
+assets/README.png
+assets/README.jpeg
