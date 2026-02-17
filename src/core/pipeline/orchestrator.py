@@ -177,37 +177,34 @@ class TranslationPipeline:
             # 2. Initialize VAD
             logger.info("  - VAD Processor...")
             
-            # Try adaptive VAD first (if enabled)
+            # Try environment-aware VAD first (if enabled)
             if self.config.use_adaptive_vad:
                 try:
-                    from src.audio.vad.silero_vad_adaptive import (
-                        AdaptiveSileroVADProcessor,
-                        AdaptiveVADConfig,
-                        create_adaptive_vad_for_environment
+                    from src.audio.vad.environment_aware_vad import (
+                        EnvironmentAwareVADProcessor,
+                        EnvironmentAwareConfig,
                     )
                     
-                    # Create adaptive VAD config
-                    adaptive_config = AdaptiveVADConfig(
+                    # Create environment-aware VAD config
+                    env_config = EnvironmentAwareConfig(
                         sample_rate=self.config.sample_rate,
                         base_threshold=self.config.vad_threshold,
                         min_speech_duration_ms=self.config.min_speech_duration_ms,
                         min_silence_duration_ms=self.config.min_silence_duration_ms,
                         speech_pad_ms=self.config.vad_lookback_ms,
                         max_segment_duration_ms=self.config.max_segment_duration_ms,
-                        pause_threshold_ms=self.config.pause_threshold_ms,
                         min_threshold=self.config.vad_min_threshold,
                         max_threshold=self.config.vad_max_threshold,
-                        enable_noise_estimation=self.config.enable_vad_noise_estimation,
                         enable_energy_prefilter=self.config.enable_vad_energy_filter,
                     )
                     
-                    self._vad = AdaptiveSileroVADProcessor(adaptive_config)
-                    logger.info(f"    ✅ Using ADAPTIVE VAD: environment={self.config.adaptive_vad_environment}, "
+                    self._vad = EnvironmentAwareVADProcessor(env_config)
+                    logger.info(f"    ✅ Using ENVIRONMENT-AWARE VAD: "
                                f"threshold_range=[{self.config.vad_min_threshold:.1f}-{self.config.vad_max_threshold:.1f}], "
-                               f"noise_est={self.config.enable_vad_noise_estimation}")
+                               f"rapid_adaptation=True")
                     
                 except ImportError as e:
-                    logger.warning(f"    Adaptive VAD not available ({e}), falling back to improved VAD")
+                    logger.warning(f"    Environment-aware VAD not available ({e}), falling back to improved VAD")
                     self.config.use_adaptive_vad = False
             
             # Fall back to improved VAD if adaptive not available or disabled

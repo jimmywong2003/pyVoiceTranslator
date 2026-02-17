@@ -33,7 +33,7 @@ from .orchestrator import (
     AudioSource
 )
 from src.audio import AudioManager, AudioConfig
-from src.audio.vad.silero_vad_adaptive import AdaptiveSileroVADProcessor, AdaptiveVADConfig
+from src.audio.vad.environment_aware_vad import EnvironmentAwareVADProcessor, EnvironmentAwareConfig
 
 logger = logging.getLogger(__name__)
 
@@ -153,30 +153,28 @@ class ParallelTranslationPipeline(TranslationPipeline):
             )
             self._audio_manager = AudioManager(audio_config)
             
-            # 2. VAD (Adaptive if enabled)
+            # 2. VAD (Environment-aware if enabled)
             logger.info("  - VAD Processor...")
             if self.config.use_adaptive_vad:
                 try:
-                    from src.audio.vad.silero_vad_adaptive import (
-                        AdaptiveSileroVADProcessor, AdaptiveVADConfig
+                    from src.audio.vad.environment_aware_vad import (
+                        EnvironmentAwareVADProcessor, EnvironmentAwareConfig
                     )
-                    adaptive_config = AdaptiveVADConfig(
+                    env_config = EnvironmentAwareConfig(
                         sample_rate=self.config.sample_rate,
                         base_threshold=self.config.vad_threshold,
                         min_speech_duration_ms=self.config.min_speech_duration_ms,
                         min_silence_duration_ms=self.config.min_silence_duration_ms,
                         speech_pad_ms=self.config.vad_lookback_ms,
                         max_segment_duration_ms=self.config.max_segment_duration_ms,
-                        pause_threshold_ms=self.config.pause_threshold_ms,
                         min_threshold=self.config.vad_min_threshold,
                         max_threshold=self.config.vad_max_threshold,
-                        enable_noise_estimation=self.config.enable_vad_noise_estimation,
                         enable_energy_prefilter=self.config.enable_vad_energy_filter,
                     )
-                    self._vad = AdaptiveSileroVADProcessor(adaptive_config)
-                    logger.info("    ✅ Using ADAPTIVE VAD with parallel support")
+                    self._vad = EnvironmentAwareVADProcessor(env_config)
+                    logger.info("    ✅ Using ENVIRONMENT-AWARE VAD with parallel support (rapid adaptation)")
                 except ImportError:
-                    logger.warning("    Adaptive VAD not available, using improved VAD")
+                    logger.warning("    Environment-aware VAD not available, using improved VAD")
                     self._vad = self._create_improved_vad()
             else:
                 self._vad = self._create_improved_vad()
