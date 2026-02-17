@@ -17,7 +17,18 @@ from collections import deque
 
 # Audio components
 from audio_module import AudioManager, AudioConfig, AudioSource
-from audio_module.vad.silero_vad import SileroVADProcessor
+from audio_module.vad.silero_vad import SileroVADProcessor  # Base import
+
+# Try to import improved VAD
+try:
+    from audio_module.vad.silero_vad_improved import (
+        ImprovedSileroVADProcessor,
+        create_vad_for_system_audio,
+        create_vad_for_microphone
+    )
+    _HAS_IMPROVED_VAD = True
+except ImportError:
+    _HAS_IMPROVED_VAD = False
 
 # ASR components
 from voice_translation.src.asr.faster_whisper import FasterWhisperASR
@@ -37,10 +48,28 @@ class PipelineConfig:
     channels: int = 1
     chunk_duration_ms: int = 30
     audio_device_index: Optional[int] = None  # None for default
+    audio_source: AudioSource = AudioSource.MICROPHONE  # MICROPHONE or SYSTEM_AUDIO
     
     # VAD settings
-    vad_threshold: float = 0.7  # Increased from 0.5 to reduce false triggers
+    vad_threshold: float = 0.5  # 0.5 for better sensitivity with system audio
     min_speech_duration_ms: int = 250
+    min_silence_duration_ms: int = 400  # Increased for better sentence boundaries
+    
+    # Enhanced VAD buffering settings
+    vad_lookback_ms: int = 500  # Pre-speech buffer to capture sentence beginnings (was 30ms)
+    max_segment_duration_ms: int = 8000  # Max segment duration before forced split
+    pause_threshold_ms: int = 800  # Pause duration to trigger sentence boundary
+    
+    # Legacy compatibility
+    max_segment_duration_s: float = 10.0  # Prevent overly long segments
+    
+    # Adaptive VAD settings (Phase 1)
+    use_adaptive_vad: bool = True  # Enable adaptive VAD
+    adaptive_vad_environment: str = "auto"  # "auto", "quiet", "office", "noisy"
+    vad_min_threshold: float = 0.3  # Minimum adaptive threshold
+    vad_max_threshold: float = 0.8  # Maximum adaptive threshold
+    enable_vad_noise_estimation: bool = True
+    enable_vad_energy_filter: bool = True  # Reduces CPU usage
     
     # ASR settings
     asr_model_size: str = "base"  # Changed from "tiny" to "base" for better accuracy
@@ -76,6 +105,7 @@ class TranslationOutput:
     target_language: str
     confidence: float
     processing_time_ms: float
+    is_partial: bool = False  # True if this is part of a longer segment
 
 
 class TranslationPipeline:
@@ -145,11 +175,62 @@ class TranslationPipeline:
             
             # 2. Initialize VAD
             logger.info("  - VAD Processor...")
-            self._vad = SileroVADProcessor(
-                sample_rate=self.config.sample_rate,
-                threshold=self.config.vad_threshold,
-                min_speech_duration_ms=self.config.min_speech_duration_ms
-            )
+            
+            # Try adaptive VAD first (if enabled)
+            if self.config.use_adaptive_vad:
+                try:
+                    from audio_module.vad.silero_vad_adaptive import (
+                        AdaptiveSileroVADProcessor,
+                        AdaptiveVADConfig,
+                        create_adaptive_vad_for_environment
+                    )
+                    
+                    # Create adaptive VAD config
+                    adaptive_config = AdaptiveVADConfig(
+                        sample_rate=self.config.sample_rate,
+                        base_threshold=self.config.vad_threshold,
+                        min_speech_duration_ms=self.config.min_speech_duration_ms,
+                        min_silence_duration_ms=self.config.min_silence_duration_ms,
+                        speech_pad_ms=self.config.vad_lookback_ms,
+                        max_segment_duration_ms=self.config.max_segment_duration_ms,
+                        pause_threshold_ms=self.config.pause_threshold_ms,
+                        min_threshold=self.config.vad_min_threshold,
+                        max_threshold=self.config.vad_max_threshold,
+                        enable_noise_estimation=self.config.enable_vad_noise_estimation,
+                        enable_energy_prefilter=self.config.enable_vad_energy_filter,
+                    )
+                    
+                    self._vad = AdaptiveSileroVADProcessor(adaptive_config)
+                    logger.info(f"    ✅ Using ADAPTIVE VAD: environment={self.config.adaptive_vad_environment}, "
+                               f"threshold_range=[{self.config.vad_min_threshold:.1f}-{self.config.vad_max_threshold:.1f}], "
+                               f"noise_est={self.config.enable_vad_noise_estimation}")
+                    
+                except ImportError as e:
+                    logger.warning(f"    Adaptive VAD not available ({e}), falling back to improved VAD")
+                    self.config.use_adaptive_vad = False
+            
+            # Fall back to improved VAD if adaptive not available or disabled
+            if not self.config.use_adaptive_vad and _HAS_IMPROVED_VAD:
+                self._vad = ImprovedSileroVADProcessor(
+                    sample_rate=self.config.sample_rate,
+                    threshold=self.config.vad_threshold,
+                    min_speech_duration_ms=self.config.min_speech_duration_ms,
+                    min_silence_duration_ms=self.config.min_silence_duration_ms,
+                    speech_pad_ms=self.config.vad_lookback_ms,
+                    max_segment_duration_ms=self.config.max_segment_duration_ms,
+                    pause_threshold_ms=self.config.pause_threshold_ms
+                )
+                logger.info(f"    Using improved VAD: lookback={self.config.vad_lookback_ms}ms, "
+                           f"max_duration={self.config.max_segment_duration_ms}ms")
+            
+            elif not self.config.use_adaptive_vad:
+                # Fallback to legacy VAD
+                logger.warning("    Using legacy VAD (improved VAD not available)")
+                self._vad = SileroVADProcessor(
+                    sample_rate=self.config.sample_rate,
+                    threshold=self.config.vad_threshold,
+                    min_speech_duration_ms=self.config.min_speech_duration_ms
+                )
             
             # 3. Initialize ASR
             logger.info(f"  - ASR ({self.config.asr_model_size})...")
@@ -198,14 +279,20 @@ class TranslationPipeline:
         if not self._is_running:
             return
         
-        # Process through VAD
-        vad_segment = self._vad.process_chunk(chunk)
+        # Process through VAD (may return single segment or list of segments)
+        vad_result = self._vad.process_chunk(chunk)
         
-        if vad_segment:
-            # Speech segment detected, add to queue
+        # Handle both legacy (single segment) and improved (list) VAD
+        if vad_result is None:
+            return
+        
+        segments = vad_result if isinstance(vad_result, list) else [vad_result]
+        
+        for segment in segments:
             try:
-                self._segment_queue.put_nowait(vad_segment)
-                logger.debug(f"Added segment: {vad_segment.duration:.2f}s")
+                self._segment_queue.put_nowait(segment)
+                partial_marker = " (partial)" if getattr(segment, 'is_partial', False) else ""
+                logger.debug(f"Added segment{partial_marker}: {segment.duration:.2f}s")
             except:
                 logger.warning("Segment queue full, dropping segment")
     
@@ -260,9 +347,32 @@ class TranslationPipeline:
         if self.config.enable_deduplication:
             self._recent_texts.append(text)
     
+    def _is_hallucination(self, text: str) -> bool:
+        """Check if text is likely a hallucination (repeated words)."""
+        words = text.lower().split()
+        if len(words) < 4:
+            return False
+        
+        # Check for excessive repetition
+        unique_words = set(words)
+        if len(unique_words) < len(words) * 0.3:  # Less than 30% unique words
+            return True
+        
+        # Check for specific patterns
+        for word in unique_words:
+            count = words.count(word)
+            if count > len(words) * 0.5 and len(words) > 10:  # Word appears >50% of time
+                return True
+        
+        return False
+    
     def _process_segment(self, segment):
         """Process a single speech segment through ASR and Translation."""
         start_time = time.time()
+        
+        # Check max segment duration
+        if segment.duration > self.config.max_segment_duration_s:
+            logger.warning(f"Segment too long ({segment.duration:.1f}s), may cause slow processing")
         
         try:
             # Save segment to temp file for ASR
@@ -285,6 +395,11 @@ class TranslationPipeline:
                 
                 source_text = asr_result.text.strip()
                 detected_language = asr_result.language
+                
+                # Check for hallucinations (repeated words)
+                if self._is_hallucination(source_text):
+                    logger.warning(f"Hallucination detected, skipping: '{source_text[:80]}...'")
+                    return
                 
                 # 2. Deduplication check
                 if self._is_duplicate(source_text):
@@ -329,7 +444,8 @@ class TranslationPipeline:
                     source_language=detected_language,
                     target_language=self.config.target_language,
                     confidence=asr_result.confidence,
-                    processing_time_ms=processing_time
+                    processing_time_ms=processing_time,
+                    is_partial=getattr(segment, 'is_partial', False)
                 )
                 
                 # 5. Send to callback
@@ -407,27 +523,67 @@ class TranslationPipeline:
         logger.info("✅ Translation pipeline started!")
         return True
     
-    def stop(self):
-        """Stop the translation pipeline."""
+    def stop(self, timeout: float = 5.0, process_final: bool = False):
+        """
+        Stop the translation pipeline.
+        
+        Args:
+            timeout: Maximum time to wait for graceful shutdown
+            process_final: Whether to process the final VAD segment (may be slow)
+        """
         if not self._is_running:
             return
         
         logger.info("Stopping translation pipeline...")
         self._is_running = False
         
-        # Stop audio capture
+        # Stop audio capture first (prevents new data)
         if self._audio_manager:
-            self._audio_manager.stop_capture()
+            try:
+                self._audio_manager.stop_capture()
+            except Exception as e:
+                logger.warning(f"Error stopping audio capture: {e}")
         
-        # Wait for processing thread
-        if self._processing_thread:
-            self._processing_thread.join(timeout=5.0)
+        # Wait for processing thread with timeout
+        if self._processing_thread and self._processing_thread.is_alive():
+            logger.debug("Waiting for processing thread to stop...")
+            self._processing_thread.join(timeout=timeout)
+            if self._processing_thread.is_alive():
+                logger.warning("Processing thread did not stop in time")
         
-        # Finalize any pending VAD segment
-        if self._vad:
-            final_segment = self._vad.force_finalize()
-            if final_segment:
-                self._process_segment(final_segment)
+        # Finalize any pending VAD segment (optional, can be slow)
+        if process_final and self._vad:
+            try:
+                final_segment = self._vad.force_finalize()
+                if final_segment:
+                    logger.info(f"Processing final segment: {final_segment.duration:.2f}s")
+                    # Process final segment with timeout protection
+                    import threading
+                    result = [None]
+                    def process_with_timeout():
+                        try:
+                            self._process_segment(final_segment)
+                            result[0] = True
+                        except Exception as e:
+                            logger.error(f"Error processing final segment: {e}")
+                            result[0] = False
+                    
+                    final_thread = threading.Thread(target=process_with_timeout)
+                    final_thread.start()
+                    final_thread.join(timeout=3.0)  # Max 3 seconds for final segment
+                    
+                    if final_thread.is_alive():
+                        logger.warning("Final segment processing timed out, skipping")
+            except Exception as e:
+                logger.warning(f"Error finalizing VAD segment: {e}")
+        
+        # Clear any remaining queue items
+        if self._segment_queue:
+            try:
+                while not self._segment_queue.empty():
+                    self._segment_queue.get_nowait()
+            except:
+                pass
         
         logger.info("✅ Translation pipeline stopped")
         self._print_stats()
@@ -447,6 +603,13 @@ class TranslationPipeline:
             if self._stats["segments_processed"] > 0:
                 avg_time = self._stats["total_processing_time"] / self._stats["segments_processed"]
                 print(f"   Avg processing time: {avg_time:.0f}ms")
+            
+            # Print adaptive VAD stats if available
+            if self.config.use_adaptive_vad and hasattr(self._vad, 'print_summary'):
+                try:
+                    self._vad.print_summary()
+                except Exception as e:
+                    logger.debug(f"Could not print VAD summary: {e}")
     
     @property
     def is_running(self) -> bool:

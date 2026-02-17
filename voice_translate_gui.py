@@ -10,7 +10,7 @@ Usage:
 import sys
 import time
 import logging
-from typing import Optional
+from typing import Optional, List
 from dataclasses import dataclass
 
 from PySide6.QtWidgets import (
@@ -43,7 +43,7 @@ class GUIConfig:
 
 
 class TranslationWorker(QThread):
-    """Worker thread for running translation pipeline."""
+    """Worker thread for running translation pipeline (Parallel version)."""
     
     # Signals
     output_ready = Signal(TranslationOutput)
@@ -53,11 +53,25 @@ class TranslationWorker(QThread):
     stopped_signal = Signal()
     audio_level = Signal(float)  # Audio level 0.0-1.0
     
-    def __init__(self, config: PipelineConfig, device_index: Optional[int] = None):
+    def __init__(self, config: PipelineConfig, device_index: Optional[int] = None, use_parallel: bool = True):
         super().__init__()
         self.config = config
         self.device_index = device_index
-        self.pipeline = TranslationPipeline(config)
+        self.use_parallel = use_parallel
+        
+        # Use parallel pipeline for better performance (2 ASR workers + overlap)
+        if use_parallel:
+            try:
+                from voice_translation.src.pipeline.orchestrator_parallel import ParallelTranslationPipeline
+                self.pipeline = ParallelTranslationPipeline(config)
+                logger.info("Using ParallelTranslationPipeline (2 ASR workers, overlap enabled)")
+            except ImportError:
+                logger.warning("Parallel pipeline not available, falling back to sequential")
+                self.pipeline = TranslationPipeline(config)
+                self.use_parallel = False
+        else:
+            self.pipeline = TranslationPipeline(config)
+        
         self._is_running = False
         self._audio_manager = None
         self._vad = None
@@ -80,7 +94,7 @@ class TranslationWorker(QThread):
             
             success = self.pipeline.start(
                 output_callback=self._on_output,
-                audio_source=AudioSource.MICROPHONE,
+                audio_source=self.config.audio_source,
                 device_index=self.device_index
             )
             
@@ -128,11 +142,31 @@ class TranslationWorker(QThread):
         self.output_ready.emit(output)
     
     def stop(self):
-        """Stop the pipeline."""
+        """Stop the pipeline gracefully but quickly."""
+        logger.info("Stopping translation worker...")
         self._is_running = False
+        
+        # Stop pipeline with shorter timeout (don't process final segment)
         if self.pipeline:
-            self.pipeline.stop()
-        self.wait(5000)  # Wait up to 5 seconds
+            try:
+                self.pipeline.stop(timeout=2.0, process_final=False)
+            except Exception as e:
+                logger.warning(f"Error stopping pipeline: {e}")
+        
+        # Stop audio monitor if running
+        if self._audio_manager:
+            try:
+                self._audio_manager.stop_capture()
+            except Exception as e:
+                logger.warning(f"Error stopping audio monitor: {e}")
+        
+        # Wait for thread to finish with timeout
+        if not self.wait(3000):  # Wait up to 3 seconds
+            logger.warning("Worker thread did not stop gracefully, forcing termination")
+            self.terminate()  # Force terminate if still running
+            self.wait(1000)
+        
+        logger.info("Translation worker stopped")
 
 
 class AudioLevelIndicator(QWidget):
@@ -179,13 +213,43 @@ class AudioLevelIndicator(QWidget):
         painter.drawRect(0, 0, width - 1, height - 1)
 
 
+@dataclass
+class TranslationEntry:
+    """Store a translation entry for export."""
+    entry_id: int
+    timestamp_str: str
+    timestamp_seconds: float
+    source_text: str
+    translated_text: str
+    source_lang: str
+    target_lang: str
+    processing_time_ms: float
+    confidence: float
+    is_partial: bool
+
+
 class TranslationDisplay(QTextEdit):
-    """Custom text display for translation output."""
+    """
+    Enhanced text display for translation output.
+    
+    Features:
+    - Better formatting for long sentences
+    - Visual separation between source and translation
+    - Smart text truncation for very long content
+    - Improved typography and readability
+    - Export to text and subtitle formats
+    """
     
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setReadOnly(True)
         self.setLineWrapMode(QTextEdit.WidgetWidth)
+        self._entry_count = 0
+        self._max_entries = 100  # Keep last 100 entries
+        self._entries: List[TranslationEntry] = []  # Store entries for export
+        self._session_start_time = time.time()  # For subtitle timing
+        
+        # Improved styling with better typography
         self.setStyleSheet("""
             QTextEdit {
                 background-color: #1e1e1e;
@@ -194,38 +258,350 @@ class TranslationDisplay(QTextEdit):
                 border-radius: 5px;
                 padding: 10px;
                 font-size: 14px;
+                line-height: 1.5;
             }
         """)
+        
+        # Set default font for better Unicode support
+        font = QFont("SF Pro Text", 14)
+        font.setStyleHint(QFont.SansSerif)
+        self.setFont(font)
+    
+    def _format_long_text(self, text: str, max_chars: int = 200) -> str:
+        """
+        Format long text with smart truncation.
+        
+        Args:
+            text: Original text
+            max_chars: Maximum characters before truncation
+            
+        Returns:
+            Formatted HTML string
+        """
+        if len(text) <= max_chars:
+            return self._escape_html(text)
+        
+        # For long text, show first part with indicator
+        truncated = text[:max_chars]
+        remaining = len(text) - max_chars
+        
+        # Try to break at sentence boundary
+        sentence_end = max(
+            truncated.rfind('. '), 
+            truncated.rfind('! '),
+            truncated.rfind('? '),
+            truncated.rfind('。'),
+            truncated.rfind('！'),
+            truncated.rfind('？')
+        )
+        
+        if sentence_end > max_chars * 0.6:  # If we can break at sentence
+            display_text = truncated[:sentence_end + 1]
+            remaining = len(text) - len(display_text)
+        else:
+            # Break at word boundary
+            word_break = truncated.rfind(' ')
+            if word_break > max_chars * 0.8:
+                display_text = truncated[:word_break]
+                remaining = len(text) - len(display_text)
+            else:
+                display_text = truncated
+        
+        return f'{self._escape_html(display_text)}<span style="color: #6e6e6e;">... ({remaining} more chars)</span>'
+    
+    def _escape_html(self, text: str) -> str:
+        """Escape HTML special characters."""
+        return (text
+                .replace('&', '&amp;')
+                .replace('<', '&lt;')
+                .replace('>', '&gt;')
+                .replace('"', '&quot;'))
+    
+    def _create_entry_html(self, entry_id: int, timestamp: str, 
+                          source_text: str, translated_text: str,
+                          source_lang: str, target_lang: str,
+                          processing_time_ms: float, confidence: float,
+                          is_partial: bool = False) -> str:
+        """Create HTML for a translation entry."""
+        
+        # Format texts
+        source_formatted = self._format_long_text(source_text, max_chars=300)
+        translation_formatted = self._format_long_text(translated_text, max_chars=300)
+        
+        # Word counts
+        source_words = len(source_text.split())
+        translation_words = len(translated_text.split())
+        
+        # Partial indicator
+        partial_badge = '<span style="background-color: #d4a017; color: #000; padding: 1px 4px; border-radius: 3px; font-size: 9px; margin-left: 5px;">PARTIAL</span>' if is_partial else ''
+        
+        html = f'''
+        <div id="entry_{entry_id}" style="margin-bottom: 12px; padding: 12px; background-color: #252526; border-radius: 6px; border-left: 3px solid #0e639c;">
+            <!-- Header with timestamp and metadata -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #3c3c3c;">
+                <span style="color: #858585; font-size: 11px; font-family: monospace;">
+                    {timestamp} {partial_badge}
+                </span>
+                <span style="color: #6e6e6e; font-size: 10px;">
+                    {processing_time_ms:.0f}ms • {confidence:.0%} confidence
+                </span>
+            </div>
+            
+            <!-- Source Text Section -->
+            <div style="margin-bottom: 10px;">
+                <div style="display: flex; align-items: center; margin-bottom: 4px;">
+                    <span style="background-color: #4ec9b0; color: #1e1e1e; padding: 2px 6px; border-radius: 3px; font-size: 10px; font-weight: bold; margin-right: 8px;">
+                        {source_lang.upper()}
+                    </span>
+                    <span style="color: #6e6e6e; font-size: 10px;">
+                        {source_words} words • {len(source_text)} chars
+                    </span>
+                </div>
+                <div style="color: #d4d4d4; font-size: 14px; line-height: 1.6; padding: 6px 8px; background-color: #1e1e1e; border-radius: 4px; word-wrap: break-word;">
+                    {source_formatted}
+                </div>
+            </div>
+            
+            <!-- Translation Section -->
+            <div>
+                <div style="display: flex; align-items: center; margin-bottom: 4px;">
+                    <span style="background-color: #ce9178; color: #1e1e1e; padding: 2px 6px; border-radius: 3px; font-size: 10px; font-weight: bold; margin-right: 8px;">
+                        {target_lang.upper()}
+                    </span>
+                    <span style="color: #6e6e6e; font-size: 10px;">
+                        {translation_words} words • {len(translated_text)} chars
+                    </span>
+                </div>
+                <div style="color: #dcdcaa; font-size: 14px; line-height: 1.6; padding: 6px 8px; background-color: #1e1e1e; border-radius: 4px; word-wrap: break-word; border-left: 2px solid #ce9178;">
+                    {translation_formatted}
+                </div>
+            </div>
+        </div>
+        '''
+        return html
     
     def add_translation(self, source_text: str, translated_text: str, 
                        source_lang: str, target_lang: str, 
-                       processing_time_ms: float, confidence: float):
-        """Add a translation entry to the display."""
-        timestamp = time.strftime("%H:%M:%S")
-        
-        html = f"""
-        <div style="margin-bottom: 15px; padding: 10px; background-color: #2d2d2d; border-radius: 5px;">
-            <div style="color: #858585; font-size: 11px; margin-bottom: 5px;">
-                {timestamp} • {processing_time_ms:.0f}ms • confidence: {confidence:.2f}
-            </div>
-            <div style="color: #4ec9b0; margin-bottom: 5px;">
-                <b>[{source_lang.upper()}]</b> {source_text}
-            </div>
-            <div style="color: #ce9178;">
-                <b>[{target_lang.upper()}]</b> {translated_text}
-            </div>
-        </div>
+                       processing_time_ms: float, confidence: float,
+                       is_partial: bool = False):
         """
+        Add a translation entry to the display.
+        
+        Args:
+            source_text: Original recognized text
+            translated_text: Translated text
+            source_lang: Source language code
+            target_lang: Target language code
+            processing_time_ms: Processing time in milliseconds
+            confidence: Confidence score (0-1)
+            is_partial: Whether this is a partial segment from a longer sentence
+        """
+        timestamp_str = time.strftime("%H:%M:%S")
+        timestamp_seconds = time.time() - self._session_start_time
+        self._entry_count += 1
+        
+        # Store entry for export
+        entry = TranslationEntry(
+            entry_id=self._entry_count,
+            timestamp_str=timestamp_str,
+            timestamp_seconds=timestamp_seconds,
+            source_text=source_text,
+            translated_text=translated_text,
+            source_lang=source_lang,
+            target_lang=target_lang,
+            processing_time_ms=processing_time_ms,
+            confidence=confidence,
+            is_partial=is_partial
+        )
+        self._entries.append(entry)
+        
+        # Create the entry HTML
+        html = self._create_entry_html(
+            entry_id=self._entry_count,
+            timestamp=timestamp_str,
+            source_text=source_text,
+            translated_text=translated_text,
+            source_lang=source_lang,
+            target_lang=target_lang,
+            processing_time_ms=processing_time_ms,
+            confidence=confidence,
+            is_partial=is_partial
+        )
         
         self.append(html)
+        
+        # Limit entries to prevent memory issues
+        self._cleanup_old_entries()
         
         # Auto-scroll to bottom
         scrollbar = self.verticalScrollBar()
         scrollbar.setValue(scrollbar.maximum())
     
+    def _cleanup_old_entries(self):
+        """Remove old entries if we exceed the maximum."""
+        if len(self._entries) > self._max_entries:
+            # Remove oldest entries
+            remove_count = len(self._entries) - self._max_entries
+            self._entries = self._entries[remove_count:]
+    
     def clear_display(self):
         """Clear the display."""
         self.clear()
+        self._entries.clear()
+        self._entry_count = 0
+        self._session_start_time = time.time()
+    
+    # ==================== Export Methods ====================
+    
+    def export_as_txt(self, filepath: str, include_source: bool = True, 
+                     include_translation: bool = True) -> bool:
+        """
+        Export translations as plain text file.
+        
+        Args:
+            filepath: Path to save the file
+            include_source: Include source text
+            include_translation: Include translated text
+            
+        Returns:
+            True if successful
+        """
+        try:
+            lines = []
+            lines.append(f"Translation Session - {time.strftime('%Y-%m-%d %H:%M:%S')}")
+            lines.append("=" * 60)
+            lines.append("")
+            
+            for entry in self._entries:
+                lines.append(f"[{entry.timestamp_str}] Entry #{entry.entry_id}")
+                
+                if include_source:
+                    lines.append(f"Source ({entry.source_lang}): {entry.source_text}")
+                
+                if include_translation:
+                    lines.append(f"Translation ({entry.target_lang}): {entry.translated_text}")
+                
+                if entry.is_partial:
+                    lines.append("[PARTIAL SEGMENT]")
+                
+                lines.append("")
+            
+            lines.append("=" * 60)
+            lines.append(f"Total entries: {len(self._entries)}")
+            
+            with open(filepath, 'w', encoding='utf-8') as f:
+                f.write('\n'.join(lines))
+            
+            logger.info(f"Exported {len(self._entries)} entries to {filepath}")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Failed to export TXT: {e}")
+            return False
+    
+    def export_as_srt(self, filepath: str, use_translation: bool = True) -> bool:
+        """
+        Export translations as SRT subtitle file.
+        
+        Args:
+            filepath: Path to save the file
+            use_translation: If True, export translations; otherwise export source text
+            
+        Returns:
+            True if successful
+        """
+        try:
+            srt_lines = []
+            
+            for i, entry in enumerate(self._entries, 1):
+                # Calculate timestamps
+                start_time = entry.timestamp_seconds
+                # Estimate end time based on text length (avg 3 chars/sec)
+                text = entry.translated_text if use_translation else entry.source_text
+                duration = max(2.0, len(text) / 8.0)  # Min 2 seconds
+                end_time = start_time + duration
+                
+                # Format timestamps (HH:MM:SS,mmm)
+                start_str = self._format_srt_time(start_time)
+                end_str = self._format_srt_time(end_time)
+                
+                srt_lines.append(str(i))
+                srt_lines.append(f"{start_str} --> {end_str}")
+                srt_lines.append(text)
+                srt_lines.append("")  # Empty line between entries
+            
+            with open(filepath, 'w', encoding='utf-8') as f:
+                f.write('\n'.join(srt_lines))
+            
+            logger.info(f"Exported {len(self._entries)} subtitles to {filepath}")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Failed to export SRT: {e}")
+            return False
+    
+    def export_as_vtt(self, filepath: str, use_translation: bool = True) -> bool:
+        """
+        Export translations as WebVTT subtitle file.
+        
+        Args:
+            filepath: Path to save the file
+            use_translation: If True, export translations; otherwise export source text
+            
+        Returns:
+            True if successful
+        """
+        try:
+            vtt_lines = ["WEBVTT", ""]
+            
+            for entry in self._entries:
+                # Calculate timestamps
+                start_time = entry.timestamp_seconds
+                text = entry.translated_text if use_translation else entry.source_text
+                duration = max(2.0, len(text) / 8.0)
+                end_time = start_time + duration
+                
+                # Format timestamps (HH:MM:SS.mmm)
+                start_str = self._format_vtt_time(start_time)
+                end_str = self._format_vtt_time(end_time)
+                
+                vtt_lines.append(f"{start_str} --> {end_str}")
+                vtt_lines.append(text)
+                vtt_lines.append("")
+            
+            with open(filepath, 'w', encoding='utf-8') as f:
+                f.write('\n'.join(vtt_lines))
+            
+            logger.info(f"Exported {len(self._entries)} subtitles to {filepath}")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Failed to export VTT: {e}")
+            return False
+    
+    def _format_srt_time(self, seconds: float) -> str:
+        """Format time for SRT (HH:MM:SS,mmm)."""
+        hours = int(seconds // 3600)
+        minutes = int((seconds % 3600) // 60)
+        secs = int(seconds % 60)
+        millis = int((seconds % 1) * 1000)
+        return f"{hours:02d}:{minutes:02d}:{secs:02d},{millis:03d}"
+    
+    def _format_vtt_time(self, seconds: float) -> str:
+        """Format time for WebVTT (HH:MM:SS.mmm)."""
+        hours = int(seconds // 3600)
+        minutes = int((seconds % 3600) // 60)
+        secs = int(seconds % 60)
+        millis = int((seconds % 1) * 1000)
+        return f"{hours:02d}:{minutes:02d}:{secs:02d}.{millis:03d}"
+    
+    def get_entries_count(self) -> int:
+        """Get the number of stored entries."""
+        return len(self._entries)
+    
+    def has_entries(self) -> bool:
+        """Check if there are entries to export."""
+        return len(self._entries) > 0
 
 
 class VideoTranslationWorker(QThread):
@@ -345,38 +721,74 @@ class VoiceTranslateMainWindow(QMainWindow):
         
         # === Settings Panel ===
         settings_group = QGroupBox("Settings")
-        settings_layout = QHBoxLayout(settings_group)
+        settings_layout = QVBoxLayout(settings_group)  # Changed to vertical for better visibility
+        
+        # Row 1: Language and Model
+        row1_layout = QHBoxLayout()
         
         # Source language
         self.source_lang_combo = QComboBox()
         self.source_lang_combo.addItems(["Auto-detect", "Chinese (zh)", "English (en)", 
                                          "Japanese (ja)", "French (fr)"])
         self.source_lang_combo.setCurrentIndex(2)  # Default: English
-        settings_layout.addWidget(QLabel("Source:"))
-        settings_layout.addWidget(self.source_lang_combo)
+        row1_layout.addWidget(QLabel("Source:"))
+        row1_layout.addWidget(self.source_lang_combo)
         
         # Arrow
         arrow_label = QLabel("→")
         arrow_label.setStyleSheet("font-size: 16px; font-weight: bold;")
-        settings_layout.addWidget(arrow_label)
+        row1_layout.addWidget(arrow_label)
         
         # Target language
         self.target_lang_combo = QComboBox()
         self.target_lang_combo.addItems(["Chinese (zh)", "English (en)", 
                                          "Japanese (ja)", "French (fr)"])
         self.target_lang_combo.setCurrentIndex(0)  # Default: Chinese
-        settings_layout.addWidget(QLabel("Target:"))
-        settings_layout.addWidget(self.target_lang_combo)
+        row1_layout.addWidget(QLabel("Target:"))
+        row1_layout.addWidget(self.target_lang_combo)
         
-        settings_layout.addSpacing(20)
+        row1_layout.addSpacing(20)
         
         # ASR Model
         self.model_combo = QComboBox()
-        self.model_combo.addItems(["base (balanced)", "tiny (fast)", "small (accurate)"])  # Changed default to base
-        settings_layout.addWidget(QLabel("ASR Model:"))
-        settings_layout.addWidget(self.model_combo)
+        self.model_combo.addItems(["base (balanced)", "tiny (fast)", "small (accurate)"])
+        row1_layout.addWidget(QLabel("ASR Model:"))
+        row1_layout.addWidget(self.model_combo)
         
-        settings_layout.addStretch()
+        row1_layout.addStretch()
+        settings_layout.addLayout(row1_layout)
+        
+        # Row 2: Audio Source (prominent placement)
+        row2_layout = QHBoxLayout()
+        
+        # Audio Source with icon and better visibility
+        audio_source_label = QLabel("🎙️ Audio Input Source:")
+        audio_source_label.setStyleSheet("font-weight: bold; color: #4ec9b0;")
+        row2_layout.addWidget(audio_source_label)
+        
+        self.audio_source_combo = QComboBox()
+        self.audio_source_combo.addItems(["🎤 Microphone", "🔊 System Audio"])
+        self.audio_source_combo.setMinimumWidth(200)  # Make it wider
+        self.audio_source_combo.setToolTip(
+            "Microphone: Capture from your microphone\n"
+            "System Audio: Capture computer's output audio (requires BlackHole on macOS)\n\n"
+            "To use System Audio:\n"
+            "1. Install BlackHole: brew install blackhole-2ch\n"
+            "2. Set BlackHole as output in System Settings → Sound"
+        )
+        row2_layout.addWidget(self.audio_source_combo)
+        
+        # Add status indicator for system audio
+        self.audio_source_status = QLabel("")
+        self.audio_source_status.setStyleSheet("color: #858585; font-size: 11px;")
+        row2_layout.addWidget(self.audio_source_status)
+        
+        row2_layout.addStretch()
+        settings_layout.addLayout(row2_layout)
+        
+        # Update status when selection changes
+        self.audio_source_combo.currentIndexChanged.connect(self._on_audio_source_changed)
+        
         layout.addWidget(settings_group)
         
         # === Display Area ===
@@ -418,6 +830,19 @@ class VoiceTranslateMainWindow(QMainWindow):
         control_layout.addWidget(self.clear_button)
         
         control_layout.addStretch()
+        
+        # Export buttons
+        self.export_txt_btn = QPushButton("📄 Export TXT")
+        self.export_txt_btn.setMinimumHeight(40)
+        self.export_txt_btn.clicked.connect(self._on_export_txt)
+        self.export_txt_btn.setToolTip("Export as plain text file")
+        control_layout.addWidget(self.export_txt_btn)
+        
+        self.export_srt_btn = QPushButton("🎬 Export SRT")
+        self.export_srt_btn.setMinimumHeight(40)
+        self.export_srt_btn.clicked.connect(self._on_export_srt)
+        self.export_srt_btn.setToolTip("Export as SRT subtitle file")
+        control_layout.addWidget(self.export_srt_btn)
         
         # Status indicator
         self.status_label = QLabel("⏹ Stopped")
@@ -635,6 +1060,35 @@ class VoiceTranslateMainWindow(QMainWindow):
         source_code = None if "Auto" in source_lang else source_lang[-3:-1]
         target_code = target_lang[-3:-1]
         
+        # Get audio source selection
+        audio_source = (
+            AudioSource.SYSTEM_AUDIO 
+            if self.audio_source_combo.currentIndex() == 1 
+            else AudioSource.MICROPHONE
+        )
+        
+        # Check system audio availability
+        if audio_source == AudioSource.SYSTEM_AUDIO:
+            import platform
+            from audio_module import AudioManager, AudioConfig
+            
+            manager = AudioManager(AudioConfig())
+            sys_devices = manager.list_devices(AudioSource.SYSTEM_AUDIO)
+            
+            if not sys_devices:
+                system = platform.system()
+                msg = "System audio capture is not available.\n\n"
+                if system == "Darwin":
+                    msg += "Please install BlackHole:\n  brew install blackhole-2ch\n\n"
+                    msg += "Then set BlackHole as your output device in System Settings."
+                elif system == "Windows":
+                    msg += "Please enable Stereo Mix or install VB-Cable."
+                else:
+                    msg += "System audio capture is not supported on this platform."
+                
+                QMessageBox.warning(self, "System Audio Not Available", msg)
+                return
+        
         # Create pipeline config
         config = PipelineConfig(
             asr_model_size=model_size,
@@ -642,7 +1096,8 @@ class VoiceTranslateMainWindow(QMainWindow):
             source_language=source_code or "auto",
             target_language=target_code,
             enable_translation=True,
-            audio_device_index=4  # Default to MacBook Pro Microphone
+            audio_device_index=None,  # Use default microphone (auto-detect)
+            audio_source=audio_source
         )
         
         # Create and start worker (use device from config)
@@ -661,14 +1116,28 @@ class VoiceTranslateMainWindow(QMainWindow):
         self._set_controls_enabled(False)
     
     def _stop_translation(self):
-        """Stop the translation pipeline."""
-        if self.worker:
-            self.status_label.setText("⏹ Stopping...")
-            self.worker.stop()
-            self.worker = None
+        """Stop the translation pipeline gracefully."""
+        self.status_label.setText("⏹ Stopping...")
+        self.status_bar.showMessage("Stopping translation...")
         
-        self.update_timer.stop()
-        self._on_worker_stopped()
+        # Stop update timer first
+        if self.update_timer.isActive():
+            self.update_timer.stop()
+        
+        # Stop worker thread
+        if self.worker:
+            try:
+                if self.worker.isRunning():
+                    self.worker.stop()
+                self.worker = None
+            except Exception as e:
+                logger.warning(f"Error stopping worker: {e}")
+                self.worker = None
+        
+        # Ensure UI is reset
+        QTimer.singleShot(100, self._on_worker_stopped)
+        
+        logger.info("Translation stopped by user")
     
     @Slot(TranslationOutput)
     def _on_output(self, output: TranslationOutput):
@@ -679,7 +1148,8 @@ class VoiceTranslateMainWindow(QMainWindow):
             source_lang=output.source_language,
             target_lang=output.target_language,
             processing_time_ms=output.processing_time_ms,
-            confidence=output.confidence
+            confidence=output.confidence,
+            is_partial=output.is_partial
         )
         self.segments_count += 1
         self.latency_label.setText(f"Latency: {output.processing_time_ms:.0f}ms")
@@ -711,11 +1181,41 @@ class VoiceTranslateMainWindow(QMainWindow):
         self.status_label.setStyleSheet("color: #858585; font-weight: bold;")
         self._set_controls_enabled(True)
     
+    def _on_audio_source_changed(self, index: int):
+        """Handle audio source selection change."""
+        if index == 1:  # System Audio selected
+            # Check if system audio is available
+            from audio_module import AudioManager, AudioConfig, AudioSource
+            
+            try:
+                manager = AudioManager(AudioConfig())
+                sys_devices = manager.list_devices(AudioSource.SYSTEM_AUDIO)
+                
+                if sys_devices:
+                    device_names = [d['name'] for d in sys_devices]
+                    self.audio_source_status.setText(
+                        f"✅ Available: {', '.join(device_names[:2])}"
+                    )
+                    self.audio_source_status.setStyleSheet("color: #4ec9b0; font-size: 11px;")
+                else:
+                    self.audio_source_status.setText(
+                        "⚠️ BlackHole not detected - install with: brew install blackhole-2ch"
+                    )
+                    self.audio_source_status.setStyleSheet("color: #ce9178; font-size: 11px;")
+            except Exception as e:
+                self.audio_source_status.setText(f"❌ Error checking: {str(e)[:50]}")
+                self.audio_source_status.setStyleSheet("color: #c75450; font-size: 11px;")
+        else:
+            # Microphone selected
+            self.audio_source_status.setText("✅ Using default microphone")
+            self.audio_source_status.setStyleSheet("color: #4ec9b0; font-size: 11px;")
+    
     def _set_controls_enabled(self, enabled: bool):
         """Enable/disable controls during translation."""
         self.source_lang_combo.setEnabled(enabled)
         self.target_lang_combo.setEnabled(enabled)
         self.model_combo.setEnabled(enabled)
+        self.audio_source_combo.setEnabled(enabled)
         self.clear_button.setEnabled(enabled)
     
     @Slot()
@@ -725,6 +1225,76 @@ class VoiceTranslateMainWindow(QMainWindow):
         self.segments_count = 0
         self.segments_label.setText("Segments: 0")
         self.latency_label.setText("Latency: --")
+    
+    @Slot()
+    def _on_export_txt(self):
+        """Export translations as TXT file."""
+        if not self.translation_display.has_entries():
+            QMessageBox.information(self, "Export", "No translations to export yet.")
+            return
+        
+        filepath, _ = QFileDialog.getSaveFileName(
+            self,
+            "Export as Text File",
+            f"translations_{time.strftime('%Y%m%d_%H%M%S')}.txt",
+            "Text Files (*.txt);;All Files (*)"
+        )
+        
+        if filepath:
+            success = self.translation_display.export_as_txt(
+                filepath,
+                include_source=True,
+                include_translation=True
+            )
+            if success:
+                QMessageBox.information(
+                    self, 
+                    "Export Successful", 
+                    f"Exported {self.translation_display.get_entries_count()} entries to:\n{filepath}"
+                )
+            else:
+                QMessageBox.critical(self, "Export Failed", "Failed to export translations.")
+    
+    @Slot()
+    def _on_export_srt(self):
+        """Export translations as SRT subtitle file."""
+        if not self.translation_display.has_entries():
+            QMessageBox.information(self, "Export", "No translations to export yet.")
+            return
+        
+        filepath, _ = QFileDialog.getSaveFileName(
+            self,
+            "Export as SRT Subtitles",
+            f"translations_{time.strftime('%Y%m%d_%H%M%S')}.srt",
+            "Subtitle Files (*.srt);;All Files (*)"
+        )
+        
+        if filepath:
+            # Ask whether to export source or translation
+            msg_box = QMessageBox(self)
+            msg_box.setWindowTitle("Export Options")
+            msg_box.setText("Which text do you want to export?")
+            msg_box.addButton("Translations", QMessageBox.AcceptRole)
+            msg_box.addButton("Source Text", QMessageBox.RejectRole)
+            msg_box.addButton("Cancel", QMessageBox.DestructiveRole)
+            
+            result = msg_box.exec()
+            
+            if result == 2:  # Cancel
+                return
+            
+            use_translation = (result == 0)  # Translations button
+            
+            success = self.translation_display.export_as_srt(filepath, use_translation)
+            if success:
+                text_type = "translations" if use_translation else "source text"
+                QMessageBox.information(
+                    self,
+                    "Export Successful",
+                    f"Exported {self.translation_display.get_entries_count()} {text_type} to:\n{filepath}"
+                )
+            else:
+                QMessageBox.critical(self, "Export Failed", "Failed to export subtitles.")
     
     @Slot()
     def _update_stats(self):

@@ -85,10 +85,21 @@ class MacOSAudioCapture(BaseAudioCapture):
         try:
             import sounddevice as sd
             
+            # Get the default input device
             default_input = sd.query_devices(kind="input")
+            
+            # Find the matching device with input channels
             for idx, device in enumerate(sd.query_devices()):
-                if device["name"] == default_input["name"]:
+                if (device["name"] == default_input["name"] and 
+                    device["max_input_channels"] > 0):
                     return idx, device
+            
+            # Fallback: find any device with input channels
+            for idx, device in enumerate(sd.query_devices()):
+                if device["max_input_channels"] > 0:
+                    logger.warning(f"Using fallback microphone: {device['name']}")
+                    return idx, device
+                    
             return None
             
         except Exception as e:
@@ -155,6 +166,13 @@ class MacOSAudioCapture(BaseAudioCapture):
             # Get device info to determine actual channels
             device_info = sd.query_devices(device_index)
             actual_channels = device_info['max_input_channels']
+            
+            # Validate device has input channels
+            if actual_channels == 0:
+                raise RuntimeError(
+                    f"Device '{device_info['name']}' (index={device_index}) "
+                    f"has no input channels. Please select a valid input device."
+                )
             
             # Use device's actual channels (some devices don't support mono)
             channels_to_use = min(actual_channels, 2)  # Use 1 or 2 channels
