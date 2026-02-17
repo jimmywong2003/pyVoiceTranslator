@@ -115,6 +115,52 @@ class PivotTranslator(BaseTranslator):
         self._second_translator.initialize()
         self._is_initialized = True
     
+    def _post_process_translation(self, text: str) -> str:
+        """
+        Post-process translation to remove common artifacts.
+        
+        Removes:
+        - Hallucinated sound effects: (Laughter), (Applause), etc.
+        - Excessive punctuation
+        - Common translation errors
+        """
+        import re
+        
+        # Remove sound effect annotations
+        sound_effects = [
+            r'\(Laughter\)',
+            r'\(Applause\)',
+            r'\(Music\)',
+            r'\(Singing\)',
+            r'\(Cheering\)',
+            r'\(Booing\)',
+            r'\(Cough\)',
+            r'\(Sigh\)',
+            r'\(Gasp\)',
+            r'\(Pause\)',
+        ]
+        
+        result = text
+        for pattern in sound_effects:
+            result = re.sub(pattern, '', result, flags=re.IGNORECASE)
+        
+        # Clean up multiple spaces
+        result = re.sub(r'\s+', ' ', result)
+        
+        # Clean up excessive punctuation
+        result = re.sub(r'\.{3,}', '...', result)  # More than 3 dots -> 3 dots
+        result = re.sub(r',{2,}', ',', result)     # Multiple commas -> one
+        
+        # Strip whitespace
+        result = result.strip()
+        
+        # If result is empty after filtering, return original (with warning)
+        if not result or result == '...':
+            # Remove just the parentheses but keep the text
+            result = re.sub(r'[\(\)]', '', text).strip()
+        
+        return result
+    
     def translate(
         self,
         text: str,
@@ -146,6 +192,14 @@ class PivotTranslator(BaseTranslator):
         # Second translation: pivot -> target
         second_result = self._second_translator.translate(pivot_text, **kwargs)
         final_text = second_result.translated_text
+        
+        # Post-process to remove artifacts
+        original_text = final_text
+        final_text = self._post_process_translation(final_text)
+        
+        # Log if we removed something
+        if final_text != original_text:
+            logger.debug(f"Post-processed: '{original_text}' -> '{final_text}'")
         
         total_time = time.time() - start_time
         

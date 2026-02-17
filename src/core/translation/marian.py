@@ -118,6 +118,29 @@ class MarianTranslator(BaseTranslator):
         self._model.eval()
         self._is_initialized = True
     
+    @staticmethod
+    def _post_process_translation(text: str) -> str:
+        """Remove common translation artifacts like (Laughter), (Applause), etc."""
+        import re
+        
+        # Remove sound effect annotations
+        sound_effects = [
+            r'\(Laughter\)', r'\(Applause\)', r'\(Music\)', r'\(Singing\)',
+            r'\(Cheering\)', r'\(Booing\)', r'\(Cough\)', r'\(Sigh\)',
+            r'\(Gasp\)', r'\(Pause\)',
+        ]
+        
+        result = text
+        for pattern in sound_effects:
+            result = re.sub(pattern, '', result, flags=re.IGNORECASE)
+        
+        # Clean up
+        result = re.sub(r'\s+', ' ', result)
+        result = re.sub(r'\.{3,}', '...', result)
+        result = result.strip()
+        
+        return result if result else text
+    
     def translate(
         self,
         text: str,
@@ -180,6 +203,9 @@ class MarianTranslator(BaseTranslator):
             outputs[0],
             skip_special_tokens=True
         )
+        
+        # Post-process to remove artifacts
+        translated = self._post_process_translation(translated)
         
         processing_time = time.time() - start_time
         
