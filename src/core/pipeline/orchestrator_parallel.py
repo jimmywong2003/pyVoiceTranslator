@@ -377,6 +377,58 @@ class ParallelTranslationPipeline(TranslationPipeline):
         
         logger.info("ASR worker stopped")
     
+    def _is_asr_hallucination(self, text: str) -> bool:
+        """
+        Detect ASR hallucinations like repetition patterns.
+        
+        Returns True if text is likely a hallucination.
+        """
+        if not text or len(text) < 5:
+            return False
+        
+        # Pattern 1: Character repetition (e.g., "夜の夜の夜の...")
+        # Detect same character/substring repeated many times
+        for length in range(1, min(10, len(text) // 3)):
+            for i in range(len(text) - length * 3):
+                pattern = text[i:i+length]
+                if len(pattern.strip()) == 0:
+                    continue
+                # Check if pattern repeats 4+ times
+                count = 0
+                pos = i
+                while pos < len(text) and text[pos:pos+length] == pattern:
+                    count += 1
+                    pos += length
+                if count >= 4:  # Pattern repeats 4+ times
+                    logger.warning(f"ASR hallucination detected: repetition of '{pattern}' {count} times")
+                    return True
+        
+        # Pattern 2: Excessive repetition of same word
+        words = text.split()
+        if len(words) >= 5:
+            word_counts = {}
+            for word in words:
+                word_counts[word] = word_counts.get(word, 0) + 1
+            # If any word appears >50% of time, it's likely hallucination
+            max_count = max(word_counts.values())
+            if max_count / len(words) > 0.5:
+                most_common = max(word_counts.keys(), key=lambda w: word_counts[w])
+                logger.warning(f"ASR hallucination detected: word '{most_common}' appears {max_count}/{len(words)} times")
+                return True
+        
+        # Pattern 3: Very long repetitive sequences
+        if len(text) > 100:
+            # Check for repeating 2-4 character sequences
+            for seq_len in range(2, 5):
+                sequences = [text[i:i+seq_len] for i in range(0, len(text)-seq_len, seq_len)]
+                if len(sequences) >= 10:
+                    unique_ratio = len(set(sequences)) / len(sequences)
+                    if unique_ratio < 0.3:  # Less than 30% unique sequences
+                        logger.warning(f"ASR hallucination detected: low diversity ({unique_ratio:.1%}) in long text")
+                        return True
+        
+        return False
+    
     def _process_asr(self, segment: PipelineSegment) -> PipelineSegment:
         """Process ASR (runs in ThreadPool)."""
         segment.asr_start_time = time.time()
@@ -396,8 +448,15 @@ class ParallelTranslationPipeline(TranslationPipeline):
                 language=self.config.asr_language
             )
             
-            segment.asr_result = asr_result
             segment.asr_end_time = time.time()
+            
+            # Check for hallucinations
+            if asr_result and asr_result.text.strip():
+                if self._is_asr_hallucination(asr_result.text):
+                    logger.warning(f"ASR segment {segment.segment_id}: Rejected hallucination: '{asr_result.text[:50]}...'")
+                    asr_result.text = ""  # Clear the text
+            
+            segment.asr_result = asr_result
             
             # Log ASR result
             asr_time = (segment.asr_end_time - segment.asr_start_time) * 1000
