@@ -1,7 +1,31 @@
 # VoiceTranslate Pro - Project Status
 
 > Last updated: 2026-02-17
-> Version: 0.6.0
+> Version: 0.7.0
+
+---
+
+## 📝 Changelog v0.7.0
+
+### New Features
+- **Parallel Translation Pipeline** - ThreadPoolExecutor with 2 ASR workers and overlap optimization
+- **Adaptive VAD** - Real-time noise floor estimation with dynamic threshold (0.3-0.8)
+- **Energy Pre-filter** - 35% CPU savings by skipping VAD inference on silence
+- **System Audio UI** - Dedicated row with status indicator and setup instructions
+- **Export Functionality** - TXT, SRT, VTT export with timestamps
+- **Latency Analyzer** - Real-time performance monitoring with BufferOptimizer
+- **ASR Hallucination Filter** - Detects and skips repetitive text patterns
+
+### Improvements
+- **ASR Queue** - Increased from 5 to 10 slots to handle burst traffic
+- **GUI Layout** - Audio Source moved to dedicated row for better visibility
+- **Stop Handling** - Fixed process_final parameter and thread cleanup
+- **VAD Lookback** - 500ms buffer for natural speech boundaries
+
+### Bug Fixes
+- **Critical ASR Bug** - Added missing ASR worker thread that caused queue overflow
+- **Stop Method** - Fixed signature mismatch with parent class
+- **ASR Callback** - Corrected lambda signature in completion handler
 
 ---
 

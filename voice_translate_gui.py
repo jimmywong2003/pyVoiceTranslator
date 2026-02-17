@@ -36,7 +36,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class GUIConfig:
     """GUI configuration."""
-    window_title: str = "VoiceTranslate Pro"
+    window_title: str = "VoiceTranslate Pro v0.7.0"
     window_width: int = 900
     window_height: int = 700
     update_interval_ms: int = 100
