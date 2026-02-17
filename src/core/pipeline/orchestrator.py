@@ -35,6 +35,7 @@ from src.core.asr.faster_whisper import FasterWhisperASR
 
 # Translation components
 from src.core.translation.marian import MarianTranslator
+from src.core.translation.pivot import create_translator_with_pivot
 from src.core.translation.cache import CachedTranslator, TranslationCache
 
 logger = logging.getLogger(__name__)
@@ -246,7 +247,8 @@ class TranslationPipeline:
             if self.config.enable_translation:
                 logger.info(f"  - Translator ({self.config.translator_type})...")
                 if self.config.translator_type == "marian":
-                    base_translator = MarianTranslator(
+                    # Use pivot translation if direct model not available
+                    base_translator = create_translator_with_pivot(
                         source_lang=self.config.source_language,
                         target_lang=self.config.target_language,
                         device="auto"
