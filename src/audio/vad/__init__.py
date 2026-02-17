@@ -7,6 +7,7 @@ Provides VAD implementations:
 - Improved Silero VAD (with enhancements)
 - Adaptive Silero VAD (with noise estimation)
 - Environment-Aware VAD (handles dynamic environments)
+- Calibration-Based VAD (3s calibration for optimal threshold)
 """
 
 from .silero_vad import SileroVADProcessor, VADState, AudioSegment
@@ -18,6 +19,12 @@ from .environment_aware_vad import (
     EnvironmentAwareConfig,
     EnvironmentState
 )
+from .adaptive_vad_with_calibration import (
+    AdaptiveVADWithCalibration,
+    CalibrationConfig,
+    CalibrationResult,
+    CalibrationState,
+)
 
 __all__ = [
     "SileroVADProcessor",
@@ -28,6 +35,10 @@ __all__ = [
     "EnvironmentAwareVADProcessor",
     "EnvironmentAwareConfig",
     "EnvironmentState",
+    "AdaptiveVADWithCalibration",
+    "CalibrationConfig",
+    "CalibrationResult",
+    "CalibrationState",
     "VADState",
     "AudioSegment",
 ]

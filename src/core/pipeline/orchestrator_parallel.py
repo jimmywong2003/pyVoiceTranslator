@@ -153,29 +153,27 @@ class ParallelTranslationPipeline(TranslationPipeline):
             )
             self._audio_manager = AudioManager(audio_config)
             
-            # 2. VAD (Environment-aware if enabled)
+            # 2. VAD (Calibration-based if enabled)
             logger.info("  - VAD Processor...")
             if self.config.use_adaptive_vad:
                 try:
-                    from src.audio.vad.environment_aware_vad import (
-                        EnvironmentAwareVADProcessor, EnvironmentAwareConfig
+                    from src.audio.vad.adaptive_vad_with_calibration import (
+                        AdaptiveVADWithCalibration, CalibrationConfig
                     )
-                    env_config = EnvironmentAwareConfig(
+                    cal_config = CalibrationConfig(
+                        calibration_duration=3.0,
                         sample_rate=self.config.sample_rate,
                         base_threshold=self.config.vad_threshold,
                         min_speech_duration_ms=self.config.min_speech_duration_ms,
                         min_silence_duration_ms=self.config.min_silence_duration_ms,
                         speech_pad_ms=self.config.vad_lookback_ms,
                         max_segment_duration_ms=self.config.max_segment_duration_ms,
-                        min_threshold=self.config.vad_min_threshold,
-                        max_threshold=self.config.vad_max_threshold,
-                        enable_energy_prefilter=self.config.enable_vad_energy_filter,
                     )
-                    self._vad = EnvironmentAwareVADProcessor(env_config)
-                    logger.info("    ✅ Using ENVIRONMENT-AWARE VAD with parallel support (rapid adaptation)")
+                    self._vad = AdaptiveVADWithCalibration(cal_config)
+                    logger.info("    ✅ Using CALIBRATION-BASED VAD with parallel support (3s calibration)")
                 except ImportError:
-                    logger.warning("    Environment-aware VAD not available, using improved VAD")
-                    self._vad = self._create_improved_vad()
+                    logger.warning("    Calibration-based VAD not available, using environment-aware VAD")
+                    self._vad = self._create_environment_aware_vad()
             else:
                 self._vad = self._create_improved_vad()
             
@@ -217,6 +215,29 @@ class ParallelTranslationPipeline(TranslationPipeline):
             max_segment_duration_ms=self.config.max_segment_duration_ms,
             pause_threshold_ms=self.config.pause_threshold_ms
         )
+    
+    def _create_environment_aware_vad(self):
+        """Create environment-aware VAD as second fallback."""
+        try:
+            from src.audio.vad.environment_aware_vad import (
+                EnvironmentAwareVADProcessor, EnvironmentAwareConfig
+            )
+            env_config = EnvironmentAwareConfig(
+                sample_rate=self.config.sample_rate,
+                base_threshold=self.config.vad_threshold,
+                min_speech_duration_ms=self.config.min_speech_duration_ms,
+                min_silence_duration_ms=self.config.min_silence_duration_ms,
+                speech_pad_ms=self.config.vad_lookback_ms,
+                max_segment_duration_ms=self.config.max_segment_duration_ms,
+                min_threshold=self.config.vad_min_threshold,
+                max_threshold=self.config.vad_max_threshold,
+                enable_energy_prefilter=self.config.enable_vad_energy_filter,
+            )
+            logger.info("    ✅ Using ENVIRONMENT-AWARE VAD (fallback)")
+            return EnvironmentAwareVADProcessor(env_config)
+        except ImportError:
+            logger.warning("    Environment-aware VAD not available, using improved VAD")
+            return self._create_improved_vad()
     
     def _initialize_translator(self):
         """Initialize translator."""

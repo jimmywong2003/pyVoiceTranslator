@@ -177,35 +177,50 @@ class TranslationPipeline:
             # 2. Initialize VAD
             logger.info("  - VAD Processor...")
             
-            # Try environment-aware VAD first (if enabled)
+            # Try calibration-based VAD first (if enabled)
             if self.config.use_adaptive_vad:
                 try:
-                    from src.audio.vad.environment_aware_vad import (
-                        EnvironmentAwareVADProcessor,
-                        EnvironmentAwareConfig,
+                    from src.audio.vad.adaptive_vad_with_calibration import (
+                        AdaptiveVADWithCalibration, CalibrationConfig,
                     )
                     
-                    # Create environment-aware VAD config
-                    env_config = EnvironmentAwareConfig(
+                    cal_config = CalibrationConfig(
+                        calibration_duration=3.0,  # 3 seconds calibration
                         sample_rate=self.config.sample_rate,
                         base_threshold=self.config.vad_threshold,
                         min_speech_duration_ms=self.config.min_speech_duration_ms,
                         min_silence_duration_ms=self.config.min_silence_duration_ms,
                         speech_pad_ms=self.config.vad_lookback_ms,
                         max_segment_duration_ms=self.config.max_segment_duration_ms,
-                        min_threshold=self.config.vad_min_threshold,
-                        max_threshold=self.config.vad_max_threshold,
-                        enable_energy_prefilter=self.config.enable_vad_energy_filter,
                     )
                     
-                    self._vad = EnvironmentAwareVADProcessor(env_config)
-                    logger.info(f"    ✅ Using ENVIRONMENT-AWARE VAD: "
-                               f"threshold_range=[{self.config.vad_min_threshold:.1f}-{self.config.vad_max_threshold:.1f}], "
-                               f"rapid_adaptation=True")
+                    self._vad = AdaptiveVADWithCalibration(cal_config)
+                    logger.info(f"    ✅ Using CALIBRATION-BASED VAD: "
+                               f"{cal_config.calibration_duration}s calibration, "
+                               f"auto-threshold=True")
                     
                 except ImportError as e:
-                    logger.warning(f"    Environment-aware VAD not available ({e}), falling back to improved VAD")
-                    self.config.use_adaptive_vad = False
+                    logger.warning(f"    Calibration-based VAD not available ({e}), falling back to environment-aware VAD")
+                    # Fallback to environment-aware
+                    try:
+                        from src.audio.vad.environment_aware_vad import (
+                            EnvironmentAwareVADProcessor, EnvironmentAwareConfig,
+                        )
+                        env_config = EnvironmentAwareConfig(
+                            sample_rate=self.config.sample_rate,
+                            base_threshold=self.config.vad_threshold,
+                            min_speech_duration_ms=self.config.min_speech_duration_ms,
+                            min_silence_duration_ms=self.config.min_silence_duration_ms,
+                            speech_pad_ms=self.config.vad_lookback_ms,
+                            max_segment_duration_ms=self.config.max_segment_duration_ms,
+                            min_threshold=self.config.vad_min_threshold,
+                            max_threshold=self.config.vad_max_threshold,
+                            enable_energy_prefilter=self.config.enable_vad_energy_filter,
+                        )
+                        self._vad = EnvironmentAwareVADProcessor(env_config)
+                        logger.info(f"    ✅ Using ENVIRONMENT-AWARE VAD (fallback)")
+                    except ImportError:
+                        self.config.use_adaptive_vad = False
             
             # Fall back to improved VAD if adaptive not available or disabled
             if not self.config.use_adaptive_vad and _HAS_IMPROVED_VAD:
