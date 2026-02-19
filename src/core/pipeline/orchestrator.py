@@ -58,7 +58,7 @@ class PipelineConfig:
     
     # Enhanced VAD buffering settings
     vad_lookback_ms: int = 500  # Pre-speech buffer to capture sentence beginnings (was 30ms)
-    max_segment_duration_ms: int = 5000  # Max segment duration before forced split (5s for lower latency)
+    max_segment_duration_ms: int = 4000  # Max segment duration before forced split (4s) - Phase 1.1
     pause_threshold_ms: int = 800  # Pause duration to trigger sentence boundary
     
     # Legacy compatibility
