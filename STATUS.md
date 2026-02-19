@@ -391,7 +391,67 @@ Ready for Phase 1.3: StreamingTranslator
 
 ---
 
-### Phase 1.5: Integration + A/B Testing (IN PROGRESS)
+### ✅ Phase 1.5: Integration + A/B Testing - COMPLETE
+
+**Phase 1.5 has been implemented and tested.**
+
+| Task | Status | Result |
+|------|--------|--------|
+| Streaming pipeline integration | ✅ Done | `src/core/pipeline/streaming_pipeline.py` |
+| Component wiring | ✅ Done | All 7 components connected |
+| Configuration management | ✅ Done | `StreamingPipelineConfig` |
+| A/B testing framework | ✅ Done | Variant configuration system |
+| Test suite | ✅ Done | `tests/test_phase15_integration.py` |
+
+**Test Results**:
+```
+======================================================================
+✅ PASS: Pipeline Config
+✅ PASS: Pipeline Creation
+✅ PASS: Component Integration
+✅ PASS: Metrics Collection
+✅ PASS: A/B Testing Framework
+✅ PASS: End-to-End Flow
+
+🎉 Phase 1.5 Complete!
+All streaming components integrated!
+======================================================================
+```
+
+**New Components**:
+- `StreamingTranslationPipeline`: Main orchestrator
+  - `initialize()`: Initialize all components
+  - `start()`: Start processing with callback
+  - `process_audio()`: Main entry for audio
+  - `finalize_segment()`: Handle silence detection
+  - `get_metrics()`: Get performance metrics
+
+**Integrated Architecture**:
+```
+StreamingTranslationPipeline:
+├── StreamingASR (cumulative context, draft/final)
+├── AdaptiveDraftController (skip if paused/busy)
+├── StreamingTranslator (semantic gating, SOV safety)
+├── StreamingMetricsCollector (TTFT, Meaning Latency)
+├── StreamingUI (diff visualization, transitions)
+└── SegmentTracker (UUID-based tracing)
+```
+
+**A/B Testing Support**:
+```python
+# Control group
+control = StreamingPipelineConfig(draft_interval_ms=2000)
+
+# Treatment: Faster drafts
+treatment_1 = StreamingPipelineConfig(draft_interval_ms=1500)
+
+# Treatment: ASR only
+treatment_2 = StreamingPipelineConfig(enable_translation=False)
+```
+
+---
+
+## 🎉 Phase 1 Complete: Streaming Optimization
 
 Based on analysis in `docs/overlap_think_on_real_time_translator.md` and `docs/evaluation_streaming_suggestions.md`, implementing **Hybrid Streaming Mode with Partial Translation**.
 
@@ -417,7 +477,7 @@ Based on analysis in `docs/overlap_think_on_real_time_translator.md` and `docs/e
 | **1.2** | **StreamingASR (cumulative, INT8)** | ✅ **COMPLETE** | 🟡 High |
 | **1.3** | **Partial Translation (semantic gating)** | ✅ **COMPLETE** | 🟡 High |
 | **1.4** | **Diff-Based UI** | ✅ **COMPLETE** | 🟢 Medium |
-| 1.5 | Integration + A/B Testing | ⏳ IN PROGRESS | 🟢 Medium |
+| **1.5** | **Integration + A/B Testing** | ✅ **COMPLETE** | 🟢 Medium |
 
 ### Expected Improvements
 
