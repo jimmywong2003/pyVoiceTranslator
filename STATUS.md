@@ -222,7 +222,39 @@ language = "ja" or "zh"
 
 **Ready for Phase 1!** 🎉
 
-### Phase 1: Streaming Optimization (IN PROGRESS)
+---
+
+### ✅ Phase 1.1: Metrics + Adaptive Config - COMPLETE
+
+**Phase 1.1 has been implemented and tested.**
+
+| Task | Status | Result |
+|------|--------|--------|
+| TTFT, Meaning Latency, Ear-to-Voice metrics | ✅ Done | `src/core/utils/streaming_metrics.py` |
+| Adaptive draft controller | ✅ Done | `src/core/pipeline/adaptive_controller.py` |
+| Reduce segment duration 8000→4000ms | ✅ Done | Lower per-segment latency |
+| Test suite | ✅ Done | `tests/test_phase11_metrics.py` |
+
+**Test Results**:
+```
+======================================================================
+               ✅ ALL TESTS PASSED!
+          🎉 Phase 1.1 Complete!
+     Ready for Phase 1.2: StreamingASR
+======================================================================
+```
+
+**New Components**:
+- `StreamingMetricsCollector`: Tracks TTFT, Meaning Latency, Ear-to-Voice Lag
+- `AdaptiveDraftController`: Skips drafts based on time/pause/queue depth
+- `SimpleDraftController`: Time-based draft triggering
+
+**Config Changes**:
+- `max_segment_duration_ms`: 8000 → 4000 (50% reduction)
+
+---
+
+### Phase 1.2: StreamingASR (IN PROGRESS)
 
 Based on analysis in `docs/overlap_think_on_real_time_translator.md` and `docs/evaluation_streaming_suggestions.md`, implementing **Hybrid Streaming Mode with Partial Translation**.
 
@@ -241,14 +273,14 @@ Based on analysis in `docs/overlap_think_on_real_time_translator.md` and `docs/e
 
 ### Implementation Timeline
 
-| Week | Task | Priority |
-|------|------|----------|
-| **0** | **Fix sentence loss bug** | 🔴 **CRITICAL** |
-| 1 | Metrics + Adaptive Config | 🟡 High |
-| 1-2 | StreamingASR (cumulative, INT8) | 🟡 High |
-| 2 | Partial Translation (semantic gating) | 🟡 High |
-| 2-3 | Diff-Based UI | 🟢 Medium |
-| 3 | Integration + A/B Testing | 🟢 Medium |
+| Phase | Task | Status | Priority |
+|-------|------|--------|----------|
+| **0** | **Fix sentence loss bug** | ✅ **COMPLETE** | 🔴 CRITICAL |
+| **1.1** | **Metrics + Adaptive Config** | ✅ **COMPLETE** | 🟡 High |
+| 1.2 | StreamingASR (cumulative, INT8) | ⏳ Ready | 🟡 High |
+| 1.3 | Partial Translation (semantic gating) | ⏳ Pending | 🟡 High |
+| 1.4 | Diff-Based UI | ⏳ Pending | 🟢 Medium |
+| 1.5 | Integration + A/B Testing | ⏳ Pending | 🟢 Medium |
 
 ### Expected Improvements
 
