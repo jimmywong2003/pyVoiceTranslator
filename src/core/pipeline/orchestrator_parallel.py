@@ -416,7 +416,7 @@ class ParallelTranslationPipeline(TranslationPipeline):
                         with self._metrics_lock:
                             self._metrics.total_segments += 1
                             self._metrics.queued_segments = self._asr_queue.qsize()
-                        logger.debug(f"Queued segment {self._segment_counter} for ASR (queue: {self._asr_queue.qsize()})")
+                        logger.info(f"[TIMESTAMP] Segment created at {pipeline_segment.start_time:.3f}s | ID {self._segment_counter} | Duration {audio_duration_ms:.0f}ms | Queue {self._asr_queue.qsize()}")
                     except Full:
                         # Week 0: Track drop
                         self._queue_monitor.record_put("asr", False, 0.1)
@@ -507,10 +507,10 @@ class ParallelTranslationPipeline(TranslationPipeline):
             # Log ASR result
             asr_time = (segment.asr_end_time - segment.asr_start_time) * 1000
             if asr_result and asr_result.text.strip():
-                logger.info(f"ASR segment {segment.segment_id}: '{asr_result.text[:50]}...' ({asr_time:.0f}ms)")
+                logger.info(f"[TIMESTAMP] ASR complete at {time.time():.3f}s | Segment {segment.segment_id} | '{asr_result.text[:50]}...' ({asr_time:.0f}ms)")
             else:
                 # Result was filtered by post-processor (hallucination or low quality)
-                logger.warning(f"ASR segment {segment.segment_id}: Filtered/Empty result ({asr_time:.0f}ms) - skipping translation")
+                logger.warning(f"[TIMESTAMP] ASR filtered at {time.time():.3f}s | Segment {segment.segment_id} | ({asr_time:.0f}ms) - skipping translation")
             
             # Cleanup
             import os
@@ -544,7 +544,7 @@ class ParallelTranslationPipeline(TranslationPipeline):
             
             # Log translation result
             trans_time = (segment.translation_end_time - segment.translation_start_time) * 1000
-            logger.info(f"Translation segment {segment.segment_id}: '{segment.asr_result.text[:30]}...' -> '{segment.translation_result[:30]}...' ({trans_time:.0f}ms)")
+            logger.info(f"[TIMESTAMP] Translation complete at {time.time():.3f}s | Segment {segment.segment_id} | '{segment.asr_result.text[:30]}...' -> '{segment.translation_result[:30]}...' ({trans_time:.0f}ms)")
             
         except Exception as e:
             logger.error(f"Translation error for segment {segment.segment_id}: {e}")
@@ -724,9 +724,10 @@ class ParallelTranslationPipeline(TranslationPipeline):
         # Call user callback
         try:
             self._output_callback(output)
-            logger.info(f"Output emitted: '{output.source_text[:40]}...' -> '{(output.translated_text or '')[:40]}...' ({total_time:.0f}ms)")
+            emit_time = time.time()
+            logger.info(f"[TIMESTAMP] Output emitted at {emit_time:.3f}s | Segment {segment.segment_id} | '{output.source_text[:40]}...' -> '{(output.translated_text or '')[:40]}...' ({total_time:.0f}ms)")
         except Exception as e:
-            logger.error(f"Output callback error: {e}")
+            logger.error(f"[TIMESTAMP] Output callback error at {time.time():.3f}s: {e}")
         
         # Update stats
         self._stats["segments_processed"] += 1

@@ -12,10 +12,15 @@ Press Ctrl+C to stop.
 import argparse
 import sys
 import signal
+import logging
 from src.core.pipeline.orchestrator import (
     TranslationPipeline, PipelineConfig, TranslationOutput
 )
 from src.audio import AudioSource
+from src.core.utils.timestamped_logging import setup_timestamped_logging
+
+# Setup timestamped logging
+setup_timestamped_logging(level=logging.INFO)
 
 
 class RealtimeTranslator:

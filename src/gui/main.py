@@ -33,8 +33,9 @@ from src.core.pipeline.orchestrator import (
 )
 from src.audio import AudioSource
 
-# Setup logging
-logging.basicConfig(level=logging.INFO)
+# Setup timestamped logging
+from src.core.utils.timestamped_logging import setup_timestamped_logging, log_segment_timing, log_latency_metric
+setup_timestamped_logging(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
