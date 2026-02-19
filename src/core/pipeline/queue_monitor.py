@@ -239,28 +239,32 @@ class QueueMonitor:
             except Exception as e:
                 logger.error(f"Queue monitor error: {e}")
     
+    def _get_metrics_dict(self, name: str, m: 'QueueMetrics') -> Dict:
+        """Helper to convert QueueMetrics to dict (no lock)."""
+        return {
+            'name': m.name,
+            'max_size': m.max_size,
+            'current_depth': m.current_depth,
+            'peak_depth': m.peak_depth,
+            'utilization': m.current_depth / m.max_size if m.max_size != float('inf') else 0,
+            'total_puts': m.total_puts,
+            'total_gets': m.total_gets,
+            'put_failures': m.total_put_failures,
+            'overflow_count': m.overflow_count,
+            'avg_put_time_ms': m.get_avg_put_time_ms(),
+            'avg_get_time_ms': m.get_avg_get_time_ms(),
+        }
+    
     def get_metrics(self, queue_name: Optional[str] = None) -> Dict:
         """Get metrics for a queue or all queues."""
         with self._lock:
             if queue_name:
                 if queue_name in self._metrics:
-                    m = self._metrics[queue_name]
-                    return {
-                        'name': m.name,
-                        'max_size': m.max_size,
-                        'current_depth': m.current_depth,
-                        'peak_depth': m.peak_depth,
-                        'utilization': m.current_depth / m.max_size if m.max_size != float('inf') else 0,
-                        'total_puts': m.total_puts,
-                        'total_gets': m.total_gets,
-                        'put_failures': m.total_put_failures,
-                        'overflow_count': m.overflow_count,
-                        'avg_put_time_ms': m.get_avg_put_time_ms(),
-                        'avg_get_time_ms': m.get_avg_get_time_ms(),
-                    }
+                    return self._get_metrics_dict(queue_name, self._metrics[queue_name])
                 return {}
             else:
-                return {name: self.get_metrics(name) for name in self._metrics}
+                # Use _get_metrics_dict to avoid reentrant lock
+                return {name: self._get_metrics_dict(name, m) for name, m in self._metrics.items()}
     
     def get_stats(self) -> Dict:
         """Get overall statistics."""

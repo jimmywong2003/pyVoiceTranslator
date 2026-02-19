@@ -91,16 +91,21 @@ def test_segment_tracker_basic():
     assert stats['unaccounted'] == 3  # 2, 3, 4, 5 not finished
     
     print("\n  ✅ Basic tracking works!")
+    
+    # Cleanup for next test
+    tracker.reset_stats()
+    
     return True
 
 
 def test_queue_monitor_basic():
-    """Test queue monitoring."""
+    """Test queue monitoring (without background thread)."""
     print("\n" + "=" * 60)
     print("TEST 2: Queue Monitor")
     print("=" * 60)
     
-    monitor = QueueMonitor(check_interval=0.1)
+    # Don't start background monitoring - just test manual tracking
+    monitor = QueueMonitor(check_interval=1.0)
     
     # Create test queues
     vad_queue = Queue(maxsize=5)
@@ -109,7 +114,7 @@ def test_queue_monitor_basic():
     monitor.register_queue("vad", vad_queue)
     monitor.register_queue("asr", asr_queue)
     
-    # Simulate operations
+    # Simulate operations (manual tracking)
     for i in range(5):
         try:
             vad_queue.put_nowait(f"item_{i}")
@@ -117,6 +122,10 @@ def test_queue_monitor_basic():
         except Full:
             monitor.record_put("vad", False, 0.1)
             print(f"  ⚠️  VAD queue overflow at item {i}")
+    
+    # Update depths manually (normally done by background thread)
+    monitor._metrics['vad'].update_depth(vad_queue.qsize())
+    monitor._metrics['asr'].update_depth(asr_queue.qsize())
     
     # Get metrics
     metrics = monitor.get_metrics()
