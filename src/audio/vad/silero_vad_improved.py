@@ -462,6 +462,6 @@ def create_vad_for_microphone() -> ImprovedSileroVADProcessor:
         min_speech_duration_ms=250,
         min_silence_duration_ms=300,
         speech_pad_ms=500,  # Capture sentence beginnings
-        max_segment_duration_ms=4000  # Phase 1.1,  # 8s max for microphone
+        max_segment_duration_ms=4000,  # Phase 1.1: Reduced from 8000ms
         pause_threshold_ms=800,
     )
