@@ -336,7 +336,62 @@ Ready for Phase 1.3: StreamingTranslator
 
 ---
 
-### Phase 1.4: Diff-Based UI (IN PROGRESS)
+### ✅ Phase 1.4: Diff-Based UI - COMPLETE
+
+**Phase 1.4 has been implemented and tested.**
+
+| Task | Status | Result |
+|------|--------|--------|
+| Diff visualization | ✅ Done | Word-level diff with SequenceMatcher |
+| Draft display | ✅ Done | Grey italic, opacity based on stability |
+| Final display | ✅ Done | Black bold, fully opaque |
+| Stability indicators | ✅ Done | ● ○ ✓ based on stability |
+| Transition animations | ✅ Done | Fade, flash highlight |
+| Test suite | ✅ Done | `tests/test_phase14_streaming_ui.py` |
+
+**Test Results**:
+```
+======================================================================
+✅ PASS: Diff Visualizer
+✅ PASS: Draft Display
+✅ PASS: Draft Update
+✅ PASS: Final Display
+✅ PASS: Stability Indicators
+✅ PASS: Transition Animations
+✅ PASS: Statistics
+
+🎉 Phase 1.4 Complete!
+======================================================================
+```
+
+**New Components**:
+- `StreamingUI`: Main UI controller
+  - `show_draft()`: Display draft with grey italic
+  - `show_final()`: Display final with black bold
+  - `update_draft()`: Update with diff highlighting
+  - `get_transition_animation()`: Get animation parameters
+- `DiffVisualizer`: Word-level diff computation
+  - `compute_diff()`: Compare two texts
+  - `format_diff()`: Format with markers
+  - `get_change_summary()`: Change statistics
+- `ConsoleStreamingUI`: Terminal implementation with ANSI colors
+
+**Visual States**:
+| State | Style | Color | Opacity | Indicator |
+|-------|-------|-------|---------|-----------|
+| Draft (low stability) | Italic | Grey | 0.3-0.6 | ● |
+| Draft (medium stability) | Italic | Grey | 0.6-0.8 | ○ |
+| Draft (high stability) | Italic | Grey | 0.8-1.0 | ✓ |
+| Final | Bold | Black | 1.0 | ✓ |
+
+**Transitions**:
+- Smooth (< 30% change): Fade transition
+- Moderate (30-50%): Highlight differences
+- Significant (> 50%): Flash highlight added words
+
+---
+
+### Phase 1.5: Integration + A/B Testing (IN PROGRESS)
 
 Based on analysis in `docs/overlap_think_on_real_time_translator.md` and `docs/evaluation_streaming_suggestions.md`, implementing **Hybrid Streaming Mode with Partial Translation**.
 
@@ -361,8 +416,8 @@ Based on analysis in `docs/overlap_think_on_real_time_translator.md` and `docs/e
 | **1.1** | **Metrics + Adaptive Config** | ✅ **COMPLETE** | 🟡 High |
 | **1.2** | **StreamingASR (cumulative, INT8)** | ✅ **COMPLETE** | 🟡 High |
 | **1.3** | **Partial Translation (semantic gating)** | ✅ **COMPLETE** | 🟡 High |
-| 1.4 | Diff-Based UI | ⏳ IN PROGRESS | 🟢 Medium |
-| 1.5 | Integration + A/B Testing | ⏳ Pending | 🟢 Medium |
+| **1.4** | **Diff-Based UI** | ✅ **COMPLETE** | 🟢 Medium |
+| 1.5 | Integration + A/B Testing | ⏳ IN PROGRESS | 🟢 Medium |
 
 ### Expected Improvements
 
