@@ -467,14 +467,22 @@ Final:                                        [ASR+MT] → "Hola mundo hoy" at 5
 
 **Semantic Gating Rules** (only translate if complete thought):
 ```python
-def should_translate_draft(text, lang):
+def should_translate_draft(text, source_lang, target_lang):
     # Must have minimum content
     if len(text.split()) < 2:
         return False
     
     # Must have verb or punctuation (complete thought)
-    has_verb = any(v in text.lower() for v in VERBS[lang])
+    has_verb = any(v in text.lower() for v in VERBS[source_lang])
     has_punct = any(text.endswith(p) for p in ['.', '!', '?', '。'])
+    
+    # Word order safety for SOV languages
+    # SOV languages (Japanese, Korean) put verb at END
+    # Translating before verb arrives = grammatical chaos
+    SOV_LANGUAGES = ['ja', 'ko', 'de', 'tr']
+    if target_lang in SOV_LANGUAGES:
+        if not has_punct:
+            return False  # Must wait for sentence end
     
     return has_verb or has_punct
 
@@ -483,7 +491,16 @@ def should_translate_draft(text, lang):
 # "Hello world" → No translation (no verb)
 # "I went" → Translate! (has verb)
 # "Hello world." → Translate! (has punctuation)
+# EN→JA: "I went to" → No (wait for Japanese verb at end)
+# EN→JA: "I went to store." → Translate! (has punctuation)
 ```
+
+**Language-Specific Rules**:
+| Language Pair | Draft Translation | Notes |
+|---------------|-------------------|-------|
+| EN→ES, EN→FR | ✅ Yes | SVO→SVO (similar order) |
+| EN→JA, EN→KO | ⚠️ Conditional | SVO→SOV (wait for punctuation) |
+| JA→EN | ✅ Yes | SOV→SVO (can translate early) |
 
 ### 10.4 Managing 3x Compute Overhead
 
@@ -491,12 +508,14 @@ def should_translate_draft(text, lang):
 
 **Mitigation Strategy**:
 
-| Technique | Implementation | Impact |
-|-----------|----------------|--------|
-| **INT8 Quantization** | Draft: `compute_type="int8"` | 2x faster drafts |
-| **Adaptive Skipping** | Skip draft if VAD detects pause >500ms | Reduce unnecessary calls |
-| **Queue Monitoring** | Skip draft if queue depth > 2 | Prevent backlog |
-| **Cumulative Context** | Draft 2 reuses Draft 1 computation conceptually | Better quality per compute |
+| Technique | Implementation | Impact | Priority |
+|-----------|----------------|--------|----------|
+| **INT8 Quantization** | Draft: `compute_type="int8"` | 2x faster drafts | Week 2 |
+| **Adaptive Skipping** | Skip draft if VAD detects pause >500ms | Reduce unnecessary calls | Week 2 |
+| **Queue Monitoring** | Skip draft if queue depth > 2; Alert on overflow | Prevent backlog, **fix data loss** | 🔴 **Week 0** |
+| **Cumulative Context** | Draft 2 reuses Draft 1 computation conceptually | Better quality per compute | Week 2 |
+| **Error Logging** | No silent failures, comprehensive tracing | Debug sentence loss | 🔴 **Week 0** |
+| **Platform Testing** | Intel i7 (OpenVINO), Mac M1 (CoreML) | Optimize INT8 per platform | 🔴 **Week 0** |
 
 **Compute Estimate**:
 ```
@@ -507,21 +526,33 @@ With Adaptive: ~1.5x average (depends on speech pattern)
 
 ### 10.5 Expected Improvements
 
-| Metric | Current | Target | Notes |
-|--------|---------|--------|-------|
-| **TTFT** (any output) | ~5000ms | < 2000ms | Draft visible |
-| **Meaning Latency** (translated) | ~5000ms | **< 2000ms** | ⭐ **Critical improvement** |
-| **Ear-to-Voice Lag** | ~700ms | < 500ms | Final optimization |
-| **Compute Overhead** | 1x | ~1.5x | Managed with INT8 + adaptive |
+| Metric | Current | Target | Priority | Notes |
+|--------|---------|--------|----------|-------|
+| **Sentence Loss Rate** | Bug exists (~?) | **0%** | 🔴 **Week 0 Critical** | Data integrity first |
+| **TTFT** (any output) | ~5000ms | < 2000ms | 🟡 Week 2 | Draft visible |
+| **Meaning Latency** (translated) | ~5000ms | **< 2000ms** | 🟡 Week 2 | ⭐ **Critical improvement** |
+| **Ear-to-Voice Lag** | ~700ms | < 500ms | 🟢 Week 3 | Final optimization |
+| **Compute Overhead** | 1x | ~1.5x | 🟢 Week 2 | Managed with INT8 + adaptive |
 
-### 10.6 Implementation Plan
+### 10.6 Implementation Plan (REVISED with Week 0)
 
 See detailed plan: `docs/design/streaming_latency_optimization_plan.md`
 
-**Revised Phases**:
-1. **Week 1**: Metrics + Adaptive Config (TTFT/Lag, segment=4s, adaptive controller)
-2. **Week 2**: StreamingASR (cumulative context, INT8 drafts) + StreamingTranslator (semantic gating)
-3. **Week 3**: Diff-based UI (smooth transitions, stability indicators) + Integration
+**Week 0: CRITICAL - Fix Sentence Loss Bug** 🔴
+> **MUST complete before any optimization!**
+
+| Task | Deliverable |
+|------|-------------|
+| Add segment sequence tracking | UUID per segment, trace capture→VAD→ASR→MT→Output |
+| Add queue depth monitoring | Alert if queue > 3 segments |
+| Add comprehensive error logging | No silent failures anywhere |
+| Stress test: 10-min continuous speech | Verify **0% sentence loss** |
+| Fix root cause | Queue overflow? VAD threshold? Race condition? |
+| Platform-specific testing | Intel i7: OpenVINO INT8, Mac M1: CoreML optimization |
+
+**Week 1**: Metrics + Adaptive Config (TTFT/Lag, segment=4s, adaptive controller)  
+**Week 2**: StreamingASR (cumulative context, INT8 drafts) + StreamingTranslator (semantic gating)  
+**Week 3**: Diff-based UI (smooth transitions, stability indicators) + Integration
 
 ### 10.7 What Was Rejected
 
