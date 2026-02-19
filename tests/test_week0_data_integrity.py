@@ -4,7 +4,16 @@ Week 0 Data Integrity Test - Critical Bug Fix Verification
 This test verifies that no segments are lost in the pipeline.
 Must pass before any streaming optimization is implemented.
 
-Test: 10-minute continuous speech simulation
+Usage:
+    # Quick test (30 seconds - default)
+    python tests/test_week0_data_integrity.py
+    
+    # Full 10-minute test
+    python tests/test_week0_data_integrity.py --duration 600
+    
+    # 5-minute test
+    python tests/test_week0_data_integrity.py --duration 300
+
 Target: 0% sentence loss
 """
 
@@ -12,6 +21,7 @@ import time
 import threading
 import logging
 import sys
+import argparse
 from pathlib import Path
 
 # Add project root to path
@@ -29,6 +39,37 @@ from src.core.pipeline.queue_monitor import (
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
+
+# Test configuration
+DEFAULT_TEST_DURATION = 30  # 30 seconds for quick test
+FULL_TEST_DURATION = 600    # 10 minutes for full test
+SPEECH_SEGMENT_DURATION = 5  # 5 seconds per speech segment
+
+
+def parse_args():
+    """Parse command line arguments."""
+    parser = argparse.ArgumentParser(
+        description='Week 0 Data Integrity Test',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog='''
+Examples:
+  %(prog)s                    # Quick 30-second test
+  %(prog)s --duration 600     # Full 10-minute test
+  %(prog)s --duration 300     # 5-minute test
+        '''
+    )
+    parser.add_argument(
+        '--duration', 
+        type=int, 
+        default=DEFAULT_TEST_DURATION,
+        help=f'Test duration in seconds (default: {DEFAULT_TEST_DURATION} for quick test, 600 for full 10-min test)'
+    )
+    parser.add_argument(
+        '--verbose', 
+        action='store_true',
+        help='Enable verbose output'
+    )
+    return parser.parse_args()
 
 
 class MockPipelineComponent:
@@ -141,15 +182,22 @@ def test_queue_monitor_basic():
     return True
 
 
-def test_10_minute_stress_test():
+def test_stress_test(duration_sec: int = DEFAULT_TEST_DURATION, verbose: bool = False):
     """
-    10-minute stress test simulating continuous speech.
+    Stress test simulating continuous speech.
     
     This test creates segments at realistic speech rates and verifies
     that 0% are lost through the pipeline.
+    
+    Args:
+        duration_sec: Test duration in seconds (default 30 for quick test, 600 for full 10-min)
+        verbose: Enable verbose output
     """
     print("\n" + "=" * 60)
-    print("TEST 3: 10-Minute Stress Test (CRITICAL)")
+    if duration_sec >= 600:
+        print("TEST 3: 10-Minute Stress Test (CRITICAL)")
+    else:
+        print(f"TEST 3: Stress Test ({duration_sec}s) (CRITICAL)")
     print("=" * 60)
     
     # Reset trackers
@@ -173,18 +221,25 @@ def test_10_minute_stress_test():
     # Start monitoring
     monitor.start_monitoring()
     
-    # Test parameters (10 minutes scaled to 30 seconds for faster testing)
-    TEST_DURATION_SEC = 30  # 30 seconds = 10 minutes scaled
+    # Test parameters
+    TEST_DURATION_SEC = duration_sec
     SPEECH_SEGMENT_DURATION_SEC = 5  # 5 seconds per speech segment
-    SCALE_FACTOR = TEST_DURATION_SEC / 600  # Scale 10min to 30sec
     
-    total_segments_to_create = int(600 / SPEECH_SEGMENT_DURATION_SEC)  # 120 segments in 10min
+    # Calculate expected segments
+    total_segments_to_create = int(TEST_DURATION_SEC / SPEECH_SEGMENT_DURATION_SEC)
+    
+    # Format duration for display
+    duration_min = TEST_DURATION_SEC / 60
     
     print(f"\n  Test Configuration:")
-    print(f"    Duration: {TEST_DURATION_SEC}s (scaled from 10min)")
+    print(f"    Duration: {TEST_DURATION_SEC}s ({duration_min:.1f} minutes)")
     print(f"    Speech segment duration: {SPEECH_SEGMENT_DURATION_SEC}s")
     print(f"    Expected segments: {total_segments_to_create}")
-    print(f"    Scale factor: {SCALE_FACTOR:.3f}x")
+    
+    if TEST_DURATION_SEC < 600:
+        print(f"    ⚠️  This is a QUICK test. For full validation, use --duration 600")
+    else:
+        print(f"    ✅ This is the FULL 10-minute validation test!")
     
     # Track created segment IDs
     created_segments = set()
@@ -203,24 +258,52 @@ def test_10_minute_stress_test():
     # Simulate pipeline
     stop_event = threading.Event()
     
+    # Progress tracking
+    progress_lock = threading.Lock()
+    last_progress_time = [time.time()]
+    segments_created = [0]
+    segments_emitted = [0]
+    
+    def print_progress():
+        """Print progress update."""
+        with progress_lock:
+            elapsed = time.time() - test_start[0]
+            percent = min(100, int(elapsed / TEST_DURATION_SEC * 100))
+            remaining = max(0, TEST_DURATION_SEC - elapsed)
+            created = segments_created[0]
+            emitted = segments_emitted[0]
+            
+            # Format time remaining
+            if remaining > 60:
+                time_str = f"{remaining/60:.1f}min"
+            else:
+                time_str = f"{remaining:.0f}s"
+            
+            print(f"\r  ⏱️  Progress: {percent:3d}% | {created} created | {emitted} emitted | {time_str} remaining", end='', flush=True)
+            last_progress_time[0] = time.time()
+    
     def vad_worker():
         """VAD worker - creates segments from audio."""
         segment_id = 0
-        start_time = time.time()
         
         while not stop_event.is_set():
-            elapsed = time.time() - start_time
+            elapsed = time.time() - test_start[0]
             if elapsed > TEST_DURATION_SEC:
                 break
             
-            # Create segment every 5 seconds (scaled)
-            if elapsed >= segment_id * (SPEECH_SEGMENT_DURATION_SEC * SCALE_FACTOR):
+            # Create segment every 5 seconds
+            if elapsed >= segment_id * SPEECH_SEGMENT_DURATION_SEC:
                 segment_id += 1
                 
                 # Create segment with tracking
                 uuid = tracker.create_segment(segment_id, audio_duration_ms=5000)
                 tracker.record_stage(uuid, SegmentStage.VAD_QUEUED)
                 created_segments.add(segment_id)
+                segments_created[0] = segment_id
+                
+                # Print progress every 5 seconds
+                if time.time() - last_progress_time[0] > 5:
+                    print_progress()
                 
                 # Try to queue for ASR
                 try:
@@ -230,6 +313,7 @@ def test_10_minute_stress_test():
                 except Full:
                     tracker.record_drop(uuid, "ASR queue full")
                     monitor.record_put("asr", False, 0.1)
+                    print(f"\n  🚨 DROPPED: Segment {segment_id} - ASR queue full")
             
             time.sleep(0.01)  # Small sleep to prevent busy-wait
     
@@ -241,8 +325,8 @@ def test_10_minute_stress_test():
                 tracker.record_stage(uuid, SegmentStage.ASR_QUEUED)
                 tracker.record_stage(uuid, SegmentStage.ASR_PROCESSING)
                 
-                # Simulate ASR processing (400ms scaled)
-                time.sleep(0.4 * SCALE_FACTOR)
+                # Simulate ASR processing (400ms)
+                time.sleep(0.4)
                 
                 # Update ASR result
                 tracker.update_asr_result(uuid, f"Transcription of segment {segment_id}")
@@ -256,6 +340,7 @@ def test_10_minute_stress_test():
                 except Full:
                     tracker.record_drop(uuid, "Translation queue full")
                     monitor.record_put("translation", False, 0.1)
+                    print(f"\n  🚨 DROPPED: Segment {segment_id} - Translation queue full")
                 
             except Empty:
                 continue
@@ -267,8 +352,8 @@ def test_10_minute_stress_test():
                 segment_id, uuid = translation_queue.get(timeout=0.1)
                 tracker.record_stage(uuid, SegmentStage.TRANSLATION_PROCESSING)
                 
-                # Simulate translation processing (250ms scaled)
-                time.sleep(0.25 * SCALE_FACTOR)
+                # Simulate translation processing (250ms)
+                time.sleep(0.25)
                 
                 # Update translation result
                 tracker.update_translation_result(uuid, f"Translation of segment {segment_id}")
@@ -282,6 +367,7 @@ def test_10_minute_stress_test():
                 except Full:
                     tracker.record_drop(uuid, "Output queue full")
                     monitor.record_put("output", False, 0.1)
+                    print(f"\n  🚨 DROPPED: Segment {segment_id} - Output queue full")
                 
             except Empty:
                 continue
@@ -293,12 +379,14 @@ def test_10_minute_stress_test():
                 segment_id, uuid = output_queue.get(timeout=0.1)
                 tracker.record_stage(uuid, SegmentStage.OUTPUT_EMITTED)
                 emitted_segments.add(segment_id)
+                segments_emitted[0] = len(emitted_segments)
                 
             except Empty:
                 continue
     
     # Start workers
     print("\n  Starting pipeline workers...")
+    test_start = [time.time()]
     threads = [
         threading.Thread(target=vad_worker, name="VADWorker"),
         threading.Thread(target=asr_worker, name="ASRWorker"),
@@ -309,9 +397,20 @@ def test_10_minute_stress_test():
     for t in threads:
         t.start()
     
-    # Run test
+    # Run test with progress
     print(f"  Running stress test for {TEST_DURATION_SEC} seconds...")
-    time.sleep(TEST_DURATION_SEC)
+    print(f"  (Press Ctrl+C to stop early)\n")
+    
+    try:
+        while True:
+            elapsed = time.time() - test_start[0]
+            if elapsed >= TEST_DURATION_SEC:
+                break
+            print_progress()
+            time.sleep(1)  # Update every second
+    except KeyboardInterrupt:
+        print("\n\n  ⚠️  Test interrupted by user")
+        stop_event.set()
     
     # Stop workers
     print("  Stopping workers...")
@@ -365,10 +464,27 @@ def test_10_minute_stress_test():
 
 def main():
     """Run all Week 0 tests."""
+    args = parse_args()
+    
+    # Set logging level
+    if args.verbose:
+        logging.getLogger().setLevel(logging.DEBUG)
+    
     print("\n" + "=" * 70)
     print(" " * 15 + "WEEK 0 DATA INTEGRITY TESTS")
     print(" " * 10 + "(Critical Bug Fix Verification)")
     print("=" * 70)
+    
+    # Print test mode
+    if args.duration >= 600:
+        print("\n  🎯 MODE: FULL 10-MINUTE VALIDATION TEST")
+        print("  ⏱️  Estimated time: ~10 minutes")
+    elif args.duration >= 60:
+        print(f"\n  🎯 MODE: Extended test ({args.duration}s)")
+        print(f"  ⏱️  Estimated time: ~{args.duration/60:.1f} minutes")
+    else:
+        print(f"\n  🎯 MODE: Quick test ({args.duration}s)")
+        print("  ⚠️  For full validation, run with --duration 600")
     
     results = []
     
@@ -386,14 +502,15 @@ def main():
         print(f"\n  ❌ FAILED: {e}")
         results.append(("Queue Monitor", False))
     
-    # Test 3: 10-minute stress test (CRITICAL)
+    # Test 3: Stress test (CRITICAL)
     try:
-        results.append(("10-Minute Stress Test", test_10_minute_stress_test()))
+        test_name = f"{args.duration}s Stress Test" if args.duration < 600 else "10-Minute Stress Test"
+        results.append((test_name, test_stress_test(duration_sec=args.duration, verbose=args.verbose)))
     except Exception as e:
         print(f"\n  ❌ FAILED: {e}")
         import traceback
         traceback.print_exc()
-        results.append(("10-Minute Stress Test", False))
+        results.append(("Stress Test", False))
     
     # Final summary
     print("\n" + "=" * 70)
