@@ -188,25 +188,68 @@ language = "ja" or "zh"
 
 ---
 
-## 🚀 Next Steps
+## 🚀 Next Steps: Streaming Optimization (APPROVED)
+
+### Git Tag Created
+**`v1.0.0-stable`** - Baseline before streaming implementation
+
+### ⚠️ CRITICAL: Phase 0 - Fix Sentence Loss Bug (WEEK 0) 🔴
+
+**Before any streaming optimization, fix the sentence loss bug.**
+
+| Task | Deliverable |
+|------|-------------|
+| Add segment sequence tracking | UUID per segment, full pipeline trace |
+| Add queue depth monitoring | Alert if queue > 3 segments |
+| Add comprehensive error logging | Zero silent failures |
+| Stress test | 10-min continuous speech, **0% loss** |
+| Fix root cause | Queue overflow? VAD threshold? Race condition? |
+| Platform validation | Intel i7 (OpenVINO), Mac M1 (CoreML) |
+
+**Why**: Optimizing a system that loses data is meaningless.
 
 ### Phase 1: Streaming Optimization (IN PROGRESS)
 
-Based on analysis in `docs/overlap_think_on_real_time_translator.md` and `docs/evaluation_streaming_suggestions.md`, implementing **Hybrid Streaming Mode** to reduce perceived latency.
+Based on analysis in `docs/overlap_think_on_real_time_translator.md` and `docs/evaluation_streaming_suggestions.md`, implementing **Hybrid Streaming Mode with Partial Translation**.
 
-**Design Plan**: `docs/design/streaming_latency_optimization_plan.md`
+**Design Plan**: `docs/design/streaming_latency_optimization_plan.md` (Rev 3)
 
-| Task | Status | Target |
-|------|--------|--------|
-| Add TTFT/Lag metrics | ⏳ Pending | Week 1 |
-| Reduce max_segment_duration 8000→4000 | ⏳ Pending | Week 1 |
-| Implement StreamingASR (draft/final) | ⏳ Pending | Week 2 |
-| Streaming UI (grey drafts, bold final) | ⏳ Pending | Week 2 |
-| Integration & A/B testing | ⏳ Pending | Week 3 |
+### Key Design Decisions (Revised)
 
-**Expected Improvements**:
-- **TTFT**: 5000ms → 2000ms (60% improvement)
-- **Ear-to-Voice Lag**: 700ms → 500ms (30% improvement)
+| Aspect | Decision | Rationale |
+|--------|----------|-----------|
+| **Draft Translation** | ✅ **Yes (Conditional)** | Users need meaning, not just words |
+| **Draft Trigger** | Adaptive (every 2s, skip if paused) | Reduce compute overhead |
+| **Context Window** | Cumulative (0-N) | Ensures grammatical consistency |
+| **Compute Strategy** | INT8 for drafts, standard for final | Manage 3x overhead |
+| **UI Transition** | Diff-based with highlight | Smooth transition |
+| **SOV Safety** | Wait for punctuation (JA, KO, DE, TR) | Prevents grammatical chaos |
+
+### Implementation Timeline
+
+| Week | Task | Priority |
+|------|------|----------|
+| **0** | **Fix sentence loss bug** | 🔴 **CRITICAL** |
+| 1 | Metrics + Adaptive Config | 🟡 High |
+| 1-2 | StreamingASR (cumulative, INT8) | 🟡 High |
+| 2 | Partial Translation (semantic gating) | 🟡 High |
+| 2-3 | Diff-Based UI | 🟢 Medium |
+| 3 | Integration + A/B Testing | 🟢 Medium |
+
+### Expected Improvements
+
+| Metric | Current | Target | Priority |
+|--------|---------|--------|----------|
+| **Sentence Loss Rate** | Bug exists | **0%** | 🔴 **Week 0** |
+| **TTFT (Meaning)** | ~5000ms | < 2000ms | 🟡 Week 2 |
+| **Meaning Latency** | ~5000ms | < 2000ms | 🟡 Week 2 |
+| **Ear-to-Voice Lag** | ~700ms | < 500ms | 🟢 Week 3 |
+| **Draft Stability** | N/A | > 70% | 🟢 Week 2 |
+
+### Risk Management
+- **3x Compute Overhead**: INT8 quantization + adaptive skipping
+- **SOV Language Issues**: Punctuation-based gating for JA/KO/DE/TR
+- **Data Loss**: Week 0 fixes before any optimization
 
 ### For Batch Processing
 - [ ] Test with audio file input to see overlap savings
