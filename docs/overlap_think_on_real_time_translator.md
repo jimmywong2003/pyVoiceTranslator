@@ -426,60 +426,113 @@ For the current single-speaker real-time use case, the architecture is already n
 
 ---
 
-## 10. Update: Streaming Solution Design
+## 10. Update: Streaming Solution Design (REVISED)
 
-After evaluation of architectural suggestions (see `docs/evaluation_streaming_suggestions.md`), a **Hybrid Streaming Mode** has been designed to address the latency limitations.
+After evaluation of architectural suggestions (see `docs/evaluation_streaming_suggestions.md`), a **Hybrid Streaming Mode with Partial Translation** has been designed.
 
 ### 10.1 The Solution: Hybrid Draft/Final Mode
 
-Instead of waiting for silence, process audio in chunks:
-
 ```
-Current (Sequential):
-Speech:  [████████████████████] (5s) → Silence → Process → Output
+Current (Sequential - No Meaning Until End):
+Speech:  [████████████████████] (5s) → Silence → ASR → MT → "Hola mundo" at 5.8s
 
-Hybrid (Overlapped):
-Speech:  [████████████████████] (5s)
-Draft 1:      [ASR] → "Hello..." (at 2s)
-Draft 2:           [ASR] → "Hello world..." (at 3.5s)
-Final:                   [ASR+MT] → "Hola mundo" (at 5.3s)
+Hybrid (Overlapped - Meaning Early):
+Speech:       [████████████████████] (5s)
+Draft ASR 1:       [ASR] → "Hello world"
+Draft MT 1:            [MT] → "Hola mundo" at 2.75s ✓ MEANING!
+Draft ASR 2:                [ASR] → "Hello world today"
+Draft MT 2:                     [MT] → "Hola mundo hoy" at 4.5s
+Final:                                        [ASR+MT] → "Hola mundo hoy" at 5.3s
 ```
 
-**Key Design Decisions**:
-| Aspect | Decision | Rationale |
-|--------|----------|-----------|
-| Draft interval | Every 2 seconds | Balance responsiveness vs compute |
-| Draft confidence | Low (0.6) | Show grey italic text |
-| Final confidence | High (0.9) | Show black bold text |
-| Draft translation | No | Too unstable; wait for final |
-| Implementation | Hybrid mode | Can toggle batch/streaming |
+### 10.2 REVISED Key Design Decisions
 
-### 10.2 Expected Improvements
+| Aspect | Original | **REVISED** | Rationale |
+|--------|----------|-------------|-----------|
+| Draft interval | Every 2s | **Adaptive (every 2s, skip if paused)** | Reduce compute overhead |
+| Draft confidence | Low (0.6) | Low (0.6) ✅ | Show grey/italic |
+| **Draft translation** | No (ASR only) | **Yes (conditional on verb/punctuation)** | Users need **meaning**, not just words |
+| **Compute strategy** | Standard | **INT8 for drafts, standard for final** | Manage 3x ASR overhead |
+| **Context window** | Chunk-based | **Cumulative (0-N, not just N-2→N)** | Ensures grammatical consistency |
+| **UI transition** | Replace | **Diff-based with highlight** | Smooth, show what changed |
 
-| Metric | Current | Target | Improvement |
-|--------|---------|--------|-------------|
-| **TTFT** | ~5000ms | < 2000ms | 60% faster first response |
-| **Ear-to-Voice Lag** | ~700ms | < 500ms | 30% faster final output |
-| **Perceived Latency** | High | Low | Drafts show progress |
+### 10.3 Critical Improvement: Draft Translation with Semantic Gating
 
-### 10.3 Implementation Plan
+**Why Conditional Translation Matters**:
+
+| Approach | T=2s | T=5.3s | User Experience |
+|----------|------|--------|-----------------|
+| **Without Translation** | "Hello world..." (EN) | "Hola mundo" (ES) | Wait 5.3s for meaning ❌ |
+| **With Translation** | "Hola mundo..." (ES) | "Hola mundo" (ES) | Get meaning at 2s ✅ |
+
+**Semantic Gating Rules** (only translate if complete thought):
+```python
+def should_translate_draft(text, lang):
+    # Must have minimum content
+    if len(text.split()) < 2:
+        return False
+    
+    # Must have verb or punctuation (complete thought)
+    has_verb = any(v in text.lower() for v in VERBS[lang])
+    has_punct = any(text.endswith(p) for p in ['.', '!', '?', '。'])
+    
+    return has_verb or has_punct
+
+# Examples:
+# "Hello" → No translation (incomplete)
+# "Hello world" → No translation (no verb)
+# "I went" → Translate! (has verb)
+# "Hello world." → Translate! (has punctuation)
+```
+
+### 10.4 Managing 3x Compute Overhead
+
+**Problem**: 5s segment → Draft at 2s + Draft at 4s + Final at 5s = **3x ASR calls**
+
+**Mitigation Strategy**:
+
+| Technique | Implementation | Impact |
+|-----------|----------------|--------|
+| **INT8 Quantization** | Draft: `compute_type="int8"` | 2x faster drafts |
+| **Adaptive Skipping** | Skip draft if VAD detects pause >500ms | Reduce unnecessary calls |
+| **Queue Monitoring** | Skip draft if queue depth > 2 | Prevent backlog |
+| **Cumulative Context** | Draft 2 reuses Draft 1 computation conceptually | Better quality per compute |
+
+**Compute Estimate**:
+```
+Unoptimized: 3 × 450ms = 1350ms (3x overhead)
+With INT8:   2 × 225ms + 450ms = 900ms (2x overhead)
+With Adaptive: ~1.5x average (depends on speech pattern)
+```
+
+### 10.5 Expected Improvements
+
+| Metric | Current | Target | Notes |
+|--------|---------|--------|-------|
+| **TTFT** (any output) | ~5000ms | < 2000ms | Draft visible |
+| **Meaning Latency** (translated) | ~5000ms | **< 2000ms** | ⭐ **Critical improvement** |
+| **Ear-to-Voice Lag** | ~700ms | < 500ms | Final optimization |
+| **Compute Overhead** | 1x | ~1.5x | Managed with INT8 + adaptive |
+
+### 10.6 Implementation Plan
 
 See detailed plan: `docs/design/streaming_latency_optimization_plan.md`
 
-**Phases**:
-1. Week 1: Add metrics, reduce segment duration
-2. Week 2: Implement StreamingASR with draft/final modes
-3. Week 3: Streaming UI and integration testing
+**Revised Phases**:
+1. **Week 1**: Metrics + Adaptive Config (TTFT/Lag, segment=4s, adaptive controller)
+2. **Week 2**: StreamingASR (cumulative context, INT8 drafts) + StreamingTranslator (semantic gating)
+3. **Week 3**: Diff-based UI (smooth transitions, stability indicators) + Integration
 
-### 10.4 What Was Rejected
+### 10.7 What Was Rejected
 
 | Approach | Reason |
 |----------|--------|
 | **Wait-k Translation** | MarianMT doesn't support streaming; fails for different word order languages |
 | **AsyncIO Rewrite** | Over-engineering; ThreadPool performs equally for ML tasks |
 | **True Streaming ASR** | Requires model change (RNN-T); too much effort |
+| **Draft Without Translation** | Provides "listening feedback" but not "meaning" - insufficient UX |
 
 ---
 
 *Document written for AI analysis and improvement planning.*  
-*Updated 2026-02-19 with streaming solution design.*
+*Updated 2026-02-19 with REVISED streaming solution (partial translation, semantic gating, INT8 optimization).*
