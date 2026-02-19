@@ -35,6 +35,10 @@ from .orchestrator import (
 from src.audio import AudioManager, AudioConfig
 from src.audio.vad.environment_aware_vad import EnvironmentAwareVADProcessor, EnvironmentAwareConfig
 
+# Week 0: Data integrity tracking
+from .segment_tracker import SegmentTracker, SegmentStage
+from .queue_monitor import QueueMonitor, InstrumentedQueue
+
 logger = logging.getLogger(__name__)
 
 
@@ -44,6 +48,9 @@ class PipelineSegment:
     segment_id: int
     audio_data: np.ndarray
     start_time: float
+    # Week 0: UUID for tracking
+    segment_uuid: Optional[str] = None
+    # ASR and translation results
     vad_confidence: float = 0.0
     asr_result: Optional[object] = None
     translation_result: Optional[str] = None
@@ -52,6 +59,11 @@ class PipelineSegment:
     translation_start_time: Optional[float] = None
     translation_end_time: Optional[float] = None
     is_partial: bool = False
+    # Timing for overlap analysis
+    vad_created_time: Optional[float] = None  # When VAD created this segment
+    asr_queued_time: Optional[float] = None   # When ASR worker picked it up
+    translation_queued_time: Optional[float] = None  # When translation was queued
+    output_queued_time: Optional[float] = None  # When output was queued
 
 
 @dataclass
@@ -110,21 +122,36 @@ class ParallelTranslationPipeline(TranslationPipeline):
             thread_name_prefix="ASRWorker"
         )
         
-        # Dedicated translation executor (1 worker)
+        # Dedicated translation executor (2 workers for true parallelism)
         self._translation_executor = ThreadPoolExecutor(
-            max_workers=1,
+            max_workers=2,  # Increased from 1 to allow parallel translations
             thread_name_prefix="TranslationWorker"
         )
         
         # Bounded queues between stages
         self._vad_queue: Queue = Queue(maxsize=10)      # Audio → VAD
-        self._asr_queue: Queue = Queue(maxsize=10)      # VAD → ASR (increased from 5)
+        self._asr_queue: Queue = Queue(maxsize=10)      # VAD → ASR
         self._translation_queue: Queue = Queue(maxsize=5)  # ASR → Translation
         self._output_queue: Queue = Queue(maxsize=20)   # Translation → Output
+        
+        # Week 0: Data integrity tracking
+        self._segment_tracker = SegmentTracker()
+        self._queue_monitor = QueueMonitor()
+        
+        # Register queues for monitoring
+        self._queue_monitor.register_queue("vad", self._vad_queue)
+        self._queue_monitor.register_queue("asr", self._asr_queue)
+        self._queue_monitor.register_queue("translation", self._translation_queue)
+        self._queue_monitor.register_queue("output", self._output_queue)
+        
+        # Set up drop/error callbacks
+        self._segment_tracker.on_drop(self._on_segment_drop)
+        self._segment_tracker.on_error(self._on_segment_error)
         
         # Worker threads
         self._vad_thread: Optional[threading.Thread] = None
         self._asr_thread: Optional[threading.Thread] = None
+        self._translation_thread: Optional[threading.Thread] = None  # Dedicated translation worker
         self._output_thread: Optional[threading.Thread] = None
         
         # Tracking
@@ -133,11 +160,13 @@ class ParallelTranslationPipeline(TranslationPipeline):
         self._metrics = ParallelPipelineMetrics()
         self._metrics_lock = threading.Lock()
         
-        # Overlap optimization
-        self._previous_translation_future: Optional[Future] = None
-        self._previous_segment_id: Optional[int] = None
+        # Overlap optimization - track completed translations for ordering
+        self._completed_translations: dict = {}  # segment_id -> segment
+        self._next_output_segment_id = 1  # Track next segment to output
+        self._translation_lock = threading.Lock()
         
-        logger.info("ParallelTranslationPipeline initialized (2 ASR workers, overlap enabled)")
+        logger.info("ParallelTranslationPipeline initialized (2 ASR workers, 2 translation workers, overlap enabled)")
+        logger.info("Week 0: Data integrity tracking enabled (SegmentTracker + QueueMonitor)")
     
     def initialize(self) -> bool:
         """Initialize all pipeline components."""
@@ -181,13 +210,33 @@ class ParallelTranslationPipeline(TranslationPipeline):
             logger.info(f"  - ASR ({self.config.asr_model_size})...")
             if not self._asr or not self._asr.is_initialized:
                 from src.core.asr.faster_whisper import FasterWhisperASR
-                self._asr = FasterWhisperASR(
+                from src.core.asr.post_processor import create_post_processed_asr
+                from src.app.platform_utils import configure_asr_for_platform
+                
+                # Get platform-optimized ASR configuration
+                asr_config = configure_asr_for_platform(self.config.asr_model_size)
+                logger.info(f"    Platform config: device={asr_config['device']}, "
+                          f"compute={asr_config['compute_type']}, threads={asr_config['cpu_threads']}")
+                
+                # Create base ASR with platform-optimized settings
+                base_asr = FasterWhisperASR(
                     model_size=self.config.asr_model_size,
-                    device="cpu",
-                    compute_type="int8",
+                    device=asr_config["device"],
+                    compute_type=asr_config["compute_type"],
+                    cpu_threads=asr_config["cpu_threads"],
                     language=self.config.asr_language
                 )
+                
+                # Wrap with post-processor for hallucination filtering and text cleaning
+                self._asr = create_post_processed_asr(
+                    base_asr=base_asr,
+                    language=self.config.asr_language,
+                    remove_filler_words=True,
+                    enable_hallucination_filter=True,
+                    min_confidence=0.3
+                )
                 self._asr.initialize()
+                logger.info("    ✅ Using post-processed ASR (hallucination filter + text cleaning)")
             
             # 4. Translator (already initialized in parent)
             if self.config.enable_translation:
@@ -279,10 +328,12 @@ class ParallelTranslationPipeline(TranslationPipeline):
         # Start worker threads
         self._vad_thread = threading.Thread(target=self._vad_worker, name="VADWorker")
         self._asr_thread = threading.Thread(target=self._asr_worker, name="ASRWorker")
+        self._translation_thread = threading.Thread(target=self._translation_worker, name="TranslationWorker")
         self._output_thread = threading.Thread(target=self._output_worker, name="OutputWorker")
         
         self._vad_thread.start()
         self._asr_thread.start()
+        self._translation_thread.start()
         self._output_thread.start()
         
         # Start audio capture
@@ -300,6 +351,14 @@ class ParallelTranslationPipeline(TranslationPipeline):
         logger.info("   Architecture: Audio→VAD→ASR(2x)→Translation→Output")
         logger.info("   Optimization: ASR[i] overlaps with Translation[i-1]")
         return True
+    
+    def _on_segment_drop(self, trace):
+        """Callback when a segment is dropped."""
+        logger.error(f"🚨 SEGMENT DROPPED: ID={trace.segment_id}, Reason={trace.dropped_reason}")
+    
+    def _on_segment_error(self, trace):
+        """Callback when a segment has an error."""
+        logger.error(f"🚨 SEGMENT ERROR: ID={trace.segment_id}, Error={trace.error_message}")
     
     def _audio_callback(self, chunk: np.ndarray):
         """Audio capture callback (runs in audio thread)."""
@@ -328,21 +387,40 @@ class ParallelTranslationPipeline(TranslationPipeline):
                 for segment in segments:
                     self._segment_counter += 1
                     
+                    # Week 0: Create segment with UUID tracking
+                    audio_duration_ms = len(segment.audio_data) / self.config.sample_rate * 1000
+                    segment_uuid = self._segment_tracker.create_segment(
+                        self._segment_counter,
+                        audio_duration_ms=audio_duration_ms
+                    )
+                    
                     pipeline_segment = PipelineSegment(
                         segment_id=self._segment_counter,
+                        segment_uuid=segment_uuid,
                         audio_data=segment.audio_data,
                         start_time=time.time(),
                         vad_confidence=segment.confidence,
                         is_partial=getattr(segment, 'is_partial', False)
                     )
                     
+                    # Record VAD processed stage
+                    self._segment_tracker.record_stage(segment_uuid, SegmentStage.VAD_PROCESSED)
+                    
                     try:
                         self._asr_queue.put_nowait(pipeline_segment)
+                        
+                        # Track queue operation
+                        self._queue_monitor.record_put("asr", True, 0.1)
+                        self._segment_tracker.record_stage(segment_uuid, SegmentStage.ASR_QUEUED)
+                        
                         with self._metrics_lock:
                             self._metrics.total_segments += 1
                             self._metrics.queued_segments = self._asr_queue.qsize()
                         logger.debug(f"Queued segment {self._segment_counter} for ASR (queue: {self._asr_queue.qsize()})")
                     except Full:
+                        # Week 0: Track drop
+                        self._queue_monitor.record_put("asr", False, 0.1)
+                        self._segment_tracker.record_drop(segment_uuid, "ASR queue full")
                         logger.warning(f"ASR queue full, dropping segment {self._segment_counter}")
                 
             except Empty:
@@ -356,6 +434,8 @@ class ParallelTranslationPipeline(TranslationPipeline):
         """ASR worker (dedicated thread - submits to ThreadPool)."""
         logger.info("ASR worker started")
         
+        pending_futures = []
+        
         while self._is_running:
             try:
                 # Get segment from VAD queue
@@ -363,12 +443,18 @@ class ParallelTranslationPipeline(TranslationPipeline):
                 
                 # Submit to ASR executor
                 future = self._asr_executor.submit(self._process_asr, segment)
+                pending_futures.append(future)
                 
                 # Add completion callback
                 future.add_done_callback(self._on_asr_complete)
                 
                 with self._metrics_lock:
                     self._metrics.asr_in_progress += 1
+                
+                # Clean up completed futures
+                pending_futures = [f for f in pending_futures if not f.done()]
+                if len(pending_futures) >= 2:
+                    logger.debug(f"ASR pipeline full: {len(pending_futures)} segments in flight")
                 
             except Empty:
                 continue
@@ -377,57 +463,24 @@ class ParallelTranslationPipeline(TranslationPipeline):
         
         logger.info("ASR worker stopped")
     
-    def _is_asr_hallucination(self, text: str) -> bool:
-        """
-        Detect ASR hallucinations like repetition patterns.
+    def _translation_worker(self):
+        """Translation worker (dedicated thread - continuously processes translation queue)."""
+        logger.info("Translation worker started")
         
-        Returns True if text is likely a hallucination.
-        """
-        if not text or len(text) < 5:
-            return False
+        while self._is_running:
+            try:
+                # Get segment from translation queue
+                segment = self._translation_queue.get(timeout=0.1)
+                
+                # Process translation asynchronously
+                self._process_translation_async(segment)
+                
+            except Empty:
+                continue
+            except Exception as e:
+                logger.error(f"Translation worker error: {e}")
         
-        # Pattern 1: Character repetition (e.g., "夜の夜の夜の...")
-        # Detect same character/substring repeated many times
-        for length in range(1, min(10, len(text) // 3)):
-            for i in range(len(text) - length * 3):
-                pattern = text[i:i+length]
-                if len(pattern.strip()) == 0:
-                    continue
-                # Check if pattern repeats 4+ times
-                count = 0
-                pos = i
-                while pos < len(text) and text[pos:pos+length] == pattern:
-                    count += 1
-                    pos += length
-                if count >= 4:  # Pattern repeats 4+ times
-                    logger.warning(f"ASR hallucination detected: repetition of '{pattern}' {count} times")
-                    return True
-        
-        # Pattern 2: Excessive repetition of same word
-        words = text.split()
-        if len(words) >= 5:
-            word_counts = {}
-            for word in words:
-                word_counts[word] = word_counts.get(word, 0) + 1
-            # If any word appears >50% of time, it's likely hallucination
-            max_count = max(word_counts.values())
-            if max_count / len(words) > 0.5:
-                most_common = max(word_counts.keys(), key=lambda w: word_counts[w])
-                logger.warning(f"ASR hallucination detected: word '{most_common}' appears {max_count}/{len(words)} times")
-                return True
-        
-        # Pattern 3: Very long repetitive sequences
-        if len(text) > 100:
-            # Check for repeating 2-4 character sequences
-            for seq_len in range(2, 5):
-                sequences = [text[i:i+seq_len] for i in range(0, len(text)-seq_len, seq_len)]
-                if len(sequences) >= 10:
-                    unique_ratio = len(set(sequences)) / len(sequences)
-                    if unique_ratio < 0.3:  # Less than 30% unique sequences
-                        logger.warning(f"ASR hallucination detected: low diversity ({unique_ratio:.1%}) in long text")
-                        return True
-        
-        return False
+        logger.info("Translation worker stopped")
     
     def _process_asr(self, segment: PipelineSegment) -> PipelineSegment:
         """Process ASR (runs in ThreadPool)."""
@@ -442,20 +495,13 @@ class ParallelTranslationPipeline(TranslationPipeline):
                 sf.write(tmp.name, segment.audio_data, self.config.sample_rate)
                 audio_path = tmp.name
             
-            # ASR transcription
+            # ASR transcription (includes post-processing with hallucination filter + text cleaning)
             asr_result = self._asr.transcribe(
                 audio_path,
                 language=self.config.asr_language
             )
             
             segment.asr_end_time = time.time()
-            
-            # Check for hallucinations
-            if asr_result and asr_result.text.strip():
-                if self._is_asr_hallucination(asr_result.text):
-                    logger.warning(f"ASR segment {segment.segment_id}: Rejected hallucination: '{asr_result.text[:50]}...'")
-                    asr_result.text = ""  # Clear the text
-            
             segment.asr_result = asr_result
             
             # Log ASR result
@@ -463,7 +509,8 @@ class ParallelTranslationPipeline(TranslationPipeline):
             if asr_result and asr_result.text.strip():
                 logger.info(f"ASR segment {segment.segment_id}: '{asr_result.text[:50]}...' ({asr_time:.0f}ms)")
             else:
-                logger.warning(f"ASR segment {segment.segment_id}: Empty result ({asr_time:.0f}ms)")
+                # Result was filtered by post-processor (hallucination or low quality)
+                logger.warning(f"ASR segment {segment.segment_id}: Filtered/Empty result ({asr_time:.0f}ms) - skipping translation")
             
             # Cleanup
             import os
@@ -480,6 +527,8 @@ class ParallelTranslationPipeline(TranslationPipeline):
             return segment
         
         if not segment.asr_result or not segment.asr_result.text.strip():
+            # ASR result was filtered by post-processor, skip translation
+            logger.debug(f"Translation segment {segment.segment_id}: Skipped (ASR filtered)")
             return segment
         
         segment.translation_start_time = time.time()
@@ -518,29 +567,32 @@ class ParallelTranslationPipeline(TranslationPipeline):
         """Callback when ASR completes."""
         try:
             segment = future.result()
+            segment.asr_end_time = time.time()
             
             with self._metrics_lock:
                 self._metrics.asr_in_progress -= 1
             
+            # Track when translation is queued
+            segment.translation_queued_time = time.time()
+            
             # Submit to translation queue
             try:
                 self._translation_queue.put_nowait(segment)
+                logger.debug(f"Segment {segment.segment_id}: Queued for translation")
             except Full:
-                logger.warning("Translation queue full, processing inline")
+                logger.warning(f"Segment {segment.segment_id}: Translation queue full, processing inline")
                 self._process_translation_async(segment)
             
         except Exception as e:
             logger.error(f"ASR completion error: {e}")
     
     def _process_translation_async(self, segment: PipelineSegment):
-        """Submit translation task asynchronously."""
-        # Check if previous translation is still running
-        # If so, we'll chain them (sequential translation is safer)
-        if self._previous_translation_future and not self._previous_translation_future.done():
-            # Wait for previous to complete (maintains order)
-            self._previous_translation_future.result()
+        """Submit translation task asynchronously (parallel, no chaining)."""
+        # Track actual translation start time
+        segment.translation_start_time = time.time()
         
-        # Submit new translation
+        # Submit new translation immediately (no waiting for previous)
+        # This allows ASR[i] to overlap with Translation[i-1]
         trans_future = self._translation_executor.submit(
             self._process_translation, segment
         )
@@ -550,25 +602,39 @@ class ParallelTranslationPipeline(TranslationPipeline):
             lambda f, seg=segment: self._on_translation_complete(f, seg)
         )
         
-        self._previous_translation_future = trans_future
-        
         with self._metrics_lock:
             self._metrics.translation_in_progress += 1
+        
+        logger.debug(f"Segment {segment.segment_id}: Translation submitted (parallel mode)")
     
     def _on_translation_complete(self, future: Future, segment: PipelineSegment):
-        """Callback when translation completes."""
+        """Callback when translation completes (handles out-of-order)."""
         try:
             completed_segment = future.result()
+            completed_segment.translation_end_time = time.time()
+            
+            # Calculate translation duration
+            trans_duration = (completed_segment.translation_end_time - completed_segment.translation_start_time) * 1000 if completed_segment.translation_start_time else 0
             
             with self._metrics_lock:
                 self._metrics.translation_in_progress -= 1
                 self._metrics.completed_segments += 1
             
-            # Queue for output
-            try:
-                self._output_queue.put_nowait(completed_segment)
-            except Full:
-                logger.warning("Output queue full, dropping segment")
+            # Store completed translation
+            with self._translation_lock:
+                self._completed_translations[segment.segment_id] = completed_segment
+                
+                # Emit all segments that are ready in order
+                while self._next_output_segment_id in self._completed_translations:
+                    ready_segment = self._completed_translations.pop(self._next_output_segment_id)
+                    self._next_output_segment_id += 1
+                    
+                    # Queue for output
+                    try:
+                        self._output_queue.put_nowait(ready_segment)
+                        logger.debug(f"Segment {ready_segment.segment_id}: Translation complete ({trans_duration:.0f}ms), queued for output (in-order)")
+                    except Full:
+                        logger.warning("Output queue full, dropping segment")
             
         except Exception as e:
             logger.error(f"Translation completion error: {e}")
@@ -583,22 +649,11 @@ class ParallelTranslationPipeline(TranslationPipeline):
                 self._emit_output(segment)
                 
             except Empty:
-                # Check for completed translations that need async processing
-                self._check_translation_queue()
                 continue
             except Exception as e:
                 logger.error(f"Output worker error: {e}")
         
         logger.info("Output worker stopped")
-    
-    def _check_translation_queue(self):
-        """Check for segments ready for translation."""
-        try:
-            while True:
-                segment = self._translation_queue.get_nowait()
-                self._process_translation_async(segment)
-        except Empty:
-            pass
     
     def _emit_output(self, segment: PipelineSegment):
         """Emit translation output."""
@@ -609,15 +664,35 @@ class ParallelTranslationPipeline(TranslationPipeline):
             return
         
         # Calculate timing
-        total_time = (time.time() - segment.start_time) * 1000
+        now = time.time()
+        total_time = (now - segment.start_time) * 1000
         asr_time = (segment.asr_end_time - segment.asr_start_time) * 1000 if segment.asr_end_time else 0
         trans_time = (segment.translation_end_time - segment.translation_start_time) * 1000 if segment.translation_end_time else 0
         
+        # Calculate queue wait times
+        vad_to_asr_queue = (segment.asr_start_time - segment.start_time) * 1000 if segment.asr_start_time else 0
+        asr_to_trans_queue = (segment.translation_start_time - segment.asr_end_time) * 1000 if segment.translation_start_time and segment.asr_end_time else 0
+        
         # Calculate overlap savings
-        # Without overlap: ASR_time + Translation_time
-        # With overlap: max(ASR_time, Translation_time) + overhead
+        # Without overlap (sequential): ASR_time + queue_wait + Translation_time
+        # With overlap (parallel): max(ASR[i], Translation[i-1]) + overhead
         sequential_time = asr_time + trans_time
-        overlap_savings = sequential_time - total_time
+        theoretical_parallel_time = max(asr_time, trans_time)
+        actual_parallel_time = total_time - vad_to_asr_queue - asr_to_trans_queue
+        
+        # Overlap effectiveness
+        overlap_savings = sequential_time - actual_parallel_time
+        overlap_efficiency = (overlap_savings / sequential_time * 100) if sequential_time > 0 else 0
+        
+        # Log detailed profiling for this segment (only if significant overlap or every 10th segment)
+        show_profiling = (overlap_savings > 50) or (segment.segment_id % 10 == 0)
+        if show_profiling:
+            logger.info(
+                f"\n📊 SEGMENT {segment.segment_id} PROFILING:\n"
+                f"  ⏱️  ASR: {asr_time:.0f}ms | Translation: {trans_time:.0f}ms | Total: {total_time:.0f}ms\n"
+                f"  ⏳ Queue waits: VAD→ASR={vad_to_asr_queue:.0f}ms | ASR→Trans={asr_to_trans_queue:.0f}ms\n"
+                f"  🔀 Sequential: {sequential_time:.0f}ms | Parallel: {actual_parallel_time:.0f}ms | Savings: {overlap_savings:.0f}ms ({overlap_efficiency:.1f}%)"
+            )
         
         with self._metrics_lock:
             self._metrics.avg_asr_time_ms = (
@@ -682,6 +757,9 @@ class ParallelTranslationPipeline(TranslationPipeline):
         if self._asr_thread and self._asr_thread.is_alive():
             self._asr_thread.join(timeout=timeout)
         
+        if self._translation_thread and self._translation_thread.is_alive():
+            self._translation_thread.join(timeout=timeout)
+        
         if self._output_thread and self._output_thread.is_alive():
             self._output_thread.join(timeout=timeout)
         
@@ -692,6 +770,11 @@ class ParallelTranslationPipeline(TranslationPipeline):
         # Process remaining items in queues if requested
         if process_final:
             self._drain_queues()
+        
+        # Reset ordering state
+        with self._translation_lock:
+            self._completed_translations.clear()
+            self._next_output_segment_id = 1
         
         logger.info("✅ Parallel pipeline stopped")
         self._print_parallel_stats()
@@ -716,8 +799,39 @@ class ParallelTranslationPipeline(TranslationPipeline):
         print(f"   Overlap Optimization: Enabled")
         
         with self._metrics_lock:
-            print(f"   Avg Overlap Savings: {self._metrics.overlap_savings_ms:.0f}ms")
-            print(f"   Effective Latency Reduction: ~{self._metrics.overlap_savings_ms/10:.0f}%")
+            avg_asr = self._metrics.avg_asr_time_ms
+            avg_trans = self._metrics.avg_translation_time_ms
+            avg_total = self._metrics.avg_total_time_ms
+            avg_savings = self._metrics.overlap_savings_ms
+            
+            print(f"\n   Avg ASR Time: {avg_asr:.0f}ms")
+            print(f"   Avg Translation Time: {avg_trans:.0f}ms")
+            print(f"   Avg Total Time: {avg_total:.0f}ms")
+            print(f"   Avg Overlap Savings: {avg_savings:.0f}ms")
+            
+            # Analysis
+            sequential = avg_asr + avg_trans
+            if sequential > 0:
+                theoretical_min = max(avg_asr, avg_trans)
+                actual_overhead = avg_total - theoretical_min
+                efficiency = (avg_savings / sequential * 100) if sequential > 0 else 0
+                
+                print(f"\n🔍 Overlap Analysis:")
+                print(f"   Sequential (ASR + Trans): {sequential:.0f}ms")
+                print(f"   Theoretical Parallel: {theoretical_min:.0f}ms")
+                print(f"   Actual Total: {avg_total:.0f}ms")
+                print(f"   Overhead: {actual_overhead:.0f}ms")
+                print(f"   Efficiency: {efficiency:.1f}%")
+                
+                # Note about real-time vs batch
+                print(f"\n💡 Note:")
+                if avg_savings < 10:
+                    print(f"   For real-time streaming: 0ms overlap is EXPECTED")
+                    print(f"   (segments arrive at speech speed, not queued)")
+                    print(f"   Overlap optimization helps with batch file processing")
+                else:
+                    print(f"   ✅ Overlap optimization is working!")
+                    print(f"   Savings of {avg_savings:.0f}ms per segment")
     
     def get_parallel_metrics(self) -> dict:
         """Get parallel pipeline metrics."""
