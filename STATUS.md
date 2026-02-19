@@ -254,7 +254,46 @@ language = "ja" or "zh"
 
 ---
 
-### Phase 1.2: StreamingASR (IN PROGRESS)
+### ✅ Phase 1.2: StreamingASR - COMPLETE
+
+**Phase 1.2 has been implemented and tested.**
+
+| Task | Status | Result |
+|------|--------|--------|
+| StreamingASR with cumulative context | ✅ Done | `src/core/asr/streaming_asr.py` |
+| INT8 quantization for drafts | ✅ Done | Draft mode uses INT8 (fast) |
+| Deduplication logic | ✅ Done | SequenceMatcher-based prefix matching |
+| Test suite | ✅ Done | `tests/test_phase12_streaming_asr.py` |
+
+**Test Results**:
+```
+======================================================================
+✅ PASS: Deduplication
+✅ PASS: Cumulative Context
+✅ PASS: Draft vs Final
+✅ PASS: Statistics
+✅ PASS: Short Audio
+
+🎉 Phase 1.2 Complete!
+Ready for Phase 1.3: StreamingTranslator
+======================================================================
+```
+
+**New Components**:
+- `StreamingASR`: Hybrid ASR with draft/final modes
+  - `generate_draft()`: Fast INT8 inference (beam=1)
+  - `generate_final()`: Accurate standard precision (beam=5)
+  - `deduplicate()`: Shows only new text in UI
+  - Cumulative audio buffer (0-N context)
+
+**Key Features**:
+- Draft mode: ~2x faster with INT8
+- Deduplication: Reduces UI flicker
+- Statistics: Track ASR calls per segment
+
+---
+
+### Phase 1.3: StreamingTranslator (IN PROGRESS)
 
 Based on analysis in `docs/overlap_think_on_real_time_translator.md` and `docs/evaluation_streaming_suggestions.md`, implementing **Hybrid Streaming Mode with Partial Translation**.
 
@@ -277,8 +316,8 @@ Based on analysis in `docs/overlap_think_on_real_time_translator.md` and `docs/e
 |-------|------|--------|----------|
 | **0** | **Fix sentence loss bug** | ✅ **COMPLETE** | 🔴 CRITICAL |
 | **1.1** | **Metrics + Adaptive Config** | ✅ **COMPLETE** | 🟡 High |
-| 1.2 | StreamingASR (cumulative, INT8) | ⏳ Ready | 🟡 High |
-| 1.3 | Partial Translation (semantic gating) | ⏳ Pending | 🟡 High |
+| **1.2** | **StreamingASR (cumulative, INT8)** | ✅ **COMPLETE** | 🟡 High |
+| 1.3 | Partial Translation (semantic gating) | ⏳ IN PROGRESS | 🟡 High |
 | 1.4 | Diff-Based UI | ⏳ Pending | 🟢 Medium |
 | 1.5 | Integration + A/B Testing | ⏳ Pending | 🟢 Medium |
 
