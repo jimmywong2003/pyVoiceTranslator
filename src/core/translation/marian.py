@@ -1,6 +1,7 @@
 """Marian NMT translator implementation for specific language pairs."""
 
 import time
+import logging
 from typing import List, Optional, Dict, Any
 
 try:
@@ -14,6 +15,8 @@ except ImportError:
     MarianMTModel = None
 
 from .base import BaseTranslator, TranslationResult
+
+logger = logging.getLogger(__name__)
 
 
 class MarianTranslator(BaseTranslator):
@@ -123,23 +126,59 @@ class MarianTranslator(BaseTranslator):
         """Remove common translation artifacts like (Laughter), (Applause), etc."""
         import re
         
-        # Remove sound effect annotations
-        sound_effects = [
-            r'\(Laughter\)', r'\(Applause\)', r'\(Music\)', r'\(Singing\)',
-            r'\(Cheering\)', r'\(Booing\)', r'\(Cough\)', r'\(Sigh\)',
-            r'\(Gasp\)', r'\(Pause\)',
+        if not text:
+            return text
+        
+        original = text
+        
+        # Remove sound effect annotations (case-insensitive, with optional content inside)
+        # Matches: (Laughter), (laughter), (Applause), (Music), etc.
+        sound_effect_patterns = [
+            r'\([\s]*Laughter[\s]*\)',
+            r'\([\s]*Applause[\s]*\)',
+            r'\([\s]*Music[\s]*\)',
+            r'\([\s]*Singing[\s]*\)',
+            r'\([\s]*Cheering[\s]*\)',
+            r'\([\s]*Booing[\s]*\)',
+            r'\([\s]*Cough[\s]*\)',
+            r'\([\s]*Sigh[\s]*\)',
+            r'\([\s]*Gasp[\s]*\)',
+            r'\([\s]*Pause[\s]*\)',
+            r'\([\s]*Bell[\s]*\)',
+            r'\([\s]*Thud[\s]*\)',
+            r'\([\s]*Click[\s]*\)',
+            r'\([\s]*Ring[\s]*\)',
         ]
         
         result = text
-        for pattern in sound_effects:
+        for pattern in sound_effect_patterns:
             result = re.sub(pattern, '', result, flags=re.IGNORECASE)
         
-        # Clean up
+        # Also remove any generic parenthetical sound descriptions
+        # This catches patterns like (sound), (noise), etc.
+        result = re.sub(r'\([\s]*[A-Z][a-z]+[\s]*\)', '', result)
+        
+        # Clean up whitespace
         result = re.sub(r'\s+', ' ', result)
-        result = re.sub(r'\.{3,}', '...', result)
+        
+        # Clean up punctuation artifacts
+        result = re.sub(r'\.{3,}', '...', result)  # Normalize ellipsis
+        result = re.sub(r',{2,}', ',', result)      # Multiple commas -> one
+        result = re.sub(r'!{2,}', '!', result)      # Multiple exclamation -> one
+        result = re.sub(r'\?{2,}', '?', result)     # Multiple question -> one
+        
+        # Remove leading/trailing punctuation artifacts
+        result = result.strip(' .,!?;:')
+        
+        # Final whitespace cleanup
         result = result.strip()
         
-        return result if result else text
+        # Log if we filtered something
+        if result != original:
+            logger.debug(f"Filtered translation artifact: '{original[:60]}...' -> '{result[:60]}...'")
+        
+        # Return result even if empty (empty means content was only artifacts)
+        return result
     
     def translate(
         self,
@@ -259,6 +298,9 @@ class MarianTranslator(BaseTranslator):
             outputs,
             skip_special_tokens=True
         )
+        
+        # Post-process to remove artifacts from all translations
+        translations = [self._post_process_translation(t) for t in translations]
         
         processing_time = time.time() - start_time
         

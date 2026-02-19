@@ -1,0 +1,204 @@
+# VoiceTranslate Pro - Docker Compose Configuration
+# 
+# Usage:
+#   docker-compose up -d              # Start all services
+#   docker-compose up -d app          # Start only app
+#   docker-compose up -d monitoring   # Start with monitoring
+#   docker-compose logs -f            # View logs
+#   docker-compose down               # Stop all services
+
+version: '3.8'
+
+services:
+  # ==========================================================================
+  # Main Application
+  # ==========================================================================
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    image: voicetranslate:latest
+    container_name: voicetranslate-app
+    restart: unless-stopped
+    
+    environment:
+      - VOICETRANSLATE_ENV=production
+      - VOICETRANSLATE_LOG_LEVEL=INFO
+      - VOICETRANSLATE_LOG_FORMAT=json
+      - VOICETRANSLATE_ENABLE_METRICS=true
+      - VOICETRANSLATE_ASR_BACKEND=auto
+      - VOICETRANSLATE_TARGET_TTFT=2000
+      
+      # Optional: API keys for cloud translation
+      # - TRANSLATION_API_KEY=${TRANSLATION_API_KEY}
+    
+    volumes:
+      # Configuration
+      - ./config:/app/config:ro
+      # Data persistence
+      - voicetranslate-data:/app/data
+      # Logs
+      - voicetranslate-logs:/app/logs
+      # Models cache
+      - voicetranslate-models:/app/models
+    
+    ports:
+      - "8080:8080"  # Health endpoint
+    
+    networks:
+      - voicetranslate-network
+    
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    
+    deploy:
+      resources:
+        limits:
+          cpus: '4.0'
+          memory: 4G
+        reservations:
+          cpus: '2.0'
+          memory: 2G
+
+  # ==========================================================================
+  # Development Mode
+  # ==========================================================================
+  app-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    image: voicetranslate:dev
+    container_name: voicetranslate-dev
+    profiles:
+      - dev  # Only started with: docker-compose --profile dev up
+    
+    environment:
+      - VOICETRANSLATE_ENV=development
+      - VOICETRANSLATE_LOG_LEVEL=DEBUG
+      - VOICETRANSLATE_LOG_FORMAT=text
+      - PYTHONDEVMODE=1
+    
+    volumes:
+      - .:/app  # Mount source code for live editing
+      - voicetranslate-models:/app/models
+    
+    ports:
+      - "8080:8080"
+    
+    networks:
+      - voicetranslate-network
+    
+    command: ["--mode", "streaming", "--debug"]
+
+  # ==========================================================================
+  # Monitoring Stack (Optional)
+  # ==========================================================================
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: voicetranslate-prometheus
+    profiles:
+      - monitoring
+    restart: unless-stopped
+    
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    
+    ports:
+      - "9090:9090"
+    
+    networks:
+      - voicetranslate-network
+    
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=15d'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--web.enable-lifecycle'
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: voicetranslate-grafana
+    profiles:
+      - monitoring
+    restart: unless-stopped
+    
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
+      - GF_USERS_ALLOW_SIGN_UP=false
+    
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./monitoring/grafana/datasources:/etc/grafana/provisioning/datasources:ro
+    
+    ports:
+      - "3000:3000"
+    
+    networks:
+      - voicetranslate-network
+
+  # ==========================================================================
+  # GPU Support (NVIDIA)
+  # ==========================================================================
+  app-gpu:
+    build:
+      context: .
+      dockerfile: Dockerfile.gpu
+    image: voicetranslate:gpu
+    container_name: voicetranslate-gpu
+    profiles:
+      - gpu
+    restart: unless-stopped
+    
+    runtime: nvidia
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - VOICETRANSLATE_ASR_BACKEND=fallback
+      - VOICETRANSLATE_ASR_COMPUTE_TYPE=float16
+    
+    volumes:
+      - ./config:/app/config:ro
+      - voicetranslate-data:/app/data
+      - voicetranslate-logs:/app/logs
+      - voicetranslate-models:/app/models
+    
+    ports:
+      - "8080:8080"
+    
+    networks:
+      - voicetranslate-network
+    
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+# ==========================================================================
+# Networks
+# ==========================================================================
+networks:
+  voicetranslate-network:
+    driver: bridge
+
+# ==========================================================================
+# Volumes
+# ==========================================================================
+volumes:
+  voicetranslate-data:
+  voicetranslate-logs:
+  voicetranslate-models:
+  prometheus-data:
+  grafana-data:

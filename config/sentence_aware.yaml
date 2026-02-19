@@ -1,0 +1,17 @@
+# Sentence-Aware VAD Configuration
+# Splits at natural sentence boundaries instead of fixed duration
+
+pipeline:
+  max_segment_duration_ms: 10000      # 10s max (allows long sentences)
+  silence_threshold_ms: 600           # Wait for 600ms silence
+  enable_sentence_detection: true     # Split at punctuation pauses
+
+vad:
+  threshold: 0.4
+  min_speech_duration_ms: 250
+  min_silence_duration_ms: 400
+  speech_pad_ms: 500
+  
+asr:
+  model_size: base
+  compute_type: int8

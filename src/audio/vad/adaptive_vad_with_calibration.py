@@ -71,7 +71,7 @@ class CalibrationConfig:
     min_speech_duration_ms: int = 200
     min_silence_duration_ms: int = 250
     speech_pad_ms: int = 400
-    max_segment_duration_ms: int = 5000  # 5 seconds max (reduced from 8s for lower latency)
+    max_segment_duration_ms: int = 8000  # 8 seconds max
     
     # Callbacks
     on_calibration_complete: Optional[Callable[[Dict], None]] = None

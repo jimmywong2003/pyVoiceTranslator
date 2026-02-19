@@ -1,0 +1,206 @@
+{
+  "dashboard": {
+    "id": null,
+    "title": "VoiceTranslate Pro - Streaming Metrics",
+    "tags": ["voicetranslate", "streaming", "asr"],
+    "timezone": "browser",
+    "schemaVersion": 36,
+    "refresh": "5s",
+    "panels": [
+      {
+        "id": 1,
+        "title": "TTFT (Time to First Token)",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "voicetranslate_ttft_ms{quantile=\"p99\"}",
+            "legendFormat": "P99"
+          },
+          {
+            "expr": "voicetranslate_ttft_ms{quantile=\"p50\"}",
+            "legendFormat": "P50"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "ms",
+            "thresholds": {
+              "steps": [
+                {"value": 0, "color": "green"},
+                {"value": 1500, "color": "yellow"},
+                {"value": 2000, "color": "red"}
+              ]
+            }
+          }
+        },
+        "gridPos": {"h": 8, "w": 8, "x": 0, "y": 0}
+      },
+      {
+        "id": 2,
+        "title": "Meaning Latency",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "voicetranslate_meaning_latency_ms{quantile=\"p99\"}",
+            "legendFormat": "P99"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "ms",
+            "thresholds": {
+              "steps": [
+                {"value": 0, "color": "green"},
+                {"value": 1500, "color": "yellow"},
+                {"value": 2000, "color": "red"}
+              ]
+            }
+          }
+        },
+        "gridPos": {"h": 8, "w": 8, "x": 8, "y": 0}
+      },
+      {
+        "id": 3,
+        "title": "Ear-Voice Lag",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "voicetranslate_ear_voice_lag_ms",
+            "legendFormat": "Lag"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "ms",
+            "thresholds": {
+              "steps": [
+                {"value": 0, "color": "green"},
+                {"value": 400, "color": "yellow"},
+                {"value": 500, "color": "red"}
+              ]
+            }
+          }
+        },
+        "gridPos": {"h": 8, "w": 8, "x": 16, "y": 0}
+      },
+      {
+        "id": 4,
+        "title": "Latency Trends",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "voicetranslate_ttft_ms{quantile=\"p99\"}",
+            "legendFormat": "TTFT P99"
+          },
+          {
+            "expr": "voicetranslate_meaning_latency_ms{quantile=\"p99\"}",
+            "legendFormat": "Meaning P99"
+          }
+        ],
+        "yAxes": [
+          {"label": "Latency (ms)", "min": 0}
+        ],
+        "gridPos": {"h": 10, "w": 12, "x": 0, "y": 8}
+      },
+      {
+        "id": 5,
+        "title": "Queue Depth",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "voicetranslate_queue_depth{queue=\"asr\"}",
+            "legendFormat": "ASR Queue"
+          },
+          {
+            "expr": "voicetranslate_queue_depth{queue=\"translation\"}",
+            "legendFormat": "Translation Queue"
+          }
+        ],
+        "alert": {
+          "conditions": [
+            {
+              "query": {"queryType": "", "refId": "A"},
+              "reducer": {"type": "last", "params": []},
+              "evaluator": {"params": [5], "type": "gt"}
+            }
+          ]
+        },
+        "gridPos": {"h": 10, "w": 12, "x": 12, "y": 8}
+      },
+      {
+        "id": 6,
+        "title": "Draft Stability",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "voicetranslate_draft_stability",
+            "legendFormat": "Stability"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percentunit",
+            "min": 0,
+            "max": 1
+          }
+        },
+        "gridPos": {"h": 8, "w": 6, "x": 0, "y": 18}
+      },
+      {
+        "id": 7,
+        "title": "Segments Completed",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "rate(voicetranslate_segments_completed[1m])",
+            "legendFormat": "Rate"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "segments/s"
+          }
+        },
+        "gridPos": {"h": 8, "w": 6, "x": 6, "y": 18}
+      },
+      {
+        "id": 8,
+        "title": "Segments Dropped",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "voicetranslate_segments_dropped",
+            "legendFormat": "Total"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "thresholds": {
+              "steps": [
+                {"value": 0, "color": "green"},
+                {"value": 1, "color": "red"}
+              ]
+            }
+          }
+        },
+        "gridPos": {"h": 8, "w": 6, "x": 12, "y": 18}
+      },
+      {
+        "id": 9,
+        "title": "Resource Usage",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "voicetranslate_cpu_percent",
+            "legendFormat": "CPU %"
+          },
+          {
+            "expr": "voicetranslate_memory_mb / 1024",
+            "legendFormat": "Memory GB"
+          }
+        ],
+        "gridPos": {"h": 10, "w": 24, "x": 0, "y": 26}
+      }
+    ]
+  }
+}

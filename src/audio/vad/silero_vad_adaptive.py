@@ -76,7 +76,7 @@ class AdaptiveVADConfig:
     min_speech_duration_ms: int = 250
     min_silence_duration_ms: int = 300
     speech_pad_ms: int = 500
-    max_segment_duration_ms: int = 5000  # 5 seconds max (reduced from 8s for lower latency)
+    max_segment_duration_ms: int = 8000  # 8 seconds max
     pause_threshold_ms: int = 800
 
 

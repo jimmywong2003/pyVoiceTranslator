@@ -2,6 +2,7 @@
 
 import os
 import tempfile
+import logging
 from typing import Iterator, Optional, List
 from pathlib import Path
 
@@ -13,6 +14,8 @@ except ImportError:
     WhisperModel = None
 
 from .base import BaseASR, TranscriptionResult, Segment, Word
+
+logger = logging.getLogger(__name__)
 
 
 class FasterWhisperASR(BaseASR):
@@ -74,21 +77,44 @@ class FasterWhisperASR(BaseASR):
             return
         
         device = self.device
+        compute_type = self.compute_type
         
-        # Auto-detect CUDA if available
+        # Auto-detect optimal device (CUDA, MPS, or CPU)
         if device == "auto":
-            import torch
-            device = "cuda" if torch.cuda.is_available() else "cpu"
+            from ...app.platform_utils import get_optimal_ml_device
+            detected_device = get_optimal_ml_device()
+            
+            # faster-whisper doesn't support MPS, fallback to CPU
+            if detected_device == "mps":
+                logger.info("MPS detected but faster-whisper doesn't support it, using CPU with NEON optimization")
+                device = "cpu"
+                compute_type = "int8"
+            elif detected_device == "cuda":
+                device = "cuda"
+                if compute_type == "int8":
+                    compute_type = "float16"
+                    logger.info(f"Auto-selected float16 compute type for CUDA")
+            else:
+                device = "cpu"
+        
+        # Validate device (faster-whisper only supports cpu, cuda)
+        if device not in ["cpu", "cuda"]:
+            logger.warning(f"Device '{device}' not supported by faster-whisper, falling back to CPU")
+            device = "cpu"
+            compute_type = "int8"
+        
+        logger.info(f"Loading faster-whisper model '{self.model_size}' on {device.upper()} ({compute_type})")
         
         self._model = WhisperModel(
             self.model_size,
             device=device,
-            compute_type=self.compute_type,
+            compute_type=compute_type,
             download_root=self.download_root,
             cpu_threads=self.cpu_threads,
             num_workers=self.num_workers,
         )
         self._is_initialized = True
+        logger.info(f"✅ faster-whisper model loaded successfully on {device.upper()}")
     
     def _to_result(
         self,

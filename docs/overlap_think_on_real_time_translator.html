@@ -1,0 +1,1114 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>overlap_think_on_real_time_translator.md</title>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+
+<style>
+/* https://github.com/microsoft/vscode/blob/master/extensions/markdown-language-features/media/markdown.css */
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
+body {
+	font-family: var(--vscode-markdown-font-family, -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", "Ubuntu", "Droid Sans", sans-serif);
+	font-size: var(--vscode-markdown-font-size, 14px);
+	padding: 0 26px;
+	line-height: var(--vscode-markdown-line-height, 22px);
+	word-wrap: break-word;
+}
+
+#code-csp-warning {
+	position: fixed;
+	top: 0;
+	right: 0;
+	color: white;
+	margin: 16px;
+	text-align: center;
+	font-size: 12px;
+	font-family: sans-serif;
+	background-color:#444444;
+	cursor: pointer;
+	padding: 6px;
+	box-shadow: 1px 1px 1px rgba(0,0,0,.25);
+}
+
+#code-csp-warning:hover {
+	text-decoration: none;
+	background-color:#007acc;
+	box-shadow: 2px 2px 2px rgba(0,0,0,.25);
+}
+
+body.scrollBeyondLastLine {
+	margin-bottom: calc(100vh - 22px);
+}
+
+body.showEditorSelection .code-line {
+	position: relative;
+}
+
+body.showEditorSelection .code-active-line:before,
+body.showEditorSelection .code-line:hover:before {
+	content: "";
+	display: block;
+	position: absolute;
+	top: 0;
+	left: -12px;
+	height: 100%;
+}
+
+body.showEditorSelection li.code-active-line:before,
+body.showEditorSelection li.code-line:hover:before {
+	left: -30px;
+}
+
+.vscode-light.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(0, 0, 0, 0.15);
+}
+
+.vscode-light.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(0, 0, 0, 0.40);
+}
+
+.vscode-light.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+.vscode-dark.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(255, 255, 255, 0.4);
+}
+
+.vscode-dark.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(255, 255, 255, 0.60);
+}
+
+.vscode-dark.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+.vscode-high-contrast.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(255, 160, 0, 0.7);
+}
+
+.vscode-high-contrast.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(255, 160, 0, 1);
+}
+
+.vscode-high-contrast.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+img {
+	max-width: 100%;
+	max-height: 100%;
+}
+
+a {
+	text-decoration: none;
+}
+
+a:hover {
+	text-decoration: underline;
+}
+
+a:focus,
+input:focus,
+select:focus,
+textarea:focus {
+	outline: 1px solid -webkit-focus-ring-color;
+	outline-offset: -1px;
+}
+
+hr {
+	border: 0;
+	height: 2px;
+	border-bottom: 2px solid;
+}
+
+h1 {
+	padding-bottom: 0.3em;
+	line-height: 1.2;
+	border-bottom-width: 1px;
+	border-bottom-style: solid;
+}
+
+h1, h2, h3 {
+	font-weight: normal;
+}
+
+table {
+	border-collapse: collapse;
+}
+
+table > thead > tr > th {
+	text-align: left;
+	border-bottom: 1px solid;
+}
+
+table > thead > tr > th,
+table > thead > tr > td,
+table > tbody > tr > th,
+table > tbody > tr > td {
+	padding: 5px 10px;
+}
+
+table > tbody > tr + tr > td {
+	border-top: 1px solid;
+}
+
+blockquote {
+	margin: 0 7px 0 5px;
+	padding: 0 16px 0 10px;
+	border-left-width: 5px;
+	border-left-style: solid;
+}
+
+code {
+	font-family: Menlo, Monaco, Consolas, "Droid Sans Mono", "Courier New", monospace, "Droid Sans Fallback";
+	font-size: 1em;
+	line-height: 1.357em;
+}
+
+body.wordWrap pre {
+	white-space: pre-wrap;
+}
+
+pre:not(.hljs),
+pre.hljs code > div {
+	padding: 16px;
+	border-radius: 3px;
+	overflow: auto;
+}
+
+pre code {
+	color: var(--vscode-editor-foreground);
+	tab-size: 4;
+}
+
+/** Theming */
+
+.vscode-light pre {
+	background-color: rgba(220, 220, 220, 0.4);
+}
+
+.vscode-dark pre {
+	background-color: rgba(10, 10, 10, 0.4);
+}
+
+.vscode-high-contrast pre {
+	background-color: rgb(0, 0, 0);
+}
+
+.vscode-high-contrast h1 {
+	border-color: rgb(0, 0, 0);
+}
+
+.vscode-light table > thead > tr > th {
+	border-color: rgba(0, 0, 0, 0.69);
+}
+
+.vscode-dark table > thead > tr > th {
+	border-color: rgba(255, 255, 255, 0.69);
+}
+
+.vscode-light h1,
+.vscode-light hr,
+.vscode-light table > tbody > tr + tr > td {
+	border-color: rgba(0, 0, 0, 0.18);
+}
+
+.vscode-dark h1,
+.vscode-dark hr,
+.vscode-dark table > tbody > tr + tr > td {
+	border-color: rgba(255, 255, 255, 0.18);
+}
+
+</style>
+
+<style>
+/* Tomorrow Theme */
+/* http://jmblog.github.com/color-themes-for-google-code-highlightjs */
+/* Original theme - https://github.com/chriskempson/tomorrow-theme */
+
+/* Tomorrow Comment */
+.hljs-comment,
+.hljs-quote {
+	color: #8e908c;
+}
+
+/* Tomorrow Red */
+.hljs-variable,
+.hljs-template-variable,
+.hljs-tag,
+.hljs-name,
+.hljs-selector-id,
+.hljs-selector-class,
+.hljs-regexp,
+.hljs-deletion {
+	color: #c82829;
+}
+
+/* Tomorrow Orange */
+.hljs-number,
+.hljs-built_in,
+.hljs-builtin-name,
+.hljs-literal,
+.hljs-type,
+.hljs-params,
+.hljs-meta,
+.hljs-link {
+	color: #f5871f;
+}
+
+/* Tomorrow Yellow */
+.hljs-attribute {
+	color: #eab700;
+}
+
+/* Tomorrow Green */
+.hljs-string,
+.hljs-symbol,
+.hljs-bullet,
+.hljs-addition {
+	color: #718c00;
+}
+
+/* Tomorrow Blue */
+.hljs-title,
+.hljs-section {
+	color: #4271ae;
+}
+
+/* Tomorrow Purple */
+.hljs-keyword,
+.hljs-selector-tag {
+	color: #8959a8;
+}
+
+.hljs {
+	display: block;
+	overflow-x: auto;
+	color: #4d4d4c;
+	padding: 0.5em;
+}
+
+.hljs-emphasis {
+	font-style: italic;
+}
+
+.hljs-strong {
+	font-weight: bold;
+}
+</style>
+
+<style>
+/*
+ * Markdown PDF CSS
+ */
+
+ body {
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", "Ubuntu", "Droid Sans", sans-serif, "Meiryo";
+	padding: 0 12px;
+}
+
+pre {
+	background-color: #f8f8f8;
+	border: 1px solid #cccccc;
+	border-radius: 3px;
+	overflow-x: auto;
+	white-space: pre-wrap;
+	overflow-wrap: break-word;
+}
+
+pre:not(.hljs) {
+	padding: 23px;
+	line-height: 19px;
+}
+
+blockquote {
+	background: rgba(127, 127, 127, 0.1);
+	border-color: rgba(0, 122, 204, 0.5);
+}
+
+.emoji {
+	height: 1.4em;
+}
+
+code {
+	font-size: 14px;
+	line-height: 19px;
+}
+
+/* for inline code */
+:not(pre):not(.hljs) > code {
+	color: #C9AE75; /* Change the old color so it seems less like an error */
+	font-size: inherit;
+}
+
+/* Page Break : use <div class="page"/> to insert page break
+-------------------------------------------------------- */
+.page {
+	page-break-after: always;
+}
+
+</style>
+
+<script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
+</head>
+<body>
+  <script>
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: document.body.classList.contains('vscode-dark') || document.body.classList.contains('vscode-high-contrast')
+          ? 'dark'
+          : 'default'
+    });
+  </script>
+<h1 id="overlap-savings-analysis-for-real-time-voice-translation">Overlap Savings Analysis for Real-Time Voice Translation</h1>
+<blockquote>
+<p><strong>Document Purpose</strong>: Explain why pipeline overlap optimization provides zero benefit for real-time streaming, and identify potential architectural improvements.</p>
+<p><strong>Target Audience</strong>: AI systems analyzing optimization opportunities</p>
+<p><strong>Last Updated</strong>: 2026-02-19 21:32 HKT (Rev 3 - Week 0 Added)</p>
+</blockquote>
+<hr>
+<h2 id="1-executive-summary">1. Executive Summary</h2>
+<p>The current parallel pipeline (<code>orchestrator_parallel.py</code>) implements worker threads for VAD, ASR, Translation, and Output. However, <strong>overlap savings = 0ms</strong> in real-time streaming mode because the pipeline is fundamentally <strong>I/O bound by human speech speed</strong>, not <strong>compute bound</strong>.</p>
+<p><strong>Key Insight</strong>: Human speech (3-8 seconds per segment) is 5-10x slower than processing time (~0.7 seconds). When ASR finishes segment N, segment N+1 hasn't been fully spoken yet.</p>
+<hr>
+<h2 id="2-timing-analysis">2. Timing Analysis</h2>
+<h3 id="21-real-time-streaming-timeline">2.1 Real-Time Streaming Timeline</h3>
+<pre><code class="language-mermaid"><div class="mermaid">gantt
+    title Real-Time Streaming: Sequential by Nature
+    dateFormat X
+    axisFormat %s
+    
+    section Human Speech
+    Segment 1 (5s speech)       :active, speech1, 0, 5
+    Silence (400ms)             :crit, silence1, 5, 5.4
+    Segment 2 (4s speech)       :active, speech2, 5.4, 9.4
+    
+    section VAD Detection
+    VAD: Seg 1 detected         :done, vad1, 5, 5.1
+    VAD: Seg 2 detected         :done, vad2, 9.4, 9.5
+    
+    section ASR Processing
+    ASR: Process Seg 1 (~450ms) :active, asr1, 5.1, 5.55
+    ASR: WAITING (idle)         :crit, asr_wait, 5.55, 9.5
+    ASR: Process Seg 2 (~450ms) :active, asr2, 9.5, 9.95
+    
+    section Translation
+    MT: Translate Seg 1 (~250ms):active, mt1, 5.55, 5.8
+    MT: WAITING (idle)          :crit, mt_wait, 5.8, 9.95
+    MT: Translate Seg 2 (~250ms):active, mt2, 9.95, 10.2
+</div></code></pre>
+<p><strong>Observation</strong>: Notice the large <strong>idle gaps</strong> (red segments). When ASR finishes at T=5.55s, the next segment hasn't even started being spoken (starts at T=5.4s, but VAD needs silence to detect it at T=9.4s).</p>
+<h3 id="22-batch-processing-timeline-for-comparison">2.2 Batch Processing Timeline (For Comparison)</h3>
+<pre><code class="language-mermaid"><div class="mermaid">gantt
+    title Batch Processing: True Parallelism Possible
+    dateFormat X
+    axisFormat %s
+    
+    section VAD (File Scan)
+    Detect ALL segments         :done, vad_batch, 0, 2
+    
+    section ASR Worker Pool
+    ASR: Segment 1              :active, asr_b1, 2, 2.45
+    ASR: Segment 2              :active, asr_b2, 2.45, 2.9
+    ASR: Segment 3              :active, asr_b3, 2.9, 3.35
+    
+    section Translation Worker Pool
+    MT: Segment 1               :active, mt_b1, 2.45, 2.7
+    MT: Segment 2               :active, mt_b2, 2.7, 2.95
+    MT: Segment 3               :active, mt_b3, 2.95, 3.2
+    
+    section Output
+    Output Seg 1                :done, out_b1, 2.7, 2.8
+    Output Seg 2                :done, out_b2, 2.95, 3.05
+    Output Seg 3                :done, out_b3, 3.2, 3.3
+</div></code></pre>
+<p><strong>Observation</strong>: In batch mode, all segments are available at T=0 (after VAD scan), enabling true pipeline parallelism.</p>
+<hr>
+<h2 id="3-mathematical-constraint">3. Mathematical Constraint</h2>
+<h3 id="31-timing-parameters-from-statusmd">3.1 Timing Parameters (from STATUS.md)</h3>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Symbol</th>
+<th>Value</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Speech Duration</td>
+<td>T_speech</td>
+<td>3-8s</td>
+<td>Human speech segment length</td>
+</tr>
+<tr>
+<td>Silence Duration</td>
+<td>T_silence</td>
+<td>400ms</td>
+<td>VAD silence threshold</td>
+</tr>
+<tr>
+<td>ASR Processing</td>
+<td>T_asr</td>
+<td>~450ms</td>
+<td>faster-whisper base model</td>
+</tr>
+<tr>
+<td>Translation</td>
+<td>T_mt</td>
+<td>~250ms</td>
+<td>MarianMT inference</td>
+</tr>
+<tr>
+<td>Total Processing</td>
+<td>T_process</td>
+<td>~700ms</td>
+<td>ASR + MT</td>
+</tr>
+</tbody>
+</table>
+<h3 id="32-overlap-condition">3.2 Overlap Condition</h3>
+<p>For pipeline overlap to provide savings:</p>
+<pre class="hljs"><code><div>Next segment must be available before current processing finishes
+
+T_available &lt; T_process
+</div></code></pre>
+<p><strong>Real-time case:</strong></p>
+<pre class="hljs"><code><div>T_available = T_speech + T_silence = 3-8s + 0.4s = 3.4-8.4s
+T_process = 0.7s
+
+3.4-8.4s &lt; 0.7s = FALSE ❌
+</div></code></pre>
+<p><strong>Batch case:</strong></p>
+<pre class="hljs"><code><div>T_available = 0 (all segments ready immediately)
+T_process = 0.7s
+
+0 &lt; 0.7s = TRUE ✅
+</div></code></pre>
+<h3 id="33-worker-utilization">3.3 Worker Utilization</h3>
+<pre><code class="language-mermaid"><div class="mermaid">pie title Real-Time Worker Utilization
+    "ASR Worker Idle (Waiting for Audio)" : 85
+    "ASR Worker Active (Processing)" : 15
+</div></code></pre>
+<pre><code class="language-mermaid"><div class="mermaid">pie title Batch Worker Utilization
+    "ASR Worker Idle" : 5
+    "ASR Worker Active" : 95
+</div></code></pre>
+<hr>
+<h2 id="4-current-architecture-deep-dive">4. Current Architecture Deep Dive</h2>
+<h3 id="41-parallel-pipeline-structure">4.1 Parallel Pipeline Structure</h3>
+<pre><code class="language-mermaid"><div class="mermaid">flowchart TB
+    subgraph AudioCapture["Audio Capture Thread"]
+        A[Microphone Input] --> B[Ring Buffer]
+    end
+    
+    subgraph VADWorker["VAD Worker (1 thread)"]
+        B --> C{Speech Detected?}
+        C -->|Yes| D[Buffer Speech Segment]
+        C -->|No| C
+        D --> E[Queue to ASR]
+    end
+    
+    subgraph ASRWorker["ASR Worker (1 thread)"]
+        E --> F[ASR Inference]
+        F -->|2-thread pool| G[CTranslate2]
+        G --> H[Queue to MT]
+    end
+    
+    subgraph MTWorker["Translation Worker (1 thread)"]
+        H --> I[MT Inference]
+        I -->|2-thread pool| J[MarianMT/NLLB]
+        J --> K[Queue to Output]
+    end
+    
+    subgraph OutputWorker["Output Worker (1 thread)"]
+        K --> L[Display/Log]
+    end
+    
+    style VADWorker fill:#ffcccc
+    style ASRWorker fill:#ffcccc
+    style MTWorker fill:#ffcccc
+    style OutputWorker fill:#ffcccc
+</div></code></pre>
+<h3 id="42-the-blocking-problem">4.2 The Blocking Problem</h3>
+<pre><code class="language-mermaid"><div class="mermaid">sequenceDiagram
+    participant H as Human
+    participant V as VAD Worker
+    participant A as ASR Worker
+    participant T as Translation Worker
+    participant O as Output Worker
+    
+    Note over H,O: Segment 1 Begins
+    
+    loop Speech Duration (5s)
+        H->>V: Audio chunks
+        V->>V: Accumulating...
+    end
+    
+    H->>V: Silence (400ms)
+    V->>V: Detect end of speech
+    V->>A: Segment 1 ready
+    
+    rect rgb(200, 255, 200)
+        Note over A: ASR Active (450ms)
+        A->>A: Process audio
+    end
+    A->>T: ASR result
+    
+    rect rgb(200, 255, 200)
+        Note over T: MT Active (250ms)
+        T->>T: Translate text
+    end
+    T->>O: Translation result
+    O->>O: Output
+    
+    Note over H,O: ASR/MT Workers IDLE waiting for Segment 2
+    
+    rect rgb(255, 200, 200)
+        Note over A,T: IDLE (~3-7s)<br/>Next segment not yet spoken
+    end
+    
+    loop Speech Duration (4s)
+        H->>V: Audio chunks
+        V->>V: Accumulating...
+    end
+    
+    H->>V: Silence
+    V->>A: Segment 2 ready
+    Note over A: ASR starts again...
+</div></code></pre>
+<p><strong>Critical Observation</strong>: The 4 workers run sequentially in practice because each waits for the previous stage to produce data, and data production is bound by human speech speed.</p>
+<hr>
+<h2 id="5-fundamental-limitations">5. Fundamental Limitations</h2>
+<h3 id="51-why-current-parallel-architecture-cant-help">5.1 Why Current Parallel Architecture Can't Help</h3>
+<table>
+<thead>
+<tr>
+<th>Limitation</th>
+<th>Explanation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Sequential Data Dependency</strong></td>
+<td>VAD must wait for speech+silence before producing a segment. ASR must wait for VAD. MT must wait for ASR.</td>
+</tr>
+<tr>
+<td><strong>No Lookahead</strong></td>
+<td>In real-time, you cannot see future audio. Batch can scan the entire file first.</td>
+</tr>
+<tr>
+<td><strong>Speech-Processing Speed Mismatch</strong></td>
+<td>Humans speak at ~150 words/min. ASR processes at ~1000 words/min (after receipt).</td>
+</tr>
+<tr>
+<td><strong>VAD as Bottleneck</strong></td>
+<td>VAD cannot detect segments faster than they are spoken.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="52-the-%22idle-gap%22-problem">5.2 The &quot;Idle Gap&quot; Problem</h3>
+<pre class="hljs"><code><div>Time:    0s    1s    2s    3s    4s    5s    6s    7s    8s    9s    10s
+         │     │     │     │     │     │     │     │     │     │     │
+Speech:  [██████████████ Segment 1 ██████████████]   [██████ Segment 2 ██████]
+         │     │     │     │     │     │     │     │     │     │     │
+VAD:     └─────┴─────┴─────┴─────┴─────┘detected at 5.4s
+                                          │     │     │     │     │
+ASR:                                      └─────┘process
+                                                │     │     │     │
+ASR Output:                                         done at 5.85s
+                                                      │     │     │
+Translation:                                          └─────┘process
+                                                            │     │
+Translation Output:                                             done at 6.1s
+                                                                  │
+Output:                                                           └display
+
+         ↑                                          ↑
+    Speech starts                              Result ready
+    at 0s                                      at 6.1s
+    
+    Total latency: 6.1s (mostly waiting for human to finish speaking!)
+</div></code></pre>
+<hr>
+<h2 id="6-potential-improvement-directions">6. Potential Improvement Directions</h2>
+<h3 id="61-streamingincremental-asr">6.1 Streaming/Incremental ASR</h3>
+<p><strong>Concept</strong>: Process audio incrementally as it arrives, not waiting for segment end.</p>
+<pre><code class="language-mermaid"><div class="mermaid">gantt
+    title Streaming ASR: Potential for Overlap
+    dateFormat X
+    axisFormat %s
+    
+    section Human Speech
+    Word 1 "Hello"               :active, w1, 0, 0.5
+    Word 2 "world"               :active, w2, 0.6, 1.1
+    Word 3 "today"               :active, w3, 1.2, 1.7
+    
+    section Streaming ASR
+    Process Word 1               :done, sw1, 0.5, 0.7
+    Process Word 2               :done, sw2, 1.1, 1.3
+    Process Word 3               :done, sw3, 1.7, 1.9
+    
+    section Speculative Translation
+    Start MT (partial)           :crit, mt_p1, 0.7, 0.9
+    Update MT (partial)          :crit, mt_p2, 1.3, 1.5
+    Finalize MT                  :active, mt_f, 1.9, 2.1
+</div></code></pre>
+<p><strong>Challenges</strong>:</p>
+<ul>
+<li>ASR accuracy on partial audio (context loss)</li>
+<li>MT quality on incomplete sentences</li>
+<li>Stitching partial results</li>
+</ul>
+<p><strong>Implementation</strong>: faster-whisper supports <code>word_timestamps=True</code> and incremental decoding.</p>
+<h3 id="62-sentence-breaking-vad-chunk-based">6.2 Sentence-Breaking VAD (Chunk-Based)</h3>
+<p><strong>Concept</strong>: Break long sentences into smaller chunks (e.g., 2-second chunks) instead of waiting for full silence.</p>
+<pre><code class="language-mermaid"><div class="mermaid">flowchart LR
+    A[2s chunk 1] -->|ASR| B[Partial result]
+    C[2s chunk 2] -->|ASR| D[Partial result]
+    E[2s chunk 3] -->|ASR| F[Partial result]
+    B --> G{Stitch}
+    D --> G
+    F --> G
+    G --> H[Full sentence]
+    H --> I[MT]
+</div></code></pre>
+<p><strong>Challenges</strong>:</p>
+<ul>
+<li>Context window management for ASR</li>
+<li>Sentence boundary detection without full pause</li>
+<li>Overlapping chunk processing</li>
+</ul>
+<h3 id="63-predictive-pre-processing">6.3 Predictive Pre-processing</h3>
+<p><strong>Concept</strong>: Use lightweight model to predict if speech is ending soon, start ASR early.</p>
+<pre><code class="language-mermaid"><div class="mermaid">sequenceDiagram
+    participant V as VAD + Predictor
+    participant A as ASR
+    participant T as Translation
+    
+    Note over V: Speech detected for 3s
+    V->>V: Lightweight predictor:<br/>"90% probability speech ends in 500ms"
+    V->>A: Start ASR early (speculative)
+    
+    alt Speech actually ends
+        A->>A: Result ready immediately!
+        A->>T: Translation starts
+    else Speech continues
+        A->>A: Discard partial result<br/>(wasted compute)
+        Note over A: Trade-off:<br/>Latency vs Compute
+    end
+</div></code></pre>
+<p><strong>Challenges</strong>:</p>
+<ul>
+<li>Prediction accuracy</li>
+<li>Wasted compute on false predictions</li>
+<li>Model size (must be very lightweight)</li>
+</ul>
+<h3 id="64-pipeline-stage-interleaving">6.4 Pipeline Stage Interleaving</h3>
+<p><strong>Concept</strong>: Process multiple speakers or audio sources (if available) to keep workers busy.</p>
+<pre><code class="language-mermaid"><div class="mermaid">gantt
+    title Multi-Source Interleaving
+    dateFormat X
+    axisFormat %s
+    
+    section Source A
+    Speech A1                    :active, sa1, 0, 5
+    
+    section Source B
+    Speech B1                    :active, sb1, 2, 7
+    
+    section ASR Worker
+    Process A1                   :active, asra1, 5, 5.45
+    Process B1                   :active, asrb1, 7, 7.45
+    
+    section Translation Worker
+    Translate A1                 :active, mta1, 5.45, 5.7
+    Translate B1                 :active, mtb1, 7.45, 7.7
+</div></code></pre>
+<p><strong>Note</strong>: This only works for multi-source scenarios (e.g., conference calls), not single-speaker translation.</p>
+<hr>
+<h2 id="7-key-questions-for-analysis">7. Key Questions for Analysis</h2>
+<p>When considering improvements, answer these:</p>
+<ol>
+<li>
+<p><strong>Is latency actually a problem?</strong></p>
+<ul>
+<li>Current end-to-end: ~700-850ms after speech ends</li>
+<li>Human perception threshold: ~200-300ms feels &quot;instant&quot;</li>
+<li>But most latency is speech duration itself, not processing</li>
+</ul>
+</li>
+<li>
+<p><strong>What's the real bottleneck?</strong></p>
+<ul>
+<li>Compute: No (processing is 5-10x faster than speech)</li>
+<li>I/O: Yes (waiting for audio)</li>
+<li>Memory: No (models already loaded)</li>
+</ul>
+</li>
+<li>
+<p><strong>Can we reduce speech duration dependency?</strong></p>
+<ul>
+<li>Only by processing partial segments</li>
+<li>Trade-off: Quality vs Latency</li>
+</ul>
+</li>
+<li>
+<p><strong>Is batch mode the actual use case?</strong></p>
+<ul>
+<li>If translating files/videos, overlap optimization is valuable</li>
+<li>If translating live speech, current architecture is near-optimal</li>
+</ul>
+</li>
+</ol>
+<hr>
+<h2 id="8-conclusion">8. Conclusion</h2>
+<p><strong>The overlap savings = 0ms is architecturally correct for real-time streaming.</strong></p>
+<p>The parallel pipeline (<code>orchestrator_parallel.py</code>) is designed for throughput optimization (batch processing), but real-time streaming is fundamentally limited by the speed of human speech production.</p>
+<p><strong>To achieve actual latency improvements in real-time mode</strong>, you would need to:</p>
+<ol>
+<li>Process audio <strong>before</strong> the speaker finishes (streaming ASR)</li>
+<li>Accept <strong>quality trade-offs</strong> (partial context)</li>
+<li>Implement <strong>speculative execution</strong> (risk wasted compute)</li>
+</ol>
+<p>For the current single-speaker real-time use case, the architecture is already near-optimal. The parallel pipeline provides value for batch video/file processing, where overlap savings are real and significant.</p>
+<hr>
+<h2 id="9-references">9. References</h2>
+<ul>
+<li>Current Pipeline: <code>src/core/pipeline/orchestrator_parallel.py</code></li>
+<li>Performance Metrics: <code>STATUS.md</code> (Section &quot;Performance Metrics&quot;)</li>
+<li>ASR Implementation: <code>src/core/asr/faster_whisper.py</code></li>
+<li>VAD Implementation: <code>src/audio/vad/silero_vad_adaptive.py</code></li>
+</ul>
+<hr>
+<h2 id="10-update-streaming-solution-design-revised">10. Update: Streaming Solution Design (REVISED)</h2>
+<p>After evaluation of architectural suggestions (see <code>docs/evaluation_streaming_suggestions.md</code>), a <strong>Hybrid Streaming Mode with Partial Translation</strong> has been designed.</p>
+<h3 id="101-the-solution-hybrid-draftfinal-mode">10.1 The Solution: Hybrid Draft/Final Mode</h3>
+<pre class="hljs"><code><div>Current (Sequential - No Meaning Until End):
+Speech:  [████████████████████] (5s) → Silence → ASR → MT → &quot;Hola mundo&quot; at 5.8s
+
+Hybrid (Overlapped - Meaning Early):
+Speech:       [████████████████████] (5s)
+Draft ASR 1:       [ASR] → &quot;Hello world&quot;
+Draft MT 1:            [MT] → &quot;Hola mundo&quot; at 2.75s ✓ MEANING!
+Draft ASR 2:                [ASR] → &quot;Hello world today&quot;
+Draft MT 2:                     [MT] → &quot;Hola mundo hoy&quot; at 4.5s
+Final:                                        [ASR+MT] → &quot;Hola mundo hoy&quot; at 5.3s
+</div></code></pre>
+<h3 id="102-revised-key-design-decisions">10.2 REVISED Key Design Decisions</h3>
+<table>
+<thead>
+<tr>
+<th>Aspect</th>
+<th>Original</th>
+<th><strong>REVISED</strong></th>
+<th>Rationale</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Draft interval</td>
+<td>Every 2s</td>
+<td><strong>Adaptive (every 2s, skip if paused)</strong></td>
+<td>Reduce compute overhead</td>
+</tr>
+<tr>
+<td>Draft confidence</td>
+<td>Low (0.6)</td>
+<td>Low (0.6) ✅</td>
+<td>Show grey/italic</td>
+</tr>
+<tr>
+<td><strong>Draft translation</strong></td>
+<td>No (ASR only)</td>
+<td><strong>Yes (conditional on verb/punctuation)</strong></td>
+<td>Users need <strong>meaning</strong>, not just words</td>
+</tr>
+<tr>
+<td><strong>Compute strategy</strong></td>
+<td>Standard</td>
+<td><strong>INT8 for drafts, standard for final</strong></td>
+<td>Manage 3x ASR overhead</td>
+</tr>
+<tr>
+<td><strong>Context window</strong></td>
+<td>Chunk-based</td>
+<td><strong>Cumulative (0-N, not just N-2→N)</strong></td>
+<td>Ensures grammatical consistency</td>
+</tr>
+<tr>
+<td><strong>UI transition</strong></td>
+<td>Replace</td>
+<td><strong>Diff-based with highlight</strong></td>
+<td>Smooth, show what changed</td>
+</tr>
+</tbody>
+</table>
+<h3 id="103-critical-improvement-draft-translation-with-semantic-gating">10.3 Critical Improvement: Draft Translation with Semantic Gating</h3>
+<p><strong>Why Conditional Translation Matters</strong>:</p>
+<table>
+<thead>
+<tr>
+<th>Approach</th>
+<th>T=2s</th>
+<th>T=5.3s</th>
+<th>User Experience</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Without Translation</strong></td>
+<td>&quot;Hello world...&quot; (EN)</td>
+<td>&quot;Hola mundo&quot; (ES)</td>
+<td>Wait 5.3s for meaning ❌</td>
+</tr>
+<tr>
+<td><strong>With Translation</strong></td>
+<td>&quot;Hola mundo...&quot; (ES)</td>
+<td>&quot;Hola mundo&quot; (ES)</td>
+<td>Get meaning at 2s ✅</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Semantic Gating Rules</strong> (only translate if complete thought):</p>
+<pre class="hljs"><code><div><span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">should_translate_draft</span><span class="hljs-params">(text, source_lang, target_lang)</span>:</span>
+    <span class="hljs-comment"># Must have minimum content</span>
+    <span class="hljs-keyword">if</span> len(text.split()) &lt; <span class="hljs-number">2</span>:
+        <span class="hljs-keyword">return</span> <span class="hljs-literal">False</span>
+    
+    <span class="hljs-comment"># Must have verb or punctuation (complete thought)</span>
+    has_verb = any(v <span class="hljs-keyword">in</span> text.lower() <span class="hljs-keyword">for</span> v <span class="hljs-keyword">in</span> VERBS[source_lang])
+    has_punct = any(text.endswith(p) <span class="hljs-keyword">for</span> p <span class="hljs-keyword">in</span> [<span class="hljs-string">'.'</span>, <span class="hljs-string">'!'</span>, <span class="hljs-string">'?'</span>, <span class="hljs-string">'。'</span>])
+    
+    <span class="hljs-comment"># Word order safety for SOV languages</span>
+    <span class="hljs-comment"># SOV languages (Japanese, Korean) put verb at END</span>
+    <span class="hljs-comment"># Translating before verb arrives = grammatical chaos</span>
+    SOV_LANGUAGES = [<span class="hljs-string">'ja'</span>, <span class="hljs-string">'ko'</span>, <span class="hljs-string">'de'</span>, <span class="hljs-string">'tr'</span>]
+    <span class="hljs-keyword">if</span> target_lang <span class="hljs-keyword">in</span> SOV_LANGUAGES:
+        <span class="hljs-keyword">if</span> <span class="hljs-keyword">not</span> has_punct:
+            <span class="hljs-keyword">return</span> <span class="hljs-literal">False</span>  <span class="hljs-comment"># Must wait for sentence end</span>
+    
+    <span class="hljs-keyword">return</span> has_verb <span class="hljs-keyword">or</span> has_punct
+
+<span class="hljs-comment"># Examples:</span>
+<span class="hljs-comment"># "Hello" → No translation (incomplete)</span>
+<span class="hljs-comment"># "Hello world" → No translation (no verb)</span>
+<span class="hljs-comment"># "I went" → Translate! (has verb)</span>
+<span class="hljs-comment"># "Hello world." → Translate! (has punctuation)</span>
+<span class="hljs-comment"># EN→JA: "I went to" → No (wait for Japanese verb at end)</span>
+<span class="hljs-comment"># EN→JA: "I went to store." → Translate! (has punctuation)</span>
+</div></code></pre>
+<p><strong>Language-Specific Rules</strong>:</p>
+<table>
+<thead>
+<tr>
+<th>Language Pair</th>
+<th>Draft Translation</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>EN→ES, EN→FR</td>
+<td>✅ Yes</td>
+<td>SVO→SVO (similar order)</td>
+</tr>
+<tr>
+<td>EN→JA, EN→KO</td>
+<td>⚠️ Conditional</td>
+<td>SVO→SOV (wait for punctuation)</td>
+</tr>
+<tr>
+<td>JA→EN</td>
+<td>✅ Yes</td>
+<td>SOV→SVO (can translate early)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="104-managing-3x-compute-overhead">10.4 Managing 3x Compute Overhead</h3>
+<p><strong>Problem</strong>: 5s segment → Draft at 2s + Draft at 4s + Final at 5s = <strong>3x ASR calls</strong></p>
+<p><strong>Mitigation Strategy</strong>:</p>
+<table>
+<thead>
+<tr>
+<th>Technique</th>
+<th>Implementation</th>
+<th>Impact</th>
+<th>Priority</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>INT8 Quantization</strong></td>
+<td>Draft: <code>compute_type=&quot;int8&quot;</code></td>
+<td>2x faster drafts</td>
+<td>Week 2</td>
+</tr>
+<tr>
+<td><strong>Adaptive Skipping</strong></td>
+<td>Skip draft if VAD detects pause &gt;500ms</td>
+<td>Reduce unnecessary calls</td>
+<td>Week 2</td>
+</tr>
+<tr>
+<td><strong>Queue Monitoring</strong></td>
+<td>Skip draft if queue depth &gt; 2; Alert on overflow</td>
+<td>Prevent backlog, <strong>fix data loss</strong></td>
+<td>🔴 <strong>Week 0</strong></td>
+</tr>
+<tr>
+<td><strong>Cumulative Context</strong></td>
+<td>Draft 2 reuses Draft 1 computation conceptually</td>
+<td>Better quality per compute</td>
+<td>Week 2</td>
+</tr>
+<tr>
+<td><strong>Error Logging</strong></td>
+<td>No silent failures, comprehensive tracing</td>
+<td>Debug sentence loss</td>
+<td>🔴 <strong>Week 0</strong></td>
+</tr>
+<tr>
+<td><strong>Platform Testing</strong></td>
+<td>Intel i7 (OpenVINO), Mac M1 (CoreML)</td>
+<td>Optimize INT8 per platform</td>
+<td>🔴 <strong>Week 0</strong></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Compute Estimate</strong>:</p>
+<pre class="hljs"><code><div>Unoptimized: 3 × 450ms = 1350ms (3x overhead)
+With INT8:   2 × 225ms + 450ms = 900ms (2x overhead)
+With Adaptive: ~1.5x average (depends on speech pattern)
+</div></code></pre>
+<h3 id="105-expected-improvements">10.5 Expected Improvements</h3>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Current</th>
+<th>Target</th>
+<th>Priority</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Sentence Loss Rate</strong></td>
+<td>Bug exists (~?)</td>
+<td><strong>0%</strong></td>
+<td>🔴 <strong>Week 0 Critical</strong></td>
+<td>Data integrity first</td>
+</tr>
+<tr>
+<td><strong>TTFT</strong> (any output)</td>
+<td>~5000ms</td>
+<td>&lt; 2000ms</td>
+<td>🟡 Week 2</td>
+<td>Draft visible</td>
+</tr>
+<tr>
+<td><strong>Meaning Latency</strong> (translated)</td>
+<td>~5000ms</td>
+<td><strong>&lt; 2000ms</strong></td>
+<td>🟡 Week 2</td>
+<td>⭐ <strong>Critical improvement</strong></td>
+</tr>
+<tr>
+<td><strong>Ear-to-Voice Lag</strong></td>
+<td>~700ms</td>
+<td>&lt; 500ms</td>
+<td>🟢 Week 3</td>
+<td>Final optimization</td>
+</tr>
+<tr>
+<td><strong>Compute Overhead</strong></td>
+<td>1x</td>
+<td>~1.5x</td>
+<td>🟢 Week 2</td>
+<td>Managed with INT8 + adaptive</td>
+</tr>
+</tbody>
+</table>
+<h3 id="106-implementation-plan-revised-with-week-0">10.6 Implementation Plan (REVISED with Week 0)</h3>
+<p>See detailed plan: <code>docs/design/streaming_latency_optimization_plan.md</code></p>
+<p><strong>Week 0: CRITICAL - Fix Sentence Loss Bug</strong> 🔴</p>
+<blockquote>
+<p><strong>MUST complete before any optimization!</strong></p>
+</blockquote>
+<table>
+<thead>
+<tr>
+<th>Task</th>
+<th>Deliverable</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Add segment sequence tracking</td>
+<td>UUID per segment, trace capture→VAD→ASR→MT→Output</td>
+</tr>
+<tr>
+<td>Add queue depth monitoring</td>
+<td>Alert if queue &gt; 3 segments</td>
+</tr>
+<tr>
+<td>Add comprehensive error logging</td>
+<td>No silent failures anywhere</td>
+</tr>
+<tr>
+<td>Stress test: 10-min continuous speech</td>
+<td>Verify <strong>0% sentence loss</strong></td>
+</tr>
+<tr>
+<td>Fix root cause</td>
+<td>Queue overflow? VAD threshold? Race condition?</td>
+</tr>
+<tr>
+<td>Platform-specific testing</td>
+<td>Intel i7: OpenVINO INT8, Mac M1: CoreML optimization</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Week 1</strong>: Metrics + Adaptive Config (TTFT/Lag, segment=4s, adaptive controller)<br>
+<strong>Week 2</strong>: StreamingASR (cumulative context, INT8 drafts) + StreamingTranslator (semantic gating)<br>
+<strong>Week 3</strong>: Diff-based UI (smooth transitions, stability indicators) + Integration</p>
+<h3 id="107-what-was-rejected">10.7 What Was Rejected</h3>
+<table>
+<thead>
+<tr>
+<th>Approach</th>
+<th>Reason</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Wait-k Translation</strong></td>
+<td>MarianMT doesn't support streaming; fails for different word order languages</td>
+</tr>
+<tr>
+<td><strong>AsyncIO Rewrite</strong></td>
+<td>Over-engineering; ThreadPool performs equally for ML tasks</td>
+</tr>
+<tr>
+<td><strong>True Streaming ASR</strong></td>
+<td>Requires model change (RNN-T); too much effort</td>
+</tr>
+<tr>
+<td><strong>Draft Without Translation</strong></td>
+<td>Provides &quot;listening feedback&quot; but not &quot;meaning&quot; - insufficient UX</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<p><em>Document written for AI analysis and improvement planning.</em><br>
+<em>Updated 2026-02-19 with REVISED streaming solution (partial translation, semantic gating, INT8 optimization).</em></p>
+
+</body>
+</html>

@@ -1,10 +1,13 @@
 """Pivot translation for unsupported language pairs."""
 
 import time
+import logging
 from typing import Optional, List
 
 from .base import BaseTranslator, TranslationResult
 from .marian import MarianTranslator
+
+logger = logging.getLogger(__name__)
 
 
 class PivotTranslator(BaseTranslator):
@@ -126,39 +129,58 @@ class PivotTranslator(BaseTranslator):
         """
         import re
         
-        # Remove sound effect annotations
-        sound_effects = [
-            r'\(Laughter\)',
-            r'\(Applause\)',
-            r'\(Music\)',
-            r'\(Singing\)',
-            r'\(Cheering\)',
-            r'\(Booing\)',
-            r'\(Cough\)',
-            r'\(Sigh\)',
-            r'\(Gasp\)',
-            r'\(Pause\)',
+        if not text:
+            return text
+        
+        original = text
+        
+        # Remove sound effect annotations (case-insensitive, with optional content inside)
+        # Matches: (Laughter), (laughter), (Applause), (Music), etc.
+        sound_effect_patterns = [
+            r'\([\s]*Laughter[\s]*\)',
+            r'\([\s]*Applause[\s]*\)',
+            r'\([\s]*Music[\s]*\)',
+            r'\([\s]*Singing[\s]*\)',
+            r'\([\s]*Cheering[\s]*\)',
+            r'\([\s]*Booing[\s]*\)',
+            r'\([\s]*Cough[\s]*\)',
+            r'\([\s]*Sigh[\s]*\)',
+            r'\([\s]*Gasp[\s]*\)',
+            r'\([\s]*Pause[\s]*\)',
+            r'\([\s]*Bell[\s]*\)',
+            r'\([\s]*Thud[\s]*\)',
+            r'\([\s]*Click[\s]*\)',
+            r'\([\s]*Ring[\s]*\)',
         ]
         
         result = text
-        for pattern in sound_effects:
+        for pattern in sound_effect_patterns:
             result = re.sub(pattern, '', result, flags=re.IGNORECASE)
         
-        # Clean up multiple spaces
+        # Also remove any generic parenthetical sound descriptions
+        # This catches patterns like (sound), (noise), etc.
+        result = re.sub(r'\([\s]*[A-Z][a-z]+[\s]*\)', '', result)
+        
+        # Clean up whitespace
         result = re.sub(r'\s+', ' ', result)
         
-        # Clean up excessive punctuation
-        result = re.sub(r'\.{3,}', '...', result)  # More than 3 dots -> 3 dots
-        result = re.sub(r',{2,}', ',', result)     # Multiple commas -> one
+        # Clean up punctuation artifacts
+        result = re.sub(r'\.{3,}', '...', result)  # Normalize ellipsis
+        result = re.sub(r',{2,}', ',', result)      # Multiple commas -> one
+        result = re.sub(r'!{2,}', '!', result)      # Multiple exclamation -> one
+        result = re.sub(r'\?{2,}', '?', result)     # Multiple question -> one
         
-        # Strip whitespace
+        # Remove leading/trailing punctuation artifacts
+        result = result.strip(' .,!?;:')
+        
+        # Final whitespace cleanup
         result = result.strip()
         
-        # If result is empty after filtering, return original (with warning)
-        if not result or result == '...':
-            # Remove just the parentheses but keep the text
-            result = re.sub(r'[\(\)]', '', text).strip()
+        # Log if we filtered something
+        if result != original:
+            logger.debug(f"Pivot filtered artifact: '{original[:60]}...' -> '{result[:60]}...'")
         
+        # Return result even if empty (empty means content was only artifacts)
         return result
     
     def translate(

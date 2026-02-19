@@ -16,9 +16,9 @@ class PostProcessConfig:
     
     # Hallucination detection
     enable_hallucination_filter: bool = True
-    repetition_threshold: int = 4  # Pattern repeats 4+ times = hallucination
-    repetition_ratio: float = 0.5  # 50% of text is repetition
-    min_diversity_ratio: float = 0.3  # Less than 30% unique = hallucination
+    repetition_threshold: int = 6  # RELAXED: Pattern repeats 6+ times = hallucination (was 4)
+    repetition_ratio: float = 0.6  # RELAXED: 60% of text is repetition (was 50%)
+    min_diversity_ratio: float = 0.12  # RELAXED: Only catch extreme repetition (was 30%, then 20%, still too aggressive)
     
     # Confidence filtering
     min_confidence: float = 0.3  # Skip segments below this confidence
@@ -234,15 +234,31 @@ class ASRPostProcessor:
             return {"is_hallucination": False}
         
         # Pattern 1: Character repetition (4+ same chars)
+        # NOTE: Disabled for CJK languages (Chinese, Japanese, Korean)
+        # CJK naturally has character repetition within words (e.g., 貓屎,妈妈)
+        # Only check for alphabetic scripts where repetition indicates hallucination
         from collections import Counter
-        char_counts = Counter(text)
-        most_common_char, count = char_counts.most_common(1)[0]
-        if count >= 4 and count / len(text) > 0.3:
-            return {
-                "is_hallucination": True,
-                "pattern": f"char_repeat:{most_common_char}",
-                "reason": f"Character '{most_common_char}' repeats {count} times ({count/len(text):.1%})"
-            }
+        import unicodedata
+        
+        # Check if text is primarily CJK
+        def is_cjk(char):
+            return '\u4e00' <= char <= '\u9fff' or '\u3040' <= char <= '\u309f' or '\uac00' <= char <= '\ud7af'
+        
+        cjk_chars = sum(1 for c in text if is_cjk(c))
+        total_chars = len([c for c in text if not c.isspace()])
+        is_primarily_cjk = cjk_chars / total_chars > 0.5 if total_chars > 0 else False
+        
+        if not is_primarily_cjk:
+            # Only check character repetition for non-CJK text
+            char_counts = Counter(c for c in text if c.isalpha())
+            if char_counts:
+                most_common_char, count = char_counts.most_common(1)[0]
+                if count >= 4 and count / len(text) > 0.35:  # Increased threshold from 0.3 to 0.35
+                    return {
+                        "is_hallucination": True,
+                        "pattern": f"char_repeat:{most_common_char}",
+                        "reason": f"Character '{most_common_char}' repeats {count} times ({count/len(text):.1%})"
+                    }
         
         # Pattern 2: Sequence repetition (3+ same sequence)
         for seq_len in range(2, min(21, len(text)//3 + 1)):
@@ -262,16 +278,24 @@ class ASRPostProcessor:
                         "reason": f"Sequence '{pattern}' repeats {count} times"
                     }
         
-        # Pattern 3: Low diversity in long text
-        if len(text) > 50:
-            unique_chars = len(set(text))
-            diversity = unique_chars / len(text)
-            if diversity < self.config.min_diversity_ratio:
-                return {
-                    "is_hallucination": True,
-                    "pattern": "low_diversity",
-                    "reason": f"Low character diversity ({diversity:.1%})"
-                }
+        # Pattern 3: Low diversity in long text (DISABLED for natural speech)
+        # Note: Character diversity is not a good metric for speech because:
+        # - Common words (the, and, of) have repeated characters
+        # - Filler words (um, uh) lower diversity
+        # - Natural speech has repetition
+        # 
+        # Only check word-level diversity for very repetitive content
+        if len(text) > 100:  # Only check very long text
+            words = text.lower().split()
+            if len(words) > 10:
+                unique_words = len(set(words))
+                word_diversity = unique_words / len(words)
+                if word_diversity < 0.3:  # Same word repeated >70%
+                    return {
+                        "is_hallucination": True,
+                        "pattern": "low_word_diversity",
+                        "reason": f"Low word diversity ({word_diversity:.1%})"
+                    }
         
         # Pattern 4: Excessive word repetition
         words = text.split()

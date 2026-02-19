@@ -502,3 +502,178 @@ if __name__ == "__main__":
     audio = AudioPlatformHelper()
     print(f"  Sample Rate: {audio.get_recommended_sample_rate()}")
     print(f"  Buffer Size: {audio.get_recommended_buffer_size()}")
+
+
+# =============================================================================
+# ML Device Detection
+# =============================================================================
+
+def get_optimal_ml_device() -> str:
+    """
+    Detect and return the optimal ML device for the current platform.
+    
+    Returns:
+        str: Device type - "cuda", "mps", or "cpu"
+        
+    Priority:
+        1. CUDA (NVIDIA GPU) - fastest, available on Windows/Linux
+        2. MPS (Apple Silicon) - optimized for M1/M2/M3 Macs
+        3. CPU - fallback for all platforms
+    """
+    try:
+        import torch
+        
+        # Priority 1: CUDA (NVIDIA GPU)
+        if torch.cuda.is_available():
+            logger.info(f"CUDA available: {torch.cuda.get_device_name(0)}")
+            return "cuda"
+        
+        # Priority 2: MPS (Apple Silicon)
+        if hasattr(torch.backends, 'mps') and torch.backends.mps.is_available():
+            # Verify we're actually on Apple Silicon
+            platform_type = detect_platform()
+            if platform_type == PlatformType.MACOS_APPLE_SILICON:
+                logger.info("MPS (Metal Performance Shaders) available on Apple Silicon")
+                return "mps"
+            else:
+                logger.debug("MPS available but not on Apple Silicon, using CPU")
+        
+        # Priority 3: CPU (fallback)
+        logger.info("No GPU acceleration available, using CPU")
+        return "cpu"
+        
+    except ImportError:
+        logger.warning("PyTorch not installed, defaulting to CPU")
+        return "cpu"
+
+
+def get_ml_device_info() -> Dict[str, Any]:
+    """
+    Get detailed information about the ML device configuration.
+    
+    Returns:
+        Dict with device info including:
+        - device: str (cuda/mps/cpu)
+        - name: str (device name)
+        - memory_gb: float (available memory in GB)
+        - platform: PlatformType
+    """
+    device = get_optimal_ml_device()
+    info = {
+        "device": device,
+        "platform": detect_platform(),
+        "name": "CPU",
+        "memory_gb": None,
+        "compute_type": "int8"  # default
+    }
+    
+    try:
+        import torch
+        
+        if device == "cuda":
+            info["name"] = torch.cuda.get_device_name(0)
+            info["memory_gb"] = torch.cuda.get_device_properties(0).total_memory / (1024**3)
+            info["compute_type"] = "float16"  # CUDA supports FP16 well
+            
+        elif device == "mps":
+            info["name"] = "Apple Silicon MPS"
+            # MPS doesn't expose memory easily, estimate based on system
+            import psutil
+            info["memory_gb"] = psutil.virtual_memory().total / (1024**3)
+            info["compute_type"] = "float16"  # MPS supports FP16
+            
+        else:  # CPU
+            info["compute_type"] = "int8"  # INT8 for CPU efficiency
+            
+    except ImportError:
+        pass
+    
+    return info
+
+
+def configure_asr_for_platform(model_size: str = "base") -> Dict[str, Any]:
+    """
+    Get optimal ASR configuration for the current platform.
+    
+    Args:
+        model_size: Model size (tiny, base, small, medium, large)
+        
+    Returns:
+        Dict with device, compute_type, and cpu_threads
+    """
+    device_info = get_ml_device_info()
+    platform = detect_platform()
+    
+    config = {
+        "device": device_info["device"],
+        "compute_type": device_info["compute_type"],
+        "cpu_threads": 4,  # default
+    }
+    
+    # Platform-specific optimizations
+    if platform == PlatformType.MACOS_APPLE_SILICON:
+        # Apple Silicon - faster-whisper doesn't support MPS, use CPU with NEON
+        config["device"] = "cpu"
+        config["compute_type"] = "int8"
+        config["cpu_threads"] = 8  # Apple Silicon has efficiency cores
+        logger.info(f"ASR configured for Apple Silicon CPU (MPS not supported by faster-whisper): {model_size} model")
+            
+    elif platform == PlatformType.WINDOWS:
+        if config["device"] == "cuda":
+            config["compute_type"] = "float16"
+            config["cpu_threads"] = 4
+            logger.info(f"ASR configured for Windows CUDA: {model_size} model")
+        else:
+            config["device"] = "cpu"
+            config["compute_type"] = "int8"
+            config["cpu_threads"] = min(8, os.cpu_count() or 4)
+            logger.info(f"ASR configured for Windows CPU: {model_size} model")
+            
+    elif platform == PlatformType.MACOS_INTEL:
+        # Intel Mac - CPU only
+        config["device"] = "cpu"
+        config["compute_type"] = "int8"
+        config["cpu_threads"] = 4
+        logger.info(f"ASR configured for Intel Mac: {model_size} model")
+        
+    else:  # Linux and others
+        if config["device"] == "cuda":
+            config["compute_type"] = "float16"
+        else:
+            config["device"] = "cpu"
+            config["compute_type"] = "int8"
+        config["cpu_threads"] = min(8, os.cpu_count() or 4)
+        logger.info(f"ASR configured for {platform.value}: {model_size} model")
+    
+    return config
+
+
+# Update the main block if run directly
+if __name__ == "__main__":
+    print("Platform Detection Test")
+    print("=" * 50)
+    
+    platform_type = detect_platform()
+    print(f"Platform: {platform_type.value}")
+    
+    info = get_platform_info()
+    print(f"System: {info.system}")
+    print(f"Machine: {info.machine}")
+    print(f"Is Apple Silicon: {info.is_apple_silicon}")
+    
+    # ML Device detection
+    print("\nML Device Configuration:")
+    ml_device = get_optimal_ml_device()
+    print(f"  Optimal Device: {ml_device}")
+    
+    ml_info = get_ml_device_info()
+    print(f"  Device Name: {ml_info.get('name', 'N/A')}")
+    print(f"  Memory: {ml_info.get('memory_gb', 'N/A')} GB")
+    print(f"  Compute Type: {ml_info.get('compute_type', 'N/A')}")
+    
+    # ASR Configuration
+    print("\nASR Configuration:")
+    asr_config = configure_asr_for_platform("base")
+    print(f"  Device: {asr_config['device']}")
+    print(f"  Compute Type: {asr_config['compute_type']}")
+    print(f"  CPU Threads: {asr_config['cpu_threads']}")

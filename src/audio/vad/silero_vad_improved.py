@@ -101,7 +101,7 @@ class ImprovedSileroVADProcessor:
         min_speech_duration_ms: int = 250,
         min_silence_duration_ms: int = 300,  # Increased from 100ms for better sentence boundaries
         speech_pad_ms: int = 500,  # Increased from 30ms for sentence beginning capture
-        max_segment_duration_ms: int = 8000,  # 8 seconds max per segment
+        max_segment_duration_ms: int = 20000,  # 20 seconds max per segment (for long sentences)
         use_onnx: bool = False,
         enable_pause_detection: bool = True,
         pause_threshold_ms: int = 800,  # Pause to consider as sentence boundary
@@ -462,6 +462,6 @@ def create_vad_for_microphone() -> ImprovedSileroVADProcessor:
         min_speech_duration_ms=250,
         min_silence_duration_ms=300,
         speech_pad_ms=500,  # Capture sentence beginnings
-        max_segment_duration_ms=4000,  # Phase 1.1: Reduced from 8000ms
+        max_segment_duration_ms=12000,  # 12s for documentary/news with long sentences
         pause_threshold_ms=800,
     )

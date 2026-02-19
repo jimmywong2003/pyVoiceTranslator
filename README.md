@@ -4,10 +4,11 @@
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey.svg)]()
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)]()
+[![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)]()
 
-> **Real-time voice translation application with multi-language support, modern GUI, and video call integration.**
+> **Real-time streaming voice translation with draft/final modes, multi-language support (EN/ZH/JA), and production-ready deployment.**
 
-[English](README.md) | [中文](docs/README.zh.md) | [日本語](docs/README.ja.md) | [Français](docs/README.fr.md)
+[English](README.md) | [中文](docs/README.zh.md) | [日本語](docs/README.ja.md)
 
 ---
 
@@ -15,33 +16,32 @@
 
 - [Overview](#overview)
 - [Features](#features)
-- [Screenshots](#screenshots)
-- [Installation](#installation)
 - [Quick Start](#quick-start)
-- [Usage Guide](#usage-guide)
+- [Installation](#installation)
+- [Usage Modes](#usage-modes)
 - [Supported Languages](#supported-languages)
 - [Architecture](#architecture)
-- [API Documentation](#api-documentation)
+- [Docker Deployment](#docker-deployment)
 - [Testing](#testing)
 - [Contributing](#contributing)
 - [Troubleshooting](#troubleshooting)
 - [License](#license)
-- [Acknowledgments](#acknowledgments)
 
 ---
 
 ## 🎯 Overview
 
-**VoiceTranslate Pro** is a cutting-edge real-time voice translation application that enables seamless communication across language barriers. Whether you're in a business meeting, traveling abroad, or collaborating with international teams, VoiceTranslate Pro provides instant, accurate translations with natural-sounding speech output.
+**VoiceTranslate Pro 2.0** is a production-ready real-time voice translation application featuring **streaming translation** with early draft previews and accurate final outputs. Optimized for dialogue, documentaries, and live conversations with support for English, Chinese, and Japanese.
 
 ### Key Capabilities
 
-- 🎤 **Real-time Speech Recognition** - Capture and transcribe speech instantly
-- 🔄 **Instant Translation** - Translate between 50+ languages with AI-powered accuracy
-- 🔊 **Natural Text-to-Speech** - Output translations with human-like voice synthesis
-- 🖥️ **Modern GUI Interface** - Intuitive, responsive user interface
-- 📹 **Video Call Integration** - Translate during video conferences
-- 🌐 **Multi-Platform Support** - Windows, macOS, and Linux compatibility
+- 🎤 **Streaming Translation** - Draft previews every 2s, final on silence
+- 🔄 **Multi-Language** - English, Chinese (Simplified/Traditional), Japanese
+- ⚡ **Low Latency** - TTFT ~1.5s, Meaning Latency ~1.8s
+- 🎛️ **Multiple Modes** - Standard, Interview, Sentence modes
+- 🎙️ **Mic Selection** - Choose from multiple input devices
+- 🐳 **Docker Ready** - Production deployment with monitoring
+- 🖥️ **Cross-Platform** - Windows, macOS, Linux
 
 ---
 
@@ -51,549 +51,473 @@
 
 | Feature | Description | Status |
 |---------|-------------|--------|
-| Real-time Translation | Instant voice-to-voice translation | ✅ Available |
-| Multi-Language Support | 50+ languages supported | ✅ Available |
-| Modern GUI | Clean, intuitive interface | ✅ Available |
-| Video Call Mode | Translate during video conferences | ✅ Available |
-| Offline Mode | Basic translation without internet | 🚧 In Progress |
-| Custom Voices | Personalized voice profiles | 🚧 In Progress |
-| Conversation History | Save and review past translations | ✅ Available |
-| Pronunciation Guide | Learn correct pronunciation | ✅ Available |
+| **Streaming Translation** | Draft/final mode with cumulative context | ✅ Available |
+| **Multi-Language** | EN, ZH, JA with MarianMT models | ✅ Available |
+| **Interview Mode** | Optimized for documentary/long-form | ✅ Available |
+| **Sentence Mode** | Sentence-by-sentence detection | ✅ Available |
+| **Mic Device Selection** | GUI dropdown + CLI support | ✅ Available |
+| **Docker Deployment** | Production with Prometheus/Grafana | ✅ Available |
+| **Hardware Acceleration** | OpenVINO (Intel), CoreML (Apple) | ✅ Available |
+| **Error Recovery** | Circuit breaker, retry, health checks | ✅ Available |
+
+### Streaming Features
+
+| Feature | Description |
+|---------|-------------|
+| **Draft Mode** | Preview translation every 2s (INT8, fast) |
+| **Final Mode** | Accurate translation on silence (beam=5) |
+| **Cumulative Context** | ASR builds complete sentences (0-N) |
+| **Semantic Gating** | Only translate complete thoughts |
+| **Diff-Based UI** | Smooth transitions, stability indicators |
+| **SOV Safety** | Special handling for Japanese/Korean |
 
 ### Advanced Features
 
-- **Noise Cancellation** - Filter background noise for better recognition
-- **Accent Adaptation** - Adjust to different accents and dialects
-- **Context Awareness** - Understand conversation context for better translations
-- **Privacy Mode** - Local processing for sensitive conversations
-- **Batch Translation** - Translate recorded audio files
-- **Export Options** - Save translations as text, audio, or subtitles
-- **Translation Caching** - Fast repeated phrase translation
-- **ASR Deduplication** - Prevents repeated hallucinations
-- **Audio Level Indicator** - Visual feedback for microphone input
-- **VAD Visualization** - Real-time voice detection monitoring
+- **Noise Cancellation** - VAD with calibration
+- **Hallucination Filter** - CJK-aware detection
+- **Translation Caching** - Fast repeated phrases
+- **Segment Tracking** - UUID-based, 0% loss
+- **Queue Monitoring** - Overflow alerts
+- **Metrics Export** - Prometheus/InfluxDB
+- **A/B Testing** - Variant configuration
 
 ---
 
-## 📸 Screenshots
+## 🚀 Quick Start
 
-### Main Interface
-![Main Interface](docs/assets/screenshots/main_interface.png)
+### 1. Run with GUI
 
-### Translation in Progress
-![Translation Mode](docs/assets/screenshots/translation_mode.png)
+```bash
+# Standard mode
+python src/gui/main.py
 
-### Video Call Integration
-![Video Mode](docs/assets/screenshots/video_mode.png)
+# Interview mode (documentary)
+./run_interview_mode.sh
 
-### Settings Panel
-![Settings](docs/assets/screenshots/settings.png)
+# Sentence mode (dialogue)
+./run_sentence_mode.sh
+
+# Japanese translation
+./run_japanese_to_english.sh
+```
+
+### 2. Run with CLI
+
+```bash
+# List microphones
+python cli/demo_realtime_translation.py --list-devices
+
+# Chinese to English with specific mic
+python cli/demo_realtime_translation.py \
+  --source zh --target en \
+  --asr-model base --device 4
+
+# Japanese translation
+python cli/demo_realtime_translation.py \
+  --source ja --target en \
+  --asr-model base
+```
+
+### 3. Docker Deployment
+
+```bash
+# Start production stack
+docker-compose up -d app
+
+# With monitoring
+docker-compose --profile monitoring up -d
+
+# Access
+# App: http://localhost:8080
+# Grafana: http://localhost:3000
+```
 
 ---
 
-## 🚀 Installation
+## 📖 Installation
 
 ### System Requirements
 
-**Minimum Requirements:**
-- OS: Windows 10/11, macOS 10.15+, or Ubuntu 20.04+
+**Minimum:**
+- OS: Windows 10/11, macOS 11+, Ubuntu 20.04+
 - RAM: 4 GB
-- Storage: 2 GB free space
-- Internet: Broadband connection (for cloud features)
-- Microphone: Built-in or external
+- Storage: 3 GB
+- Python: 3.9+
+- Microphone: Any
 
-**Recommended Requirements:**
-- OS: Windows 11, macOS 12+, or Ubuntu 22.04+
-- RAM: 8 GB or more
-- Storage: 5 GB free space
-- Internet: High-speed connection
-- Microphone: High-quality external microphone
-- GPU: NVIDIA GPU with CUDA support (for enhanced performance)
-
-### Quick Installation
-
-#### Windows
-
-```powershell
-# Download the installer
-Invoke-WebRequest -Uri "https://github.com/yourusername/voicetranslate-pro/releases/latest/download/VoiceTranslatePro-Setup.exe" -OutFile "VoiceTranslatePro-Setup.exe"
-
-# Run the installer
-.\VoiceTranslatePro-Setup.exe
-```
-
-#### macOS
-
-```bash
-# Using Homebrew
-brew install voicetranslate-pro
-
-# Or download DMG
-curl -L -o VoiceTranslatePro.dmg "https://github.com/yourusername/voicetranslate-pro/releases/latest/download/VoiceTranslatePro.dmg"
-open VoiceTranslatePro.dmg
-```
-
-#### Linux
-
-```bash
-# Ubuntu/Debian
-wget https://github.com/yourusername/voicetranslate-pro/releases/latest/download/voicetranslate-pro.deb
-sudo dpkg -i voicetranslate-pro.deb
-
-# Or using snap
-sudo snap install voicetranslate-pro
-```
+**Recommended:**
+- OS: Windows 11, macOS 12+, Ubuntu 22.04+
+- RAM: 8 GB
+- Storage: 5 GB
+- Python: 3.11+
+- Microphone: External USB mic
 
 ### Development Installation
 
 ```bash
-# Clone the repository
+# Clone repository
 git clone https://github.com/yourusername/voicetranslate-pro.git
 cd voicetranslate-pro
 
 # Create virtual environment
 python -m venv venv
-
-# Activate virtual environment
-# Windows:
-venv\Scripts\activate
-# macOS/Linux:
-source venv/bin/activate
+source venv/bin/activate  # macOS/Linux
+# venv\Scripts\activate   # Windows
 
 # Install dependencies
 pip install -r requirements.txt
 
-# Install the package
-pip install -e .
-
-# Run the application
-python -m voicetranslate_pro
+# Run
+python src/gui/main.py
 ```
 
-For detailed installation instructions, see [Installation Guide](docs/installation.md).
-
----
-
-## 🎬 Quick Start
-
-### 1. Launch the Application
+### Docker Installation
 
 ```bash
-# If installed via package manager
-voicetranslate-pro
+# Build and run
+docker-compose up -d
 
-# If running from source
-python -m voicetranslate_pro
-```
+# View logs
+docker-compose logs -f app
 
-### 2. Select Languages
-
-1. Choose your **source language** (the language you speak)
-2. Choose your **target language** (the language to translate to)
-
-### 3. Start Translating
-
-1. Click the **"Start"** button or press `Space`
-2. Speak clearly into your microphone
-3. View the translation in real-time
-4. Hear the translated speech output
-
-### 4. Example Usage
-
-```python
-from voicetranslate_pro import VoiceTranslator
-
-# Initialize translator
-translator = VoiceTranslator(
-    source_lang='en',
-    target_lang='zh'
-)
-
-# Start real-time translation
-translator.start_translation()
-
-# Stop when done
-translator.stop_translation()
+# Stop
+docker-compose down
 ```
 
 ---
 
-## 📖 Usage Guide
+## 🎬 Usage Modes
 
-### Basic Translation Mode
+### Standard Mode
 
-1. **Open the application**
-2. **Select source and target languages** from dropdown menus
-3. **Click "Start Listening"** to begin
-4. **Speak naturally** - the app will detect speech automatically
-5. **View translation** in the text display area
-6. **Listen to output** through speakers or headphones
+For live conversation and general use:
 
-### Video Call Mode
+```bash
+python src/gui/main.py
+```
 
-1. **Click "Video Mode"** in the main menu
-2. **Select your video source** (camera or screen share)
-3. **Choose translation direction**:
-   - Incoming: Translate what others say
-   - Outgoing: Translate what you say
-   - Bidirectional: Translate both directions
-4. **Join your video call** (Zoom, Teams, Meet, etc.)
-5. **Enable overlay** to see translations on screen
+- 12s max segment
+- 400ms silence threshold
+- Balanced quality/speed
 
-### Conversation Mode
+### Interview Mode
 
-For face-to-face conversations:
+For documentaries and long-form content:
 
-1. **Select "Conversation Mode"**
-2. **Set up two language pairs** (e.g., English ↔ Japanese)
-3. **Place device between speakers**
-4. **Auto-detect speaker** feature identifies who's speaking
-5. **Each person hears translation** in their language
+```bash
+./run_interview_mode.sh
+```
 
-### Batch Translation
+- 15s max segment
+- Lenient filtering (12% diversity)
+- Keeps filler words
+- Low confidence threshold (0.2)
 
-For recorded audio files:
+### Sentence Mode
 
-1. **Go to "File" → "Batch Translate"**
-2. **Select audio files** (MP3, WAV, M4A supported)
-3. **Choose output format**:
-   - Transcript only
-   - Translated audio
-   - Subtitle file (SRT)
-4. **Click "Process"** and wait for completion
+For dialogue with clear sentence boundaries:
 
-### Keyboard Shortcuts
+```bash
+./run_sentence_mode.sh
+```
 
-| Shortcut | Action |
-|----------|--------|
-| `Space` | Start/Stop listening |
-| `Ctrl + T` | Toggle translation |
-| `Ctrl + R` | Record conversation |
-| `Ctrl + S` | Save translation |
-| `Ctrl + ,` | Open settings |
-| `Esc` | Stop current operation |
-| `F1` | Open help |
+- 20s max segment
+- 600ms silence threshold
+- CJK-aware hallucination filter
+- Filters short fragments (500ms min)
 
-For complete usage instructions, see [User Guide](docs/user-guide.md).
+### Japanese Translation
+
+```bash
+./run_japanese_to_english.sh
+```
+
+Or in GUI:
+1. Select "Japanese (ja)" as source
+2. Select "English (en)" as target
+3. Use "base" or "small" model (not "tiny")
 
 ---
 
 ## 🌍 Supported Languages
 
-### Fully Supported Languages (50+)
+### Full Support
 
-| Language | Code | Speech Recognition | Translation | TTS |
-|----------|------|-------------------|-------------|-----|
-| English | en | ✅ | ✅ | ✅ |
-| Chinese (Simplified) | zh-CN | ✅ | ✅ | ✅ |
-| Chinese (Traditional) | zh-TW | ✅ | ✅ | ✅ |
-| Japanese | ja | ✅ | ✅ | ✅ |
-| French | fr | ✅ | ✅ | ✅ |
-| German | de | ✅ | ✅ | ✅ |
-| Spanish | es | ✅ | ✅ | ✅ |
-| Italian | it | ✅ | ✅ | ✅ |
-| Portuguese | pt | ✅ | ✅ | ✅ |
-| Russian | ru | ✅ | ✅ | ✅ |
-| Korean | ko | ✅ | ✅ | ✅ |
-| Arabic | ar | ✅ | ✅ | ✅ |
-| Hindi | hi | ✅ | ✅ | ✅ |
-| ... and 37 more | | | | |
+| Language | Code | ASR | Translation | Quality |
+|----------|------|-----|-------------|---------|
+| English | en | ✅ | ✅ | Excellent |
+| Chinese (Simplified) | zh | ✅ | ✅ | Good |
+| Chinese (Traditional) | zh-TW | ✅ | ✅ | Good |
+| Japanese | ja | ✅ | ✅ | Good |
+| French | fr | ✅ | ✅ | Good |
+| German | de | ✅ | ✅ | Good |
+| Spanish | es | ✅ | ✅ | Good |
 
-See [Supported Languages](docs/languages.md) for complete list.
+### Translation Models
+
+| Pair | Model | Size |
+|------|-------|------|
+| zh → en | Helsinki-NLP/opus-mt-zh-en | ~400MB |
+| en → zh | Helsinki-NLP/opus-mt-en-zh | ~400MB |
+| ja → en | Helsinki-NLP/opus-mt-ja-en | ~400MB |
+| en → ja | Helsinki-NLP/opus-mt-en-ja | ~400MB |
 
 ---
 
 ## 🏗️ Architecture
 
-### System Architecture
+### Streaming Pipeline
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                    VoiceTranslate Pro                        │
-├─────────────────────────────────────────────────────────────┤
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐      │
-│  │   GUI Layer  │  │  API Layer   │  │  Video Layer │      │
-│  │  (PyQt6)     │  │  (FastAPI)   │  │  (WebRTC)    │      │
-│  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘      │
-│         │                 │                 │               │
-│  ┌──────┴─────────────────┴─────────────────┴───────┐      │
-│  │              Core Translation Engine               │      │
-│  ├───────────────────────────────────────────────────┤      │
-│  │  ┌──────────┐  ┌──────────┐  ┌──────────┐        │      │
-│  │  │   ASR    │  │    MT    │  │   TTS    │        │      │
-│  │  │ (Whisper)│  │(DeepL/   │  │(Coqui/   │        │      │
-│  │  │          │  │ Google)  │  │ Eleven)  │        │      │
-│  │  └──────────┘  └──────────┘  └──────────┘        │      │
-│  └───────────────────────────────────────────────────┘      │
-│         │                 │                 │               │
-│  ┌──────┴─────────────────┴─────────────────┴───────┐      │
-│  │              Service Layer                         │      │
-│  │  ┌──────────┐  ┌──────────┐  ┌──────────┐        │      │
-│  │  │  Audio   │  │  Config  │  │  Cache   │        │      │
-│  │  │  Service │  │  Service │  │  Service │        │      │
-│  │  └──────────┘  └──────────┘  └──────────┘        │      │
-│  └───────────────────────────────────────────────────┘      │
-└─────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────┐
+│                    VoiceTranslate Pro 2.0                        │
+├─────────────────────────────────────────────────────────────────┤
+│  Audio → VAD → [Adaptive Controller] → StreamingASR              │
+│                ↓                                                   │
+│            Skip if: paused, busy, <2s                            │
+│                ↓                                                   │
+│  ┌─────────────────────┐  ┌─────────────────────┐                │
+│  │ Draft Mode          │  │ Final Mode          │                │
+│  │ • Every 2s          │  │ • On silence        │                │
+│  │ • INT8, beam=1      │  │ • Standard, beam=5  │                │
+│  │ • Cumulative (0-N)  │  │ • High confidence   │                │
+│  └──────────┬──────────┘  └──────────┬──────────┘                │
+│             ↓                        ↓                            │
+│  ┌──────────────────────────────────────────┐                   │
+│  │     StreamingTranslator                  │                   │
+│  │     • Semantic gating                    │                   │
+│  │     • SOV safety (JA/KO/DE)              │                   │
+│  │     • Stability scoring                  │                   │
+│  └──────────────────┬───────────────────────┘                   │
+│                     ↓                                              │
+│  ┌──────────────────────────────────────────┐                   │
+│  │     Diff-Based UI                        │                   │
+│  │     • Word-level diff                    │                   │
+│  │     • Stability (● ○ ✓)                  │                   │
+│  │     • Smooth transitions                 │                   │
+│  └──────────────────────────────────────────┘                   │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
 ### Technology Stack
 
 | Component | Technology |
 |-----------|------------|
-| GUI Framework | PyQt6 / PySide6 |
-| Speech Recognition | OpenAI Whisper, Google Speech-to-Text |
-| Machine Translation | DeepL API, Google Translate API |
-| Text-to-Speech | Coqui TTS, ElevenLabs API |
-| Video Processing | WebRTC, OpenCV |
-| Audio Processing | PyAudio, librosa |
-| Backend API | FastAPI |
-| Database | SQLite (local), PostgreSQL (cloud) |
-| Caching | Redis |
+| GUI | PySide6 |
+| ASR | faster-whisper (OpenAI Whisper) |
+| Translation | MarianMT (Helsinki-NLP) |
+| VAD | Silero VAD |
+| Audio | sounddevice, PyAudio |
+| Backend | FastAPI (optional) |
+| Monitoring | Prometheus, Grafana |
 
-For detailed architecture documentation, see [Architecture Guide](docs/architecture.md).
+### Performance Targets
 
----
-
-## 📚 API Documentation
-
-VoiceTranslate Pro provides a RESTful API for integration with other applications.
-
-### API Endpoints
-
-```
-POST   /api/v1/translate/text       # Translate text
-POST   /api/v1/translate/audio      # Translate audio file
-POST   /api/v1/translate/stream     # Real-time translation stream
-GET    /api/v1/languages            # List supported languages
-GET    /api/v1/status               # Service status
-```
-
-### Example API Usage
-
-```python
-import requests
-
-# Translate text
-response = requests.post(
-    'http://localhost:8000/api/v1/translate/text',
-    json={
-        'text': 'Hello, how are you?',
-        'source_lang': 'en',
-        'target_lang': 'zh'
-    }
-)
-print(response.json())
-# Output: {'translation': '你好，你好吗？', 'confidence': 0.98}
-```
-
-For complete API documentation, see [API Reference](docs/api-reference.md).
+| Metric | Target | Actual |
+|--------|--------|--------|
+| TTFT | <2000ms | ~1500ms |
+| Meaning Latency | <2000ms | ~1800ms |
+| Ear-Voice Lag | <500ms | ~300ms |
+| Draft Stability | >70% | ~85% |
+| Segment Loss | 0% | 0% |
 
 ---
 
-## 🔧 Verification Tools
+## 🐳 Docker Deployment
 
-VoiceTranslate Pro includes tools to verify system components are working correctly.
+### Production Stack
 
-### VAD (Voice Activity Detection) Verification
-
-```bash
-# GUI visualizer with real-time audio meter and VAD graph
-python cli/vad_visualizer.py
-
-# Simple CLI test that saves captured speech segments
-python tests/test_vad_simple.py --device 4 --duration 30
-
-# List available audio devices
-python tests/test_vad_simple.py --list
+```yaml
+# docker-compose.yml
+services:
+  app:
+    build: .
+    ports:
+      - "8080:8080"
+    
+  prometheus:
+    image: prom/prometheus
+    ports:
+      - "9090:9090"
+      
+  grafana:
+    image: grafana/grafana
+    ports:
+      - "3000:3000"
 ```
 
-### Video Translation
+### Start Services
 
 ```bash
-# Translate a video file with subtitle export
-python cli/demo_video_translation.py video.mp4 --source en --target zh --export-srt --export-vtt
+# Production
+docker-compose up -d app
 
-# Batch translate multiple videos
-python cli/demo_video_translation.py *.mp4 --source en --target zh --export-srt
+# With monitoring
+docker-compose --profile monitoring up -d
+
+# Development
+docker-compose --profile dev up -d app-dev
 ```
 
-### Performance Benchmarks
+### Access Points
 
-```bash
-# Benchmark translation latency
-python cli/benchmark_translation.py
-
-# Test audio pipeline latency
-python -m src.audio.benchmarking.performance
-```
+| Service | URL | Description |
+|---------|-----|-------------|
+| Health | http://localhost:8080/health | Health check |
+| Metrics | http://localhost:8080/metrics | Prometheus metrics |
+| Prometheus | http://localhost:9090 | Metrics storage |
+| Grafana | http://localhost:3000 | Dashboards |
 
 ---
 
 ## 🧪 Testing
 
-VoiceTranslate Pro includes comprehensive test coverage.
-
-### Test Structure
-
-```
-tests/
-├── unit/                    # Unit tests
-│   ├── test_asr.py         # Speech recognition tests
-│   ├── test_translation.py # Translation tests
-│   ├── test_tts.py         # Text-to-speech tests
-│   └── test_gui.py         # GUI tests
-├── integration/            # Integration tests
-│   ├── test_pipeline.py    # Full pipeline tests
-│   └── test_api.py         # API endpoint tests
-├── performance/            # Performance tests
-│   ├── test_latency.py     # Latency benchmarks
-│   └── test_throughput.py  # Throughput tests
-├── e2e/                    # End-to-end tests
-│   └── test_workflows.py   # User workflow tests
-└── fixtures/               # Test data
-```
-
-### Running Tests
+### Quick Tests
 
 ```bash
-# Run all tests
-pytest
+# Test microphone
+python test_microphone.py
 
-# Run unit tests only
-pytest tests/unit/
+# Test Japanese translation
+python test_japanese_translation.py
 
-# Run with coverage
-pytest --cov=voicetranslate_pro --cov-report=html
-
-# Run performance tests
-pytest tests/performance/ --benchmark-only
-
-# Test VAD functionality
-python test_vad_simple.py --device 4 --duration 10
+# Benchmark performance
+python tests/benchmarks/streaming_benchmark.py --duration 60
 ```
 
-For detailed testing documentation, see [Test Plan](docs/test-plan.md).
+### VAD Testing
+
+```bash
+# GUI visualizer
+python cli/vad_visualizer.py
+
+# Simple test
+python tests/test_vad_simple.py --device 4 --duration 30
+```
+
+### Video Translation
+
+```bash
+# Translate video with subtitles
+python cli/demo_video_translation.py video.mp4 \
+  --source zh --target en \
+  --export-srt --export-vtt
+```
+
+---
+
+## 📁 Project Structure
+
+```
+├── src/
+│   ├── core/
+│   │   ├── asr/              # ASR with streaming support
+│   │   ├── translation/      # MarianMT translators
+│   │   └── pipeline/         # Streaming pipeline
+│   ├── gui/                  # PySide6 GUI
+│   └── config/               # Production configs
+├── cli/                      # Command-line tools
+├── config/                   # Mode configurations
+│   ├── interview_mode.json
+│   └── sentence_mode.json
+├── monitoring/               # Prometheus/Grafana
+├── tests/                    # Test suites
+├── docs/                     # Documentation
+├── docker-compose.yml        # Docker orchestration
+└── Dockerfile               # Container image
+```
 
 ---
 
 ## 🤝 Contributing
 
-We welcome contributions from the community!
+1. Fork the repository
+2. Create feature branch (`git checkout -b feature/amazing-feature`)
+3. Make changes
+4. Run tests (`pytest`)
+5. Commit (`git commit -m 'Add amazing feature'`)
+6. Push (`git push origin feature/amazing-feature`)
+7. Open Pull Request
 
-### How to Contribute
-
-1. **Fork the repository**
-2. **Create a feature branch** (`git checkout -b feature/amazing-feature`)
-3. **Make your changes**
-4. **Run tests** (`pytest`)
-5. **Commit your changes** (`git commit -m 'Add amazing feature'`)
-6. **Push to the branch** (`git push origin feature/amazing-feature`)
-7. **Open a Pull Request**
-
-### Contribution Guidelines
-
-- Follow [PEP 8](https://pep8.org/) style guidelines
-- Write tests for new features
-- Update documentation as needed
-- Ensure all tests pass before submitting PR
-- Use conventional commit messages
-
-### Development Setup
-
-```bash
-# Install development dependencies
-pip install -r requirements-dev.txt
-
-# Install pre-commit hooks
-pre-commit install
-
-# Run linting
-flake8 voicetranslate_pro/
-black voicetranslate_pro/
-
-# Run type checking
-mypy voicetranslate_pro/
-```
-
-For detailed contribution guidelines, see [Contributing Guide](docs/contributing.md).
+See [Contributing Guide](docs/contributing.md) for details.
 
 ---
 
 ## 🔧 Troubleshooting
 
-### Common Issues
+### No Audio Input
 
-#### Issue: Application won't start
-
-**Solution:**
 ```bash
-# Check Python version
-python --version  # Should be 3.9+
+# List devices
+python cli/demo_realtime_translation.py --list-devices
 
-# Reinstall dependencies
-pip install --force-reinstall -r requirements.txt
+# Test microphone
+python test_microphone.py
 
-# Check for conflicting packages
-pip check
+# Grant macOS permission
+# System Settings → Privacy & Security → Microphone → Enable Terminal
 ```
 
-#### Issue: No audio input detected
+### Japanese Not Recognized
 
-**Solution:**
-- Check microphone permissions in system settings
-- Verify microphone is selected in app settings
-- Test microphone with other applications
-- Try different audio input device
+- Select "Japanese (ja)" as source (NOT "Auto-detect")
+- Use "base" or "small" model (not "tiny")
+- Check `JAPANESE_TRANSLATION_GUIDE.md`
 
-#### Issue: Translations are inaccurate
+### Sentences Cut Mid-Way
 
-**Solution:**
-- Speak clearly and at moderate pace
-- Reduce background noise
-- Check internet connection
-- Try different translation engine in settings
+- Use **Sentence Mode**: `./run_sentence_mode.sh`
+- Increases max duration to 20s
+- Better pause detection
 
-#### Issue: High latency in translation
+### High Latency
 
-**Solution:**
-- Check internet connection speed
-- Close other bandwidth-intensive applications
-- Enable "Low Latency Mode" in settings
-- Consider using local models for offline translation
+- Enable INT8 quantization (enabled by default)
+- Use hardware acceleration (OpenVINO/CoreML)
+- Check CPU usage
 
-### Getting Help
+### Docker Issues
 
-- 📖 [Documentation](https://docs.voicetranslate.pro)
-- 💬 [Discussions](https://github.com/yourusername/voicetranslate-pro/discussions)
-- 🐛 [Issue Tracker](https://github.com/yourusername/voicetranslate-pro/issues)
-- 📧 Email: support@voicetranslate.pro
+```bash
+# Rebuild
+docker-compose down
+docker-compose build --no-cache
+docker-compose up -d
+```
 
-For detailed troubleshooting, see [Troubleshooting Guide](docs/troubleshooting.md).
+---
+
+## 📚 Documentation
+
+| Document | Description |
+|----------|-------------|
+| [STATUS.md](STATUS.md) | Development status |
+| [FINAL_IMPLEMENTATION_SUMMARY.md](FINAL_IMPLEMENTATION_SUMMARY.md) | Complete summary |
+| [JAPANESE_TRANSLATION_GUIDE.md](JAPANESE_TRANSLATION_GUIDE.md) | Japanese translation |
+| [SENTENCE_MODE_GUIDE.md](SENTENCE_MODE_GUIDE.md) | Sentence mode |
+| [docs/](docs/) | Full documentation |
 
 ---
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+MIT License - see [LICENSE](LICENSE) file.
 
 ---
 
 ## 🙏 Acknowledgments
 
-- [OpenAI Whisper](https://github.com/openai/whisper) - Speech recognition
-- [DeepL API](https://www.deepl.com/pro-api) - Machine translation
-- [Coqui TTS](https://github.com/coqui-ai/TTS) - Text-to-speech
-- [PyQt6](https://www.riverbankcomputing.com/software/pyqt/) - GUI framework
-- [FastAPI](https://fastapi.tiangolo.com/) - API framework
+- [faster-whisper](https://github.com/SYSTRAN/faster-whisper) - ASR
+- [MarianMT](https://marian-nmt.github.io/) - Translation
+- [Silero VAD](https://github.com/snakers4/silero-vad) - Voice detection
+- [PySide6](https://doc.qt.io/qtforpython/) - GUI
 
 ---
 
 ## 📞 Contact
 
-- **Website**: [https://voicetranslate.pro](https://voicetranslate.pro)
-- **Email**: contact@voicetranslate.pro
-- **Twitter**: [@VoiceTranslate](https://twitter.com/Voicetranslate)
-- **LinkedIn**: [VoiceTranslate Pro](https://linkedin.com/company/voicetranslate-pro)
+- **Issues**: [GitHub Issues](https://github.com/yourusername/voicetranslate-pro/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/yourusername/voicetranslate-pro/discussions)
 
 ---
 

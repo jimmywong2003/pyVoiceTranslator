@@ -783,16 +783,28 @@ class VoiceTranslateMainWindow(QMainWindow):
         )
         row2_layout.addWidget(self.audio_source_combo)
         
+        # Microphone device selector (shown only when Microphone is selected)
+        self.mic_device_combo = QComboBox()
+        self.mic_device_combo.setMinimumWidth(250)
+        self.mic_device_combo.setToolTip("Select specific microphone device")
+        row2_layout.addWidget(self.mic_device_combo)
+        
         # Add status indicator for system audio
         self.audio_source_status = QLabel("")
         self.audio_source_status.setStyleSheet("color: #858585; font-size: 11px;")
         row2_layout.addWidget(self.audio_source_status)
+        
+        # Populate microphone devices
+        self._populate_mic_devices()
         
         row2_layout.addStretch()
         settings_layout.addLayout(row2_layout)
         
         # Update status when selection changes
         self.audio_source_combo.currentIndexChanged.connect(self._on_audio_source_changed)
+        
+        # Initial update
+        self._on_audio_source_changed(0)
         
         layout.addWidget(settings_group)
         
@@ -1094,6 +1106,13 @@ class VoiceTranslateMainWindow(QMainWindow):
                 QMessageBox.warning(self, "System Audio Not Available", msg)
                 return
         
+        # Get microphone device index if using microphone
+        mic_device_index = None
+        if audio_source == AudioSource.MICROPHONE:
+            mic_device_index = self.mic_device_combo.currentData()
+            if mic_device_index is None or mic_device_index < 0:
+                mic_device_index = None  # Use default
+        
         # Create pipeline config
         config = PipelineConfig(
             asr_model_size=model_size,
@@ -1101,12 +1120,12 @@ class VoiceTranslateMainWindow(QMainWindow):
             source_language=source_code or "auto",
             target_language=target_code,
             enable_translation=True,
-            audio_device_index=None,  # Use default microphone (auto-detect)
+            audio_device_index=mic_device_index,
             audio_source=audio_source
         )
         
-        # Create and start worker (use device from config)
-        self.worker = TranslationWorker(config, device_index=config.audio_device_index)
+        # Create and start worker
+        self.worker = TranslationWorker(config, device_index=mic_device_index)
         self.worker.output_ready.connect(self._on_output)
         self.worker.status_changed.connect(self._on_status_changed)
         self.worker.error_occurred.connect(self._on_error)
@@ -1186,9 +1205,37 @@ class VoiceTranslateMainWindow(QMainWindow):
         self.status_label.setStyleSheet("color: #858585; font-weight: bold;")
         self._set_controls_enabled(True)
     
+    def _populate_mic_devices(self):
+        """Populate microphone device dropdown."""
+        self.mic_device_combo.clear()
+        
+        try:
+            import sounddevice as sd
+            devices = sd.query_devices()
+            
+            default_idx = sd.default.device[0]  # Default input device
+            
+            for i, device in enumerate(devices):
+                if device['max_input_channels'] > 0:  # Input device
+                    name = device['name']
+                    is_default = "⭐ " if i == default_idx else ""
+                    self.mic_device_combo.addItem(f"{is_default}[{i}] {name}", i)
+            
+            # Select default device
+            default_combo_idx = self.mic_device_combo.findData(default_idx)
+            if default_combo_idx >= 0:
+                self.mic_device_combo.setCurrentIndex(default_combo_idx)
+                
+        except Exception as e:
+            logger.error(f"Failed to populate mic devices: {e}")
+            self.mic_device_combo.addItem("⚠️ Error loading devices", -1)
+    
     def _on_audio_source_changed(self, index: int):
         """Handle audio source selection change."""
         if index == 1:  # System Audio selected
+            # Hide mic device selector
+            self.mic_device_combo.setVisible(False)
+            
             # Check if system audio is available
             from src.audio import AudioManager, AudioConfig, AudioSource
             
@@ -1211,8 +1258,14 @@ class VoiceTranslateMainWindow(QMainWindow):
                 self.audio_source_status.setText(f"❌ Error checking: {str(e)[:50]}")
                 self.audio_source_status.setStyleSheet("color: #c75450; font-size: 11px;")
         else:
-            # Microphone selected
-            self.audio_source_status.setText("✅ Using default microphone")
+            # Microphone selected - show device selector
+            self.mic_device_combo.setVisible(True)
+            self._populate_mic_devices()  # Refresh device list
+            
+            # Show selected device info
+            current_idx = self.mic_device_combo.currentData()
+            current_text = self.mic_device_combo.currentText()
+            self.audio_source_status.setText(f"✅ {current_text[:40]}...")
             self.audio_source_status.setStyleSheet("color: #4ec9b0; font-size: 11px;")
     
     def _set_controls_enabled(self, enabled: bool):
@@ -1221,6 +1274,7 @@ class VoiceTranslateMainWindow(QMainWindow):
         self.target_lang_combo.setEnabled(enabled)
         self.model_combo.setEnabled(enabled)
         self.audio_source_combo.setEnabled(enabled)
+        self.mic_device_combo.setEnabled(enabled)
         self.clear_button.setEnabled(enabled)
     
     @Slot()
