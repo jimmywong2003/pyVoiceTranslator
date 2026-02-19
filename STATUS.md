@@ -1,7 +1,8 @@
 # VoiceTranslate Pro - Development Status
 
 **Last Updated:** 2026-02-19 23:30 HKT (Final Implementation)  
-**Version:** 2.0.0 - Production Ready  
+**Version:** v2.0.0 (commit: `8fc103bf`)  
+**Git Tag:** `v2.0.0`  
 **Status:** ✅ **ALL PHASES COMPLETE**
 
 ---

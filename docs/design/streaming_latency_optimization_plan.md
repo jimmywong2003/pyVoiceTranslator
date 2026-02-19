@@ -3,7 +3,9 @@
 > **Status**: ✅ **IMPLEMENTATION COMPLETE**  
 > **Priority**: High (Real-time Mode)  
 > **Effort**: 3 weeks (completed)  
-> **Last Updated**: 2026-02-19 23:30 HKT (Final)
+> **Version**: v2.0.0 (commit: `8fc103bf`)  
+> **Git Tag**: `v2.0.0`  
+> **Last Updated**: 2026-02-19
 
 ---
 

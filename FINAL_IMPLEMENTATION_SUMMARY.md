@@ -1,8 +1,9 @@
 # VoiceTranslate Pro - Final Implementation Summary
 
-> **Version**: 2.0.0  
+> **Version**: v2.0.0 (commit: `8fc103bf`)  
 > **Status**: ✅ Production Ready  
 > **Date**: 2026-02-19  
+> **Git Tag**: `v2.0.0`  
 > **Total Lines of Code**: ~15,000+ (new + modified)
 
 ---

@@ -4,7 +4,9 @@
 > 
 > **Purpose**: Document which suggestions were implemented, which were deferred, and actual results
 > 
-> **Last Updated**: 2026-02-19 23:30 HKT (Implementation Complete)
+> **Version**: v2.0.0 (commit: `8fc103bf`)  
+> **Git Tag**: `v2.0.0`  
+> **Last Updated**: 2026-02-19 (Implementation Complete)
 > 
 > **Status**: ✅ **ALL PHASES COMPLETE**
 

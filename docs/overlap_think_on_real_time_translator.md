@@ -4,7 +4,9 @@
 > 
 > **Target Audience**: Developers and AI systems analyzing the VoiceTranslate Pro architecture
 > 
-> **Last Updated**: 2026-02-19 23:30 HKT (Final Implementation)
+> **Version**: v2.0.0 (commit: `8fc103bf`)  
+> **Git Tag**: `v2.0.0`  
+> **Last Updated**: 2026-02-19
 > 
 > **Status**: ✅ **ARCHITECTURE DOCUMENTED** - Streaming pipeline fully implemented
 

@@ -4,7 +4,7 @@
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey.svg)]()
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)]()
-[![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)]()
+[![Version](https://img.shields.io/badge/version-v2.0.0-blue.svg)]()
 
 > **Real-time streaming voice translation with draft/final modes, multi-language support (EN/ZH/JA), and production-ready deployment.**
 
@@ -31,7 +31,7 @@
 
 ## 🎯 Overview
 
-**VoiceTranslate Pro 2.0** is a production-ready real-time voice translation application featuring **streaming translation** with early draft previews and accurate final outputs. Optimized for dialogue, documentaries, and live conversations with support for English, Chinese, and Japanese.
+**VoiceTranslate Pro v2.0.0** (commit: `8fc103bf`) is a production-ready real-time voice translation application featuring **streaming translation** with early draft previews and accurate final outputs. Optimized for dialogue, documentaries, and live conversations with support for English, Chinese, and Japanese.
 
 ### Key Capabilities
 
