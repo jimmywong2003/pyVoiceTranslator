@@ -10,7 +10,7 @@ from PySide6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
     QComboBox, QProgressBar, QMessageBox, QGroupBox
 )
-from PySide6.QtCore import Qt, QTimer, Signal, QThread
+from PySide6.QtCore import Qt, QTimer, Signal, QThread, Slot
 from PySide6.QtGui import QFont
 
 import sounddevice as sd
@@ -435,13 +435,13 @@ class AudioTestDialog(QDialog):
                     # Re-enable buttons on main thread
                     from PySide6.QtCore import QMetaObject, Qt, Q_ARG
                     QMetaObject.invokeMethod(
-                        self, "_on_playback_finished",
+                        self, "on_playback_finished",
                         Qt.QueuedConnection
                     )
                 except Exception as e:
                     print(f"Playback error: {e}")
                     QMetaObject.invokeMethod(
-                        self, "_on_playback_finished",
+                        self, "on_playback_finished",
                         Qt.QueuedConnection
                     )
             
@@ -449,9 +449,10 @@ class AudioTestDialog(QDialog):
             
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to play audio: {e}")
-            self._on_playback_finished()
+            self.on_playback_finished()
     
-    def _on_playback_finished(self):
+    @Slot()
+    def on_playback_finished(self):
         """Called when playback finishes."""
         self.play_btn.setEnabled(True)
         self.record_btn.setEnabled(True)
