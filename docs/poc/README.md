@@ -8,10 +8,11 @@ This directory contains proof-of-concept implementations and design proposals fo
 
 | Document | Description | Status | Target Version |
 |----------|-------------|--------|----------------|
-| [AUDIO_AUTO_TUNE_ACTION_ITEMS.md](AUDIO_AUTO_TUNE_ACTION_ITEMS.md) | **Action items & next steps** (APPROVED) | ✅ Ready | v2.2.0 |
-| [AUDIO_AUTO_TUNE_PROPOSAL_v2.md](AUDIO_AUTO_TUNE_PROPOSAL_v2.md) | Full technical specification (APPROVED) | ✅ Ready | v2.2.0 |
-| [AUDIO_AUTO_TUNE_SUMMARY.md](AUDIO_AUTO_TUNE_SUMMARY.md) | Executive summary (APPROVED) | ✅ Ready | v2.2.0 |
-| [AUDIO_AUTO_TUNE_PROPOSAL.md](AUDIO_AUTO_TUNE_PROPOSAL.md) | Original proposal (archived) | 🗄️ Archived | - |
+| [AUDIO_AUTO_TUNE_IMPLEMENTATION_SUMMARY.md](AUDIO_AUTO_TUNE_IMPLEMENTATION_SUMMARY.md) | **Implementation status** (IN PROGRESS) | 🚧 Week 2/10 | v2.2.0 |
+| [AUDIO_AUTO_TUNE_ACTION_ITEMS.md](AUDIO_AUTO_TUNE_ACTION_ITEMS.md) | Action items & next steps | ✅ Ready | v2.2.0 |
+| [AUDIO_AUTO_TUNE_PROPOSAL_v2.md](AUDIO_AUTO_TUNE_PROPOSAL_v2.md) | Full technical specification | ✅ Ready | v2.2.0 |
+| [AUDIO_AUTO_TUNE_SUMMARY.md](AUDIO_AUTO_TUNE_SUMMARY.md) | Executive summary | ✅ Ready | v2.2.0 |
+| [AUDIO_AUTO_TUNE_PROPOSAL.md](AUDIO_AUTO_TUNE_PROPOSAL.md) | Original proposal | 🗄️ Archived | - |
 
 ### ✅ Completed PoCs
 
