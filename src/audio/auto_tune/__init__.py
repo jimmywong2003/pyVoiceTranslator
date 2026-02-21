@@ -23,11 +23,16 @@ from .gain_controller import (
     GainController, GainCapabilities, GainAdjustmentResult, GainMode
 )
 from .auto_tuner import AudioAutoTuner, TuneResult
+from .settings_manager import SettingsManager, AudioProfile
 
 __all__ = [
     # Main coordinator
     'AudioAutoTuner',
     'TuneResult',
+    
+    # Settings
+    'SettingsManager',
+    'AudioProfile',
     
     # Level analysis
     'LevelAnalyzer',
