@@ -1360,10 +1360,11 @@ class VoiceTranslateMainWindow(QMainWindow):
     def _on_audio_test(self):
         """Open audio test dialog."""
         try:
-            from .audio_test_dialog import AudioTestDialog
+            from src.gui.audio_test_dialog import AudioTestDialog
             dialog = AudioTestDialog(self)
             dialog.exec()
-        except ImportError:
+        except ImportError as e:
+            logger.warning(f"Audio test dialog import failed: {e}")
             QMessageBox.information(
                 self,
                 "Audio Test",
