@@ -6,44 +6,65 @@
 
 ## Project Overview
 
-**VoiceTranslate Pro** (also known as pyLiveTranslator) is a real-time voice translation application that enables seamless communication across language barriers. The system captures audio from microphone or system audio, performs speech recognition (ASR), translates the text, and outputs the translation.
+**VoiceTranslate Pro** (also known as pyLiveTranslator) is a production-ready real-time voice translation application featuring streaming translation with draft/final modes. Version 2.0.0+ supports English, Chinese (Simplified/Traditional), Japanese, and French with hardware acceleration and Docker deployment.
 
 ### Key Capabilities
 
-- 🎤 **Real-time Speech Recognition** - Capture and transcribe speech instantly using OpenAI Whisper
-- 🔄 **Instant Translation** - Translate between multiple languages using MarianMT/NLLB
-- 🖥️ **Multi-source Audio** - Support for microphone and system audio (loopback) capture
-- 🌐 **Cross-Platform** - Windows 10/11 and macOS (Apple Silicon optimized)
-- 📹 **Video Translation** - Batch video translation with subtitle export
-- 🔊 **Voice Activity Detection** - Silero VAD and WebRTC VAD implementations
+- 🎤 **Streaming Translation** - Draft previews every 2s, final translation on silence
+- 🔄 **Multi-Language** - EN, ZH, JA with optimized MarianMT models
+- ⚡ **Low Latency** - TTFT ~1.5s, Meaning Latency ~1.8s
+- 🎛️ **Multiple Modes** - Standard, Interview (documentary), Sentence modes
+- 🎙️ **Mic Selection** - GUI dropdown + CLI support
+- 🐳 **Docker Ready** - Production deployment with Prometheus/Grafana
+- 🖥️ **Cross-Platform** - Windows, macOS (Apple Silicon optimized), Linux
 
 ### Target Platforms
 
-- **Windows**: 10/11 (x86_64) with CUDA support
-- **macOS**: 11.0+ (Apple Silicon M1/M2/M3 and Intel)
+| Platform | Status | Notes |
+|----------|--------|-------|
+| macOS 11+ | ✅ Fully Supported | Apple Silicon M1/M2/M3 optimized (MPS backend) |
+| Windows 10/11 | ✅ Fully Supported | x86_64 with CUDA/OpenVINO support |
+| Linux | ✅ Supported | Primary for Docker deployment |
 
 ### Supported Languages
 
-Chinese (zh), English (en), Japanese (ja), French (fr), and 50+ more via translation backends.
+| Language | Code | ASR | Translation | Quality |
+|----------|------|-----|-------------|---------|
+| English | en | ✅ | ✅ | Excellent |
+| Chinese (Simplified) | zh | ✅ | ✅ | Good |
+| Chinese (Traditional) | zh-TW | ✅ | ✅ | Good |
+| Japanese | ja | ✅ | ✅ | Good |
+| French | fr | ✅ | ✅ | Good |
 
 ---
 
 ## Technology Stack
 
-| Component | Technology | Notes |
-|-----------|------------|-------|
-| **Language** | Python 3.9+ | Minimum version enforced |
-| **GUI Framework** | PySide6 | Modern Qt-based GUI |
-| **Audio I/O** | sounddevice, PyAudio | Cross-platform via PortAudio |
-| **System Audio Capture** | pyaudiowpatch (Win), BlackHole (macOS) | Platform-specific loopback |
-| **VAD** | silero-vad, webrtcvad | Silero VAD v5.1 primary |
-| **ASR (Edge)** | faster-whisper, whisper.cpp | CTranslate2 backend |
+| Component | Technology | Version/Notes |
+|-----------|------------|---------------|
+| **Language** | Python | 3.9+ required, 3.11 recommended |
+| **GUI Framework** | PySide6 | Qt-based GUI |
+| **ASR** | faster-whisper | CTranslate2 backend, int8 quantization |
 | **ASR (Apple)** | mlx-whisper | Apple Silicon optimized |
-| **Translation** | MarianMT, NLLB-200 | Via Hugging Face Transformers |
-| **Video Processing** | FFmpeg, ffmpeg-python | Audio extraction from video |
-| **ML Framework** | PyTorch 2.0+ | MPS (Apple) / CUDA (Windows) support |
+| **Translation** | MarianMT | Helsinki-NLP models |
+| **VAD** | Silero VAD v5.1 | Primary voice detection |
+| **VAD (Fallback)** | WebRTC VAD | Lightweight alternative |
+| **Audio I/O** | sounddevice, PyAudio | PortAudio backend |
+| **System Audio** | pyaudiowpatch (Win), BlackHole (macOS) | Loopback capture |
+| **ML Framework** | PyTorch 2.0+ | MPS (Apple) / CUDA (NVIDIA) |
+| **Hardware Opt** | OpenVINO, CoreML | Intel/Apple acceleration |
+| **Backend API** | FastAPI | Optional REST API |
+| **Monitoring** | Prometheus, Grafana | Metrics and dashboards |
 | **Testing** | pytest | Unit and integration tests |
-| **Packaging** | setuptools, py2app | macOS app bundle support |
+
+### Translation Models
+
+| Pair | Model | Size |
+|------|-------|------|
+| zh → en | Helsinki-NLP/opus-mt-zh-en | ~400MB |
+| en → zh | Helsinki-NLP/opus-mt-en-zh | ~400MB |
+| ja → en | Helsinki-NLP/opus-mt-ja-en | ~400MB |
+| en → ja | Helsinki-NLP/opus-mt-en-ja | ~400MB |
 
 ---
 
@@ -52,132 +73,197 @@ Chinese (zh), English (en), Japanese (ja), French (fr), and 50+ more via transla
 ```
 pyLiveTranslator_kimi/
 ├── README.md                    # Main project documentation
-├── STATUS.md                    # Current development status
-├── .gitignore                   # Git ignore rules
+├── STATUS.md                    # Development status and phases
+├── AGENTS.md                    # This file - AI agent documentation
+├── FINAL_IMPLEMENTATION_SUMMARY.md  # Complete feature summary
+├── SENTENCE_MODE_GUIDE.md       # Sentence mode documentation
+├── JAPANESE_TRANSLATION_GUIDE.md    # Japanese translation guide
+├── SPEECH_LOSS_EVALUATION_GUIDE.md  # Speech loss evaluation
 │
 ├── src/                         # Source code
 │   ├── __init__.py
-│   ├── core/                    # Core translation system
-│   │   ├── asr/                # Automatic Speech Recognition
+│   ├── core/                    # Core translation engine
+│   │   ├── asr/                 # Automatic Speech Recognition
 │   │   │   ├── base.py
-│   │   │   ├── faster_whisper.py
-│   │   │   ├── mlx_whisper.py
+│   │   │   ├── faster_whisper.py      # Primary ASR (faster-whisper)
+│   │   │   ├── mlx_whisper.py         # Apple Silicon ASR
 │   │   │   ├── whisper_cpp.py
-│   │   │   └── post_processor.py    # ASR hallucination filter
-│   │   ├── pipeline/           # Translation pipelines
+│   │   │   ├── streaming_asr.py       # Draft/final streaming modes
+│   │   │   ├── post_processor.py      # Hallucination filter (CJK-aware)
+│   │   │   └── hardware_backends.py   # OpenVINO/CoreML backends
+│   │   ├── pipeline/            # Translation pipelines
 │   │   │   ├── base.py
 │   │   │   ├── realtime.py
 │   │   │   ├── batch.py
 │   │   │   ├── hybrid.py
-│   │   │   ├── orchestrator.py      # Main pipeline orchestrator
-│   │   │   └── orchestrator_parallel.py  # Parallel processing
-│   │   ├── translation/        # Translation engines
+│   │   │   ├── orchestrator.py        # Main pipeline orchestrator
+│   │   │   ├── orchestrator_parallel.py  # Parallel ASR processing
+│   │   │   ├── streaming_pipeline.py  # End-to-end streaming
+│   │   │   ├── segment_tracker.py     # UUID-based segment tracking
+│   │   │   ├── queue_monitor.py       # Queue overflow monitoring
+│   │   │   └── adaptive_controller.py # Adaptive pipeline control
+│   │   ├── translation/         # Translation engines
 │   │   │   ├── base.py
-│   │   │   ├── marian.py
+│   │   │   ├── marian.py              # MarianMT translator
 │   │   │   ├── nllb.py
+│   │   │   ├── streaming_translator.py # Semantic gating, SOV safety
 │   │   │   ├── pivot.py
-│   │   │   └── cache.py
-│   │   ├── configs/            # Configuration files
+│   │   │   └── cache.py               # Translation caching
+│   │   ├── configs/             # Configuration files
 │   │   │   ├── cloud.yaml
 │   │   │   └── edge.yaml
-│   │   ├── utils/              # Utility functions
+│   │   ├── utils/               # Utility functions
 │   │   │   └── latency_analyzer.py
-│   │   ├── cli.py              # Core CLI entry
-│   │   └── interfaces.py       # Abstract interfaces
+│   │   ├── cli.py               # Core CLI entry
+│   │   └── interfaces.py        # Abstract interfaces and data structures
 │   │
 │   ├── audio/                   # Audio processing module
 │   │   ├── __init__.py
-│   │   ├── config.py
-│   │   ├── capture/            # Audio capture (mic, system audio)
+│   │   ├── config.py            # Audio configuration
+│   │   ├── capture/             # Audio capture (mic, system audio)
 │   │   │   ├── base.py
 │   │   │   ├── macos.py
 │   │   │   ├── windows.py
 │   │   │   └── manager.py
-│   │   ├── vad/                # Voice Activity Detection
+│   │   ├── vad/                 # Voice Activity Detection
 │   │   │   ├── silero_vad.py
 │   │   │   ├── silero_vad_improved.py
 │   │   │   ├── silero_vad_adaptive.py
 │   │   │   ├── environment_aware_vad.py
 │   │   │   └── webrtc_vad.py
-│   │   ├── segmentation/       # Audio segmentation
+│   │   ├── segmentation/        # Audio segmentation
 │   │   │   └── engine.py
-│   │   ├── pipeline/           # Audio streaming pipeline
+│   │   ├── pipeline/            # Audio streaming pipeline
 │   │   │   └── streaming.py
-│   │   ├── video/              # Video audio extraction
+│   │   ├── video/               # Video audio extraction
 │   │   │   └── extractor.py
-│   │   ├── benchmarking/       # Performance benchmarks
+│   │   ├── benchmarking/        # Performance benchmarks
 │   │   │   └── performance.py
-│   │   └── testing/            # Audio testing utilities
+│   │   └── testing/             # Audio testing utilities
 │   │       └── detection.py
 │   │
 │   ├── gui/                     # GUI application
 │   │   ├── __init__.py
-│   │   └── main.py             # Main GUI entry (54KB+)
+│   │   ├── main.py              # Main PySide6 GUI (54KB+)
+│   │   ├── streaming_ui.py      # Streaming UI components
+│   │   └── export/              # Export functionality (planned)
 │   │
 │   └── app/                     # Standalone app components
 │       ├── __init__.py
-│       ├── main.py             # CLI entry point
-│       ├── platform_utils.py   # Cross-platform utilities
-│       ├── audio_platform.py   # Unified audio capture
-│       ├── ml_platform.py      # ML optimization
-│       └── config/             # App packaging config
+│       ├── main.py              # CLI entry point
+│       ├── platform_utils.py    # Cross-platform utilities
+│       ├── audio_platform.py    # Unified audio capture
+│       ├── ml_platform.py       # ML optimization
+│       ├── setup.py             # Package setup
+│       └── config/              # App packaging config
 │           ├── entitlements.plist
 │           ├── voice-translate-macos.spec
 │           └── voice-translate-windows.spec
 │
 ├── cli/                         # Command-line tools
-│   ├── vad_visualizer.py       # Real-time VAD GUI visualizer
+│   ├── vad_visualizer.py        # Real-time VAD GUI visualizer
 │   ├── demo_realtime_translation.py
+│   ├── demo_streaming_mode.py
 │   ├── demo_video_translation.py
 │   └── benchmark_translation.py
 │
 ├── tests/                       # Test suite
 │   ├── __init__.py
-│   ├── test_platform.py        # Platform utility tests
-│   ├── test_translation.py     # Translation engine tests
-│   └── test_vad_simple.py      # VAD functionality tests
+│   ├── test_platform.py         # Platform utility tests
+│   ├── test_translation.py      # Translation engine tests
+│   ├── test_vad_simple.py       # VAD functionality tests
+│   ├── test_week0_data_integrity.py
+│   ├── test_phase11_metrics.py
+│   ├── test_phase12_streaming_asr.py
+│   ├── test_phase13_streaming_translator.py
+│   ├── test_phase14_streaming_ui.py
+│   ├── test_phase15_integration.py
+│   └── benchmarks/              # Performance benchmarks
 │
 ├── scripts/                     # Setup and utility scripts
-│   ├── setup_environment.py    # Environment setup
-│   ├── example_usage.py        # Usage examples
-│   └── analyze_overlap.py      # Overlap analysis
+│   ├── setup_environment.py     # Environment setup
+│   ├── example_usage.py         # Usage examples
+│   └── analyze_overlap.py       # Overlap analysis
+│
+├── config/                      # Configuration files
+│   ├── interview_mode.json      # Interview mode settings
+│   ├── sentence_mode.json       # Sentence mode settings
+│   ├── documentary_mode.json    # Documentary mode settings
+│   ├── sentence_aware.yaml      # Sentence-aware config
+│   ├── environments/            # Conda environments
+│   │   ├── macos-arm64.yml
+│   │   └── windows.yml
+│   └── requirements/            # Requirements files
+│       └── requirements.txt
 │
 ├── docs/                        # Documentation
-│   ├── AGENTS.md               # Existing agent docs (older)
-│   ├── architecture/           # Architecture documents
-│   │   ├── voice_translation_system_architecture.md
-│   │   ├── audio_processing_subsystem_design.md
-│   │   └── AUDIO_SUBSYSTEM_SUMMARY.md
-│   ├── design/                 # Design documents
-│   │   ├── voice_translation_design.md
-│   │   ├── voice_translation_gui_design.md
-│   │   └── asr-post-processing-design.md
-│   ├── guides/                 # Implementation guides
-│   │   ├── SETUP_GUIDE.md
-│   │   ├── ADAPTIVE_VAD_IMPLEMENTATION.md
-│   │   ├── PARALLEL_PIPELINE_GUIDE.md
-│   │   └── LATENCY_ANALYSIS_GUIDE.md
+│   ├── architecture/            # Architecture documents
+│   ├── design/                  # Design documents
+│   ├── guides/                  # Implementation guides
 │   ├── installation.md
 │   ├── test-plan.md
 │   ├── troubleshooting.md
 │   └── user-guide.md
 │
-├── config/                      # Configuration files
-│   ├── requirements/
-│   │   └── requirements.txt    # Core audio requirements
-│   └── environments/
-│       ├── macos-arm64.yml     # Conda env for macOS
-│       └── windows.yml         # Conda env for Windows
+├── monitoring/                  # Prometheus/Grafana config
+│   ├── prometheus.yml
+│   └── grafana/
 │
-└── assets/                      # Static assets
-    └── icon.icns               # App icon
+├── assets/                      # Static assets
+│   └── icon.icns
+│
+├── Dockerfile                   # Multi-stage Docker build
+├── docker-compose.yml           # Docker orchestration
+├── requirements-prod.txt        # Production dependencies
+├── requirements-dev.txt         # Development dependencies
+├── run_interview_mode.sh        # Interview mode launcher
+├── run_sentence_mode.sh         # Sentence mode launcher
+├── run_japanese_to_english.sh   # Japanese translation launcher
+├── run_documentary_mode.sh      # Documentary mode launcher
+├── test_microphone.py           # Microphone test utility
+└── test_japanese_translation.py # Japanese translation test
 ```
 
 ---
 
 ## Key Entry Points
 
-### 1. Main Application (Cross-Platform)
+### 1. GUI Application (Primary)
+
+```bash
+# Standard mode
+python src/gui/main.py
+
+# Interview mode (documentary)
+./run_interview_mode.sh
+
+# Sentence mode (dialogue)
+./run_sentence_mode.sh
+
+# Japanese translation
+./run_japanese_to_english.sh
+```
+
+### 2. CLI Tools
+
+```bash
+# Real-time translation demo
+python cli/demo_realtime_translation.py --source zh --target en --device 4
+
+# Streaming mode with draft/final
+python cli/demo_streaming_mode.py --source ja --target en --draft-interval 2000
+
+# Video translation with subtitle export
+python cli/demo_video_translation.py video.mp4 --source zh --target en --export-srt
+
+# VAD Visualizer (GUI with real-time audio meter)
+python cli/vad_visualizer.py
+
+# Performance benchmark
+python cli/benchmark_translation.py
+```
+
+### 3. Core Application (Cross-Platform)
 
 ```bash
 # Run the cross-platform application
@@ -199,43 +285,20 @@ python src/app/main.py --system-audio
 python src/app/main.py --verbose
 ```
 
-### 2. GUI Application
+### 4. Testing Utilities
 
 ```bash
-# Launch PySide6 GUI
-python src/gui/main.py
-```
+# Test microphone
+python test_microphone.py
 
-### 3. CLI Tools
+# Test Japanese translation
+python test_japanese_translation.py
 
-```bash
-# VAD Visualizer (GUI with real-time audio meter)
-python cli/vad_visualizer.py
+# Test VAD with device selection
+python tests/test_vad_simple.py --device 4 --duration 30
 
-# Real-time translation demo
-python cli/demo_realtime_translation.py
-
-# Video translation with subtitle export
-python cli/demo_video_translation.py video.mp4 --source en --target zh --export-srt
-
-# Performance benchmark
-python cli/benchmark_translation.py
-```
-
-### 4. Core Pipeline (Programmatic)
-
-```python
-from src.core.pipeline.orchestrator import TranslationPipeline, PipelineConfig
-
-config = PipelineConfig(
-    source_language="ja",
-    target_language="en",
-    asr_model_size="base",
-    audio_source=AudioSource.MICROPHONE
-)
-
-pipeline = TranslationPipeline(config)
-pipeline.start()
+# List audio devices
+python tests/test_vad_simple.py --list
 ```
 
 ---
@@ -250,7 +313,7 @@ python -m venv venv
 source venv/bin/activate  # macOS/Linux
 venv\Scripts\activate     # Windows
 
-# Install dependencies (platform-specific)
+# Install dependencies
 pip install -r config/requirements/requirements.txt
 
 # Or use Conda environment (recommended)
@@ -270,11 +333,33 @@ pytest tests/test_vad_simple.py
 # Run with coverage
 pytest --cov=src --cov-report=html
 
-# Run VAD test with device selection
+# Run VAD test with audio capture
 python tests/test_vad_simple.py --device 4 --duration 30
 
-# List audio devices
-python tests/test_vad_simple.py --list
+# Run platform tests
+python tests/test_platform.py
+
+# Run unit tests (unittest)
+python -m unittest discover tests/
+```
+
+### Docker Deployment
+
+```bash
+# Production
+docker-compose up -d app
+
+# With monitoring (Prometheus/Grafana)
+docker-compose --profile monitoring up -d
+
+# Development mode with live reload
+docker-compose --profile dev up -d app-dev
+
+# View logs
+docker-compose logs -f
+
+# Stop all services
+docker-compose down
 ```
 
 ### Building Application
@@ -328,11 +413,13 @@ def process_audio(
 
 ### Naming Conventions
 
-- **Classes**: PascalCase (`AudioManager`, `SileroVADProcessor`)
-- **Functions/Variables**: snake_case (`process_chunk`, `sample_rate`)
-- **Constants**: UPPER_SNAKE_CASE (`DEFAULT_SAMPLE_RATE`)
-- **Abstract Interfaces**: Start with 'I' (`IAudioCapture`, `IVADEngine`)
-- **Private Members**: Leading underscore (`_audio_buffer`, `_process_internal`)
+| Type | Convention | Example |
+|------|------------|---------|
+| **Classes** | PascalCase | `AudioManager`, `SileroVADProcessor` |
+| **Functions/Variables** | snake_case | `process_chunk`, `sample_rate` |
+| **Constants** | UPPER_SNAKE_CASE | `DEFAULT_SAMPLE_RATE` |
+| **Abstract Interfaces** | Start with 'I' | `IAudioCapture`, `IVADEngine` |
+| **Private Members** | Leading underscore | `_audio_buffer`, `_process_internal` |
 
 ### Platform-Specific Code
 
@@ -350,20 +437,14 @@ def process_audio(
 tests/
 ├── test_platform.py          # Platform utility tests
 ├── test_translation.py       # Translation engine tests  
-└── test_vad_simple.py        # VAD functionality tests
-```
-
-### Running Tests
-
-```bash
-# Run unit tests
-pytest tests/ -v
-
-# Run VAD test with audio capture
-python tests/test_vad_simple.py --device 4 --duration 30
-
-# Run platform tests
-python tests/test_platform.py
+├── test_vad_simple.py        # VAD functionality tests
+├── test_week0_data_integrity.py    # Data integrity verification
+├── test_phase11_metrics.py   # Phase 1.1 metrics tests
+├── test_phase12_streaming_asr.py   # Streaming ASR tests
+├── test_phase13_streaming_translator.py  # Streaming translator tests
+├── test_phase14_streaming_ui.py        # Streaming UI tests
+├── test_phase15_integration.py         # Integration tests
+└── benchmarks/               # Performance benchmarks
 ```
 
 ### Verification Tools
@@ -377,11 +458,36 @@ python tests/test_vad_simple.py --device 4 --duration 30
 
 # List available audio devices
 python tests/test_vad_simple.py --list
+
+# Test microphone recording
+python test_microphone.py
+
+# Test Japanese translation
+python test_japanese_translation.py
 ```
 
 ---
 
 ## Configuration
+
+### Mode Configurations
+
+**Standard Mode** (default):
+- Max segment: 12 seconds
+- Silence threshold: 400ms
+- Balanced quality/speed
+
+**Interview Mode** (`config/interview_mode.json`):
+- Max segment: 15 seconds
+- Lenient filtering (12% diversity)
+- Keeps filler words
+- Low confidence threshold (0.2)
+
+**Sentence Mode** (`config/sentence_mode.json`):
+- Max segment: 20 seconds
+- Silence threshold: 600ms
+- CJK-aware hallucination filter
+- Filters short fragments (500ms min)
 
 ### Key Constants
 
@@ -407,7 +513,7 @@ MODEL_CACHE_DIR = "~/.voice_translate/models"
 ### Pipeline Configuration
 
 ```python
-from src.core.pipeline.orchestrator import PipelineConfig
+from src.core.pipeline.orchestrator import PipelineConfig, AudioSource
 
 config = PipelineConfig(
     sample_rate=16000,
@@ -419,15 +525,10 @@ config = PipelineConfig(
     source_language="ja",
     target_language="en",
     translator_type="marian",  # or "nllb"
-    enable_translation_cache=True
+    enable_translation_cache=True,
+    audio_source=AudioSource.MICROPHONE
 )
 ```
-
-### Configuration Files
-
-- `src/core/configs/cloud.yaml` - Cloud processing configuration
-- `src/core/configs/edge.yaml` - Edge processing configuration
-- `src/app/config/entitlements.plist` - macOS app entitlements
 
 ---
 
@@ -437,7 +538,7 @@ config = PipelineConfig(
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                    VoiceTranslate Pro                        │
+│                    VoiceTranslate Pro 2.0                    │
 ├─────────────────────────────────────────────────────────────┤
 │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐      │
 │  │   GUI Layer  │  │  CLI Tools   │  │  API Layer   │      │
@@ -448,8 +549,8 @@ config = PipelineConfig(
 │  │              Core Translation Engine               │      │
 │  ├───────────────────────────────────────────────────┤      │
 │  │  ┌──────────┐  ┌──────────┐  ┌──────────┐        │      │
-│  │  │   ASR    │  │    MT    │  │   TTS    │        │      │
-│  │  │ (Whisper)│  │(Marian/  │  │ (Future) │        │      │
+│  │  │   ASR    │  │    MT    │  │   VAD    │        │      │
+│  │  │ (Whisper)│  │(Marian/  │  │(Silero)  │        │      │
 │  │  │          │  │  NLLB)   │  │          │        │      │
 │  │  └──────────┘  └──────────┘  └──────────┘        │      │
 │  └───────────────────────────────────────────────────┘      │
@@ -464,14 +565,34 @@ config = PipelineConfig(
 └─────────────────────────────────────────────────────────────┘
 ```
 
-### Pipeline Flow
+### Streaming Pipeline Flow
 
-1. **Audio Capture** → Raw audio from microphone or system audio
-2. **VAD Processing** → Detect speech segments
-3. **ASR (Speech-to-Text)** → Transcribe using faster-whisper
-4. **Post-Processing** → Filter hallucinations, normalize text
-5. **Translation** → Translate using MarianMT/NLLB
-6. **Output** → Display and/or text-to-speech
+```
+Audio → VAD → [Adaptive Controller] → StreamingASR
+              ↓
+          Skip if: paused, busy, <2s
+              ↓
+  ┌─────────────────────┐  ┌─────────────────────┐
+  │ Draft Mode          │  │ Final Mode          │
+  │ • Every 2s          │  │ • On silence        │
+  │ • INT8, beam=1      │  │ • Standard, beam=5  │
+  │ • Cumulative (0-N)  │  │ • High confidence   │
+  └──────────┬──────────┘  └──────────┬──────────┘
+             ↓                        ↓
+  ┌──────────────────────────────────────────┐
+  │     StreamingTranslator                  │
+  │     • Semantic gating                    │
+  │     • SOV safety (JA/KO/DE)              │
+  │     • Stability scoring                  │
+  └──────────────────┬───────────────────────┘
+                     ↓
+  ┌──────────────────────────────────────────┐
+  │     Diff-Based UI                        │
+  │     • Word-level diff                    │
+  │     • Stability (● ○ ✓)                  │
+  │     • Delta time display                 │
+  └──────────────────────────────────────────┘
+```
 
 ---
 
@@ -482,6 +603,7 @@ config = PipelineConfig(
 3. **Model Downloads**: Models downloaded from trusted sources (Hugging Face)
 4. **Permissions**: Requires microphone access (platform-specific prompts)
 5. **macOS App Sandboxing**: `entitlements.plist` configures sandbox permissions
+6. **Docker Security**: Non-root user (`voicetranslate`) in production containers
 
 ---
 
@@ -516,20 +638,58 @@ config = PipelineConfig(
 
 ---
 
+## Troubleshooting
+
+### No Audio Input
+
+```bash
+# List devices
+python cli/demo_realtime_translation.py --list-devices
+
+# Test microphone
+python test_microphone.py
+
+# Grant macOS permission
+# System Settings → Privacy & Security → Microphone → Enable Terminal
+```
+
+### Japanese Not Recognized
+
+- Select "Japanese (ja)" as source (NOT "Auto-detect")
+- Use "base" or "small" model (not "tiny")
+- Check `JAPANESE_TRANSLATION_GUIDE.md`
+
+### Sentences Cut Mid-Way
+
+- Use **Sentence Mode**: `./run_sentence_mode.sh`
+- Increases max duration to 20s
+- Better pause detection
+
+### High Latency
+
+- Enable INT8 quantization (enabled by default)
+- Use hardware acceleration (OpenVINO/CoreML)
+- Check CPU usage
+
+---
+
 ## Documentation References
 
 | Document | Description |
 |----------|-------------|
 | `README.md` | Main project overview and user guide |
 | `STATUS.md` | Current development status and phase tracking |
-| `docs/architecture.md` | System architecture details |
+| `FINAL_IMPLEMENTATION_SUMMARY.md` | Complete implementation summary |
+| `SENTENCE_MODE_GUIDE.md` | Sentence mode documentation |
+| `JAPANESE_TRANSLATION_GUIDE.md` | Japanese translation guide |
+| `docs/architecture/` | System architecture details |
+| `docs/design/` | Design documents |
+| `docs/guides/` | Implementation guides |
 | `docs/installation.md` | Platform-specific installation |
 | `docs/test-plan.md` | Testing strategy |
-| `docs/guides/SETUP_GUIDE.md` | Detailed setup instructions |
-| `docs/guides/PARALLEL_PIPELINE_GUIDE.md` | Parallel processing documentation |
-| `docs/design/asr-post-processing-design.md` | ASR post-processing design |
+| `docs/troubleshooting.md` | Troubleshooting guide |
 
 ---
 
 *This file should be updated when significant architectural changes are made.*
-*Last updated: 2026-02-19*
+*Last updated: 2026-02-21*

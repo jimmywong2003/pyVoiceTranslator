@@ -4,3 +4,16 @@ venv/
 assets/README.html
 assets/README.png
 assets/README.jpeg
+
+# User data directories
+.voicetranslate/
+logs/
+models/
+
+# PyInstaller build
+dist/
+build/
+*.spec
+
+# macOS
+.DS_Store

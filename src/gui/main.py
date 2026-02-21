@@ -33,10 +33,32 @@ from src.core.pipeline.orchestrator import (
 )
 from src.audio import AudioSource
 
-# Setup timestamped logging
+# Setup timestamped logging (must be before other imports that use logger)
 from src.core.utils.timestamped_logging import setup_timestamped_logging, log_segment_timing, log_latency_metric
 setup_timestamped_logging(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# Import Meeting Mode (Phase 4)
+try:
+    from src.gui.meeting.window import MeetingWindow
+    MEETING_MODE_AVAILABLE = True
+except ImportError as e:
+    MEETING_MODE_AVAILABLE = False
+    logger.warning(f"Meeting Mode not available: {e}")
+
+# Import Phase 5 utilities
+try:
+    from src.core.utils.debug_logger import DebugLogger, get_debug_logger
+    from src.core.utils.performance_monitor import PerformanceMonitor
+    from src.core.utils.update_checker import UpdateChecker, UpdateInfo
+    PHASE5_AVAILABLE = True
+except ImportError as e:
+    PHASE5_AVAILABLE = False
+    logger.warning(f"Phase 5 utilities not available: {e}")
+    DebugLogger = None
+    PerformanceMonitor = None
+    UpdateChecker = None
+    UpdateInfo = None
 
 
 @dataclass
@@ -225,6 +247,7 @@ class TranslationEntry:
     entry_id: int
     timestamp_str: str
     timestamp_seconds: float
+    delta_from_previous: float  # Time delta from previous entry in seconds
     source_text: str
     translated_text: str
     source_lang: str
@@ -232,6 +255,7 @@ class TranslationEntry:
     processing_time_ms: float
     confidence: float
     is_partial: bool
+    unix_timestamp: float  # Unix timestamp for precise timing
 
 
 class TranslationDisplay(QTextEdit):
@@ -254,6 +278,8 @@ class TranslationDisplay(QTextEdit):
         self._max_entries = 100  # Keep last 100 entries
         self._entries: List[TranslationEntry] = []  # Store entries for export
         self._session_start_time = time.time()  # For subtitle timing
+        self._last_entry_time: Optional[float] = None  # For delta calculation
+        self._show_timestamps = True  # Toggle for timestamp display
         
         # Improved styling with better typography
         self.setStyleSheet("""
@@ -324,11 +350,12 @@ class TranslationDisplay(QTextEdit):
                 .replace('"', '&quot;'))
     
     def _create_entry_html(self, entry_id: int, timestamp: str, 
+                          delta_from_previous: float,
                           source_text: str, translated_text: str,
                           source_lang: str, target_lang: str,
                           processing_time_ms: float, confidence: float,
                           is_partial: bool = False) -> str:
-        """Create HTML for a translation entry."""
+        """Create HTML for a translation entry with delta time."""
         
         # Format texts
         source_formatted = self._format_long_text(source_text, max_chars=300)
@@ -341,12 +368,23 @@ class TranslationDisplay(QTextEdit):
         # Partial indicator
         partial_badge = '<span style="background-color: #d4a017; color: #000; padding: 1px 4px; border-radius: 3px; font-size: 9px; margin-left: 5px;">PARTIAL</span>' if is_partial else ''
         
+        # Format delta time
+        if delta_from_previous == 0.0:
+            delta_str = "start"
+        elif delta_from_previous >= 60:
+            # Show minutes:seconds format for long deltas
+            mins = int(delta_from_previous // 60)
+            secs = int(delta_from_previous % 60)
+            delta_str = f"+{mins}m{secs}s"
+        else:
+            delta_str = f"+{delta_from_previous:.2f}s"
+        
         html = f'''
         <div id="entry_{entry_id}" style="margin-bottom: 12px; padding: 12px; background-color: #252526; border-radius: 6px; border-left: 3px solid #0e639c;">
-            <!-- Header with timestamp and metadata -->
+            <!-- Header with timestamp, delta, and metadata -->
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #3c3c3c;">
                 <span style="color: #858585; font-size: 11px; font-family: monospace;">
-                    {timestamp} {partial_badge}
+                    {timestamp} <span style="color: #5c5c5c;">|</span> <span style="color: #4ec9b0;">{delta_str}</span> {partial_badge}
                 </span>
                 <span style="color: #6e6e6e; font-size: 10px;">
                     {processing_time_ms:.0f}ms • {confidence:.0%} confidence
@@ -402,8 +440,17 @@ class TranslationDisplay(QTextEdit):
             confidence: Confidence score (0-1)
             is_partial: Whether this is a partial segment from a longer sentence
         """
+        unix_now = time.time()
         timestamp_str = time.strftime("%H:%M:%S")
-        timestamp_seconds = time.time() - self._session_start_time
+        timestamp_seconds = unix_now - self._session_start_time
+        
+        # Calculate delta from previous entry
+        if self._last_entry_time is None:
+            delta_from_previous = 0.0
+        else:
+            delta_from_previous = unix_now - self._last_entry_time
+        self._last_entry_time = unix_now
+        
         self._entry_count += 1
         
         # Store entry for export
@@ -411,13 +458,15 @@ class TranslationDisplay(QTextEdit):
             entry_id=self._entry_count,
             timestamp_str=timestamp_str,
             timestamp_seconds=timestamp_seconds,
+            delta_from_previous=delta_from_previous,
             source_text=source_text,
             translated_text=translated_text,
             source_lang=source_lang,
             target_lang=target_lang,
             processing_time_ms=processing_time_ms,
             confidence=confidence,
-            is_partial=is_partial
+            is_partial=is_partial,
+            unix_timestamp=unix_now
         )
         self._entries.append(entry)
         
@@ -425,6 +474,7 @@ class TranslationDisplay(QTextEdit):
         html = self._create_entry_html(
             entry_id=self._entry_count,
             timestamp=timestamp_str,
+            delta_from_previous=delta_from_previous,
             source_text=source_text,
             translated_text=translated_text,
             source_lang=source_lang,
@@ -456,6 +506,7 @@ class TranslationDisplay(QTextEdit):
         self._entries.clear()
         self._entry_count = 0
         self._session_start_time = time.time()
+        self._last_entry_time = None
     
     # ==================== Export Methods ====================
     
@@ -479,7 +530,17 @@ class TranslationDisplay(QTextEdit):
             lines.append("")
             
             for entry in self._entries:
-                lines.append(f"[{entry.timestamp_str}] Entry #{entry.entry_id}")
+                # Format delta time for display
+                if entry.delta_from_previous == 0.0:
+                    delta_str = "start"
+                elif entry.delta_from_previous >= 60:
+                    mins = int(entry.delta_from_previous // 60)
+                    secs = int(entry.delta_from_previous % 60)
+                    delta_str = f"+{mins}m{secs}s"
+                else:
+                    delta_str = f"+{entry.delta_from_previous:.2f}s"
+                
+                lines.append(f"[{entry.timestamp_str}] [{delta_str}] Entry #{entry.entry_id}")
                 
                 if include_source:
                     lines.append(f"Source ({entry.source_lang}): {entry.source_text}")
@@ -692,11 +753,26 @@ class VoiceTranslateMainWindow(QMainWindow):
         self.worker: Optional[TranslationWorker] = None
         self.video_worker: Optional[VideoTranslationWorker] = None
         
+        # Meeting Mode (Phase 4)
+        self.meeting_window: Optional['MeetingWindow'] = None
+        self._meeting_mode_enabled = MEETING_MODE_AVAILABLE
+        
+        # Phase 5 utilities
+        self._phase5_enabled = PHASE5_AVAILABLE
+        self._debug_logger: Optional['DebugLogger'] = None
+        self._perf_monitor: Optional['PerformanceMonitor'] = None
+        self._update_checker: Optional['UpdateChecker'] = None
+        
         self.setWindowTitle(self.config.window_title)
         self.setMinimumSize(self.config.window_width, self.config.window_height)
         
         self._setup_ui()
         self._setup_styles()
+        self._setup_menus()
+        
+        # Initialize Phase 5 features
+        if self._phase5_enabled:
+            self._init_phase5()
     
     def _setup_ui(self):
         """Setup the user interface."""
@@ -847,6 +923,48 @@ class VoiceTranslateMainWindow(QMainWindow):
         self.clear_button.clicked.connect(self._on_clear)
         control_layout.addWidget(self.clear_button)
         
+        # Meeting Mode button (Phase 4)
+        if self._meeting_mode_enabled:
+            self.meeting_button = QPushButton("📋 Meeting Mode")
+            self.meeting_button.setMinimumHeight(40)
+            self.meeting_button.setStyleSheet("""
+                QPushButton {
+                    background-color: #6C5DD3;
+                    color: white;
+                    border: none;
+                    border-radius: 5px;
+                    padding: 10px 20px;
+                    font-weight: bold;
+                }
+                QPushButton:hover {
+                    background-color: #7D6EE4;
+                }
+                QPushButton:pressed {
+                    background-color: #5B4CC2;
+                }
+            """)
+            self.meeting_button.clicked.connect(self._on_open_meeting_mode)
+            control_layout.addWidget(self.meeting_button)
+        
+        # Settings button (Phase 5) - accessible way to open settings menu
+        self.settings_btn = QPushButton("⚙️ Settings")
+        self.settings_btn.setMinimumHeight(40)
+        self.settings_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #4a4a4a;
+                color: white;
+                border: none;
+                border-radius: 5px;
+                padding: 10px 20px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background-color: #5a5a5a;
+            }
+        """)
+        self.settings_btn.clicked.connect(self._on_open_settings_menu)
+        control_layout.addWidget(self.settings_btn)
+        
         control_layout.addStretch()
         
         # Export buttons
@@ -877,6 +995,13 @@ class VoiceTranslateMainWindow(QMainWindow):
         self.segments_label = QLabel("Segments: 0")
         self.status_bar.addWidget(self.latency_label)
         self.status_bar.addWidget(self.segments_label)
+        
+        # Phase 5: Performance labels
+        self.cpu_label = QLabel("")
+        self.memory_label = QLabel("")
+        self.status_bar.addWidget(self.cpu_label)
+        self.status_bar.addWidget(self.memory_label)
+        
         self.status_bar.showMessage("Ready")
         
         # Timer for UI updates
@@ -1059,6 +1184,236 @@ class VoiceTranslateMainWindow(QMainWindow):
             }
         """)
     
+    def _setup_menus(self):
+        """Setup menu bar (Phase 5)."""
+        from PySide6.QtWidgets import QMenuBar, QMenu
+        
+        menubar = self.menuBar()
+        
+        # File menu
+        file_menu = menubar.addMenu("File")
+        
+        # Export actions
+        export_txt_action = file_menu.addAction("📄 Export as TXT...")
+        export_txt_action.triggered.connect(self._on_export_txt)
+        
+        export_srt_action = file_menu.addAction("🎬 Export as SRT...")
+        export_srt_action.triggered.connect(self._on_export_srt)
+        
+        file_menu.addSeparator()
+        
+        # Exit action
+        exit_action = file_menu.addAction("Exit")
+        exit_action.triggered.connect(self.close)
+        
+        # Tools menu (Phase 5)
+        tools_menu = menubar.addMenu("Tools")
+        
+        # Meeting Mode
+        if self._meeting_mode_enabled:
+            meeting_action = tools_menu.addAction("📋 Meeting Mode")
+            meeting_action.triggered.connect(self._on_open_meeting_mode)
+            tools_menu.addSeparator()
+        
+        # Debug logging toggle (Phase 5)
+        if self._phase5_enabled:
+            self.debug_log_action = tools_menu.addAction("🐛 Debug Logging")
+            self.debug_log_action.setCheckable(True)
+            self.debug_log_action.setChecked(False)
+            self.debug_log_action.triggered.connect(self._on_toggle_debug_logging)
+            
+            self.privacy_mode_action = tools_menu.addAction("🔒 Privacy Mode")
+            self.privacy_mode_action.setCheckable(True)
+            self.privacy_mode_action.setChecked(False)
+            self.privacy_mode_action.triggered.connect(self._on_toggle_privacy_mode)
+            
+            tools_menu.addSeparator()
+        
+        # Settings menu
+        settings_menu = menubar.addMenu("Settings")
+        
+        # Performance monitoring (Phase 5)
+        if self._phase5_enabled:
+            self.perf_monitor_action = settings_menu.addAction("📊 Performance Monitor")
+            self.perf_monitor_action.setCheckable(True)
+            self.perf_monitor_action.setChecked(True)
+            self.perf_monitor_action.triggered.connect(self._on_toggle_perf_monitor)
+        
+        # Help menu
+        help_menu = menubar.addMenu("Help")
+        
+        # Check for updates (Phase 5)
+        if self._phase5_enabled:
+            check_update_action = help_menu.addAction("🔄 Check for Updates")
+            check_update_action.triggered.connect(self._on_check_updates)
+            help_menu.addSeparator()
+        
+        about_action = help_menu.addAction("About VoiceTranslate Pro")
+        about_action.triggered.connect(self._on_about)
+    
+    def _init_phase5(self):
+        """Initialize Phase 5 utilities."""
+        # Initialize debug logger
+        try:
+            self._debug_logger = get_debug_logger(app_version="2.0.0")
+            logger.info("Debug logger initialized")
+        except Exception as e:
+            logger.warning(f"Failed to initialize debug logger: {e}")
+        
+        # Initialize performance monitor
+        try:
+            self._perf_monitor = PerformanceMonitor(
+                cpu_threshold=80.0,
+                memory_threshold=85.0
+            )
+            self._perf_monitor.metrics_updated.connect(self._on_perf_metrics)
+            self._perf_monitor.start_monitoring(interval_ms=2000)
+            logger.info("Performance monitor started")
+        except Exception as e:
+            logger.warning(f"Failed to initialize performance monitor: {e}")
+        
+        # Initialize update checker
+        try:
+            self._update_checker = UpdateChecker(current_version="2.0.0")
+            self._update_checker.update_available.connect(self._on_update_available)
+            self._update_checker.check_failed.connect(self._on_update_check_failed)
+        except Exception as e:
+            logger.warning(f"Failed to initialize update checker: {e}")
+    
+    def _on_toggle_debug_logging(self, checked: bool):
+        """Toggle debug logging."""
+        if not self._debug_logger:
+            return
+        
+        if checked:
+            success = self._debug_logger.enable(level="DEBUG")
+            if success:
+                self.status_bar.showMessage("Debug logging enabled", 3000)
+            else:
+                QMessageBox.warning(self, "Debug Logging", "Failed to enable debug logging")
+                self.debug_log_action.setChecked(False)
+        else:
+            self._debug_logger.disable()
+            self.status_bar.showMessage("Debug logging disabled", 3000)
+    
+    def _on_toggle_privacy_mode(self, checked: bool):
+        """Toggle privacy mode."""
+        if self._debug_logger:
+            self._debug_logger.set_privacy_mode(checked)
+            status = "enabled" if checked else "disabled"
+            self.status_bar.showMessage(f"Privacy mode {status}", 3000)
+    
+    def _on_toggle_perf_monitor(self, checked: bool):
+        """Toggle performance monitor."""
+        if not self._perf_monitor:
+            return
+        
+        if checked:
+            self._perf_monitor.start_monitoring()
+            self.status_bar.showMessage("Performance monitor enabled", 3000)
+        else:
+            self._perf_monitor.stop_monitoring()
+            # Clear performance labels
+            self.cpu_label.setText("")
+            self.memory_label.setText("")
+            self.status_bar.showMessage("Performance monitor disabled", 3000)
+    
+    def _on_perf_metrics(self, metrics):
+        """Handle performance metrics update."""
+        if hasattr(self, 'cpu_label'):
+            self.cpu_label.setText(f"CPU: {metrics.cpu_percent:.0f}%")
+            self.memory_label.setText(f"RAM: {metrics.memory_percent:.0f}%")
+    
+    def _on_check_updates(self):
+        """Check for updates."""
+        if not self._update_checker:
+            QMessageBox.information(self, "Update Check", "Update checker not available")
+            return
+        
+        self.status_bar.showMessage("Checking for updates...")
+        self._update_checker.check_for_updates()
+    
+    def _on_update_available(self, update_info):
+        """Handle update available."""
+        reply = QMessageBox.question(
+            self,
+            "Update Available",
+            f"Version {update_info.version} is available!\n\n"
+            f"Release Notes:\n{update_info.release_notes}\n\n"
+            f"Would you like to download it?",
+            QMessageBox.Yes | QMessageBox.No
+        )
+        
+        if reply == QMessageBox.Yes:
+            self._update_checker.open_download_page(update_info.download_url)
+    
+    def _on_update_check_failed(self, message: str):
+        """Handle update check failure."""
+        self.status_bar.showMessage(f"Update check: {message}", 5000)
+    
+    def _on_about(self):
+        """Show about dialog."""
+        QMessageBox.about(
+            self,
+            "About VoiceTranslate Pro",
+            "<h2>VoiceTranslate Pro v2.0.0</h2>"
+            "<p>Real-time voice translation application</p>"
+            "<p>Features:</p>"
+            "<ul>"
+            "<li>🎤 Real-time speech recognition</li>"
+            "<li>🔄 Instant translation</li>"
+            "<li>📋 Meeting mode with speaker identification</li>"
+            "<li>🎬 Video translation</li>"
+            "</ul>"
+            "<p>Built with PySide6, faster-whisper, and MarianMT</p>"
+        )
+    
+    def _on_open_settings_menu(self):
+        """Open settings popup menu."""
+        from PySide6.QtWidgets import QMenu
+        
+        menu = QMenu(self)
+        
+        # Meeting Mode
+        if self._meeting_mode_enabled:
+            meeting_action = menu.addAction("📋 Open Meeting Mode")
+            meeting_action.triggered.connect(self._on_open_meeting_mode)
+            menu.addSeparator()
+        
+        # Phase 5 features
+        if self._phase5_enabled:
+            debug_action = menu.addAction("🐛 Debug Logging")
+            debug_action.setCheckable(True)
+            debug_action.setChecked(self._debug_logger is not None and hasattr(self, 'debug_log_action') and self.debug_log_action.isChecked())
+            debug_action.triggered.connect(self._on_toggle_debug_logging)
+            
+            privacy_action = menu.addAction("🔒 Privacy Mode")
+            privacy_action.setCheckable(True)
+            privacy_action.setChecked(self._debug_logger is not None and hasattr(self, 'privacy_mode_action') and self.privacy_mode_action.isChecked())
+            privacy_action.triggered.connect(self._on_toggle_privacy_mode)
+            
+            perf_action = menu.addAction("📊 Performance Monitor")
+            perf_action.setCheckable(True)
+            perf_action.setChecked(self._perf_monitor is not None)
+            perf_action.triggered.connect(self._on_toggle_perf_monitor)
+            
+            menu.addSeparator()
+            
+            update_action = menu.addAction("🔄 Check for Updates")
+            update_action.triggered.connect(self._on_check_updates)
+        else:
+            # Show placeholder if Phase 5 not available
+            unavailable = menu.addAction("⚠️ Advanced features require: loguru, packaging")
+            unavailable.setEnabled(False)
+        
+        menu.addSeparator()
+        
+        about_action = menu.addAction("ℹ️ About")
+        about_action.triggered.connect(self._on_about)
+        
+        # Show menu at button position
+        menu.exec(self.settings_btn.mapToGlobal(self.settings_btn.rect().bottomLeft()))
+    
     @Slot()
     def _on_start_stop(self):
         """Handle start/stop button click."""
@@ -1178,6 +1533,17 @@ class VoiceTranslateMainWindow(QMainWindow):
         )
         self.segments_count += 1
         self.latency_label.setText(f"Latency: {output.processing_time_ms:.0f}ms")
+        
+        # Also send to Meeting Mode if active (Phase 4)
+        if self.meeting_window and self.meeting_window.is_recording():
+            # Only add non-partial results to meeting minutes
+            if not output.is_partial:
+                self.meeting_window.add_transcription(
+                    text=output.source_text,
+                    translated_text=output.translated_text,
+                    confidence=output.confidence,
+                    duration=output.processing_time_ms / 1000.0,  # Convert ms to seconds
+                )
     
     @Slot(str)
     def _on_status_changed(self, status: str):
@@ -1205,6 +1571,22 @@ class VoiceTranslateMainWindow(QMainWindow):
         self.status_label.setText("⏹ Stopped")
         self.status_label.setStyleSheet("color: #858585; font-weight: bold;")
         self._set_controls_enabled(True)
+    
+    def _on_open_meeting_mode(self):
+        """Open Meeting Mode window (Phase 4)."""
+        if not self._meeting_mode_enabled:
+            QMessageBox.information(self, "Meeting Mode", "Meeting Mode is not available.")
+            return
+        
+        if not self.meeting_window:
+            self.meeting_window = MeetingWindow()
+            self.meeting_window.setAttribute(Qt.WA_DeleteOnClose, False)
+        
+        self.meeting_window.show()
+        self.meeting_window.raise_()
+        self.meeting_window.activateWindow()
+        
+        logger.info("Meeting Mode window opened")
     
     def _populate_mic_devices(self):
         """Populate microphone device dropdown."""

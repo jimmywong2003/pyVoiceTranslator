@@ -1,0 +1,3257 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>ROADMAP.md</title>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+
+<style>
+/* https://github.com/microsoft/vscode/blob/master/extensions/markdown-language-features/media/markdown.css */
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
+body {
+	font-family: var(--vscode-markdown-font-family, -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", "Ubuntu", "Droid Sans", sans-serif);
+	font-size: var(--vscode-markdown-font-size, 14px);
+	padding: 0 26px;
+	line-height: var(--vscode-markdown-line-height, 22px);
+	word-wrap: break-word;
+}
+
+#code-csp-warning {
+	position: fixed;
+	top: 0;
+	right: 0;
+	color: white;
+	margin: 16px;
+	text-align: center;
+	font-size: 12px;
+	font-family: sans-serif;
+	background-color:#444444;
+	cursor: pointer;
+	padding: 6px;
+	box-shadow: 1px 1px 1px rgba(0,0,0,.25);
+}
+
+#code-csp-warning:hover {
+	text-decoration: none;
+	background-color:#007acc;
+	box-shadow: 2px 2px 2px rgba(0,0,0,.25);
+}
+
+body.scrollBeyondLastLine {
+	margin-bottom: calc(100vh - 22px);
+}
+
+body.showEditorSelection .code-line {
+	position: relative;
+}
+
+body.showEditorSelection .code-active-line:before,
+body.showEditorSelection .code-line:hover:before {
+	content: "";
+	display: block;
+	position: absolute;
+	top: 0;
+	left: -12px;
+	height: 100%;
+}
+
+body.showEditorSelection li.code-active-line:before,
+body.showEditorSelection li.code-line:hover:before {
+	left: -30px;
+}
+
+.vscode-light.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(0, 0, 0, 0.15);
+}
+
+.vscode-light.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(0, 0, 0, 0.40);
+}
+
+.vscode-light.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+.vscode-dark.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(255, 255, 255, 0.4);
+}
+
+.vscode-dark.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(255, 255, 255, 0.60);
+}
+
+.vscode-dark.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+.vscode-high-contrast.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(255, 160, 0, 0.7);
+}
+
+.vscode-high-contrast.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(255, 160, 0, 1);
+}
+
+.vscode-high-contrast.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+img {
+	max-width: 100%;
+	max-height: 100%;
+}
+
+a {
+	text-decoration: none;
+}
+
+a:hover {
+	text-decoration: underline;
+}
+
+a:focus,
+input:focus,
+select:focus,
+textarea:focus {
+	outline: 1px solid -webkit-focus-ring-color;
+	outline-offset: -1px;
+}
+
+hr {
+	border: 0;
+	height: 2px;
+	border-bottom: 2px solid;
+}
+
+h1 {
+	padding-bottom: 0.3em;
+	line-height: 1.2;
+	border-bottom-width: 1px;
+	border-bottom-style: solid;
+}
+
+h1, h2, h3 {
+	font-weight: normal;
+}
+
+table {
+	border-collapse: collapse;
+}
+
+table > thead > tr > th {
+	text-align: left;
+	border-bottom: 1px solid;
+}
+
+table > thead > tr > th,
+table > thead > tr > td,
+table > tbody > tr > th,
+table > tbody > tr > td {
+	padding: 5px 10px;
+}
+
+table > tbody > tr + tr > td {
+	border-top: 1px solid;
+}
+
+blockquote {
+	margin: 0 7px 0 5px;
+	padding: 0 16px 0 10px;
+	border-left-width: 5px;
+	border-left-style: solid;
+}
+
+code {
+	font-family: Menlo, Monaco, Consolas, "Droid Sans Mono", "Courier New", monospace, "Droid Sans Fallback";
+	font-size: 1em;
+	line-height: 1.357em;
+}
+
+body.wordWrap pre {
+	white-space: pre-wrap;
+}
+
+pre:not(.hljs),
+pre.hljs code > div {
+	padding: 16px;
+	border-radius: 3px;
+	overflow: auto;
+}
+
+pre code {
+	color: var(--vscode-editor-foreground);
+	tab-size: 4;
+}
+
+/** Theming */
+
+.vscode-light pre {
+	background-color: rgba(220, 220, 220, 0.4);
+}
+
+.vscode-dark pre {
+	background-color: rgba(10, 10, 10, 0.4);
+}
+
+.vscode-high-contrast pre {
+	background-color: rgb(0, 0, 0);
+}
+
+.vscode-high-contrast h1 {
+	border-color: rgb(0, 0, 0);
+}
+
+.vscode-light table > thead > tr > th {
+	border-color: rgba(0, 0, 0, 0.69);
+}
+
+.vscode-dark table > thead > tr > th {
+	border-color: rgba(255, 255, 255, 0.69);
+}
+
+.vscode-light h1,
+.vscode-light hr,
+.vscode-light table > tbody > tr + tr > td {
+	border-color: rgba(0, 0, 0, 0.18);
+}
+
+.vscode-dark h1,
+.vscode-dark hr,
+.vscode-dark table > tbody > tr + tr > td {
+	border-color: rgba(255, 255, 255, 0.18);
+}
+
+</style>
+
+<style>
+/* Tomorrow Theme */
+/* http://jmblog.github.com/color-themes-for-google-code-highlightjs */
+/* Original theme - https://github.com/chriskempson/tomorrow-theme */
+
+/* Tomorrow Comment */
+.hljs-comment,
+.hljs-quote {
+	color: #8e908c;
+}
+
+/* Tomorrow Red */
+.hljs-variable,
+.hljs-template-variable,
+.hljs-tag,
+.hljs-name,
+.hljs-selector-id,
+.hljs-selector-class,
+.hljs-regexp,
+.hljs-deletion {
+	color: #c82829;
+}
+
+/* Tomorrow Orange */
+.hljs-number,
+.hljs-built_in,
+.hljs-builtin-name,
+.hljs-literal,
+.hljs-type,
+.hljs-params,
+.hljs-meta,
+.hljs-link {
+	color: #f5871f;
+}
+
+/* Tomorrow Yellow */
+.hljs-attribute {
+	color: #eab700;
+}
+
+/* Tomorrow Green */
+.hljs-string,
+.hljs-symbol,
+.hljs-bullet,
+.hljs-addition {
+	color: #718c00;
+}
+
+/* Tomorrow Blue */
+.hljs-title,
+.hljs-section {
+	color: #4271ae;
+}
+
+/* Tomorrow Purple */
+.hljs-keyword,
+.hljs-selector-tag {
+	color: #8959a8;
+}
+
+.hljs {
+	display: block;
+	overflow-x: auto;
+	color: #4d4d4c;
+	padding: 0.5em;
+}
+
+.hljs-emphasis {
+	font-style: italic;
+}
+
+.hljs-strong {
+	font-weight: bold;
+}
+</style>
+
+<style>
+/*
+ * Markdown PDF CSS
+ */
+
+ body {
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", "Ubuntu", "Droid Sans", sans-serif, "Meiryo";
+	padding: 0 12px;
+}
+
+pre {
+	background-color: #f8f8f8;
+	border: 1px solid #cccccc;
+	border-radius: 3px;
+	overflow-x: auto;
+	white-space: pre-wrap;
+	overflow-wrap: break-word;
+}
+
+pre:not(.hljs) {
+	padding: 23px;
+	line-height: 19px;
+}
+
+blockquote {
+	background: rgba(127, 127, 127, 0.1);
+	border-color: rgba(0, 122, 204, 0.5);
+}
+
+.emoji {
+	height: 1.4em;
+}
+
+code {
+	font-size: 14px;
+	line-height: 19px;
+}
+
+/* for inline code */
+:not(pre):not(.hljs) > code {
+	color: #C9AE75; /* Change the old color so it seems less like an error */
+	font-size: inherit;
+}
+
+/* Page Break : use <div class="page"/> to insert page break
+-------------------------------------------------------- */
+.page {
+	page-break-after: always;
+}
+
+</style>
+
+<script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
+</head>
+<body>
+  <script>
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: document.body.classList.contains('vscode-dark') || document.body.classList.contains('vscode-high-contrast')
+          ? 'dark'
+          : 'default'
+    });
+  </script>
+<h1 id="voicetranslate-pro---development-roadmap">VoiceTranslate Pro - Development Roadmap</h1>
+<blockquote>
+<p><strong>Purpose:</strong> Detailed implementation guide for future development phases<br>
+<strong>Last Updated:</strong> 2026-02-21<br>
+<strong>Current Version:</strong> v2.0.0+delta-time<br>
+<strong>Next Phase:</strong> Phase 4 - Meeting Minutes &amp; Speaker Recognition</p>
+</blockquote>
+<hr>
+<h2 id="%F0%9F%93%8B-quick-reference">📋 Quick Reference</h2>
+<table>
+<thead>
+<tr>
+<th>Phase</th>
+<th>Status</th>
+<th>Priority</th>
+<th>Est. Time</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>PoC</strong></td>
+<td>📋 For Review</td>
+<td>Critical</td>
+<td>1 week</td>
+</tr>
+<tr>
+<td>Phase 4</td>
+<td>📋 Planned</td>
+<td>High</td>
+<td>5 weeks</td>
+</tr>
+<tr>
+<td>Phase 5</td>
+<td>📋 Planned</td>
+<td>Medium</td>
+<td>2 weeks</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Current Status:</strong> 🔄 <strong>REVIEW PHASE - Not Ready for Implementation</strong></p>
+<p><strong>Action Required:</strong> Review and approve Proof of Concept plan before proceeding.</p>
+<hr>
+<h2 id="%F0%9F%94%AC-proof-of-concept-poc---critical-first-step">🔬 Proof of Concept (PoC) - CRITICAL FIRST STEP</h2>
+<blockquote>
+<p><strong>⚠️ DO NOT START IMPLEMENTATION UNTIL PoC IS COMPLETE AND REVIEWED</strong></p>
+</blockquote>
+<h3 id="poc-objective">PoC Objective</h3>
+<p>Validate technical feasibility and compatibility before committing to full implementation.</p>
+<h3 id="poc-folder-structure-isolated">PoC Folder Structure (Isolated)</h3>
+<p>All PoC code must be in a <strong>separate, isolated directory</strong> to avoid polluting the main codebase:</p>
+<pre class="hljs"><code><div>project-root/
+├── src/                          # ⛔ DO NOT MODIFY - Main codebase
+│   ├── gui/
+│   ├── core/
+│   └── ...
+├── tests/                        # ⛔ DO NOT MODIFY
+├── docs/
+├── poc/                          # ✅ PoC WORK DIRECTORY
+│   ├── README.md                 # PoC setup and run instructions
+│   ├── requirements.txt          # PoC-specific dependencies
+│   ├── poc1_fluent_widgets/      # PoC 1: UI Compatibility
+│   │   ├── test_fluent_theme.py
+│   │   ├── test_threading.py
+│   │   └── results.md
+│   ├── poc2_speaker_diarization/ # PoC 2: Speaker Detection
+│   │   ├── test_diarization.py
+│   │   ├── test_latency.py
+│   │   └── results.md
+│   ├── poc3_data_model/          # PoC 3: Model Coexistence
+│   │   ├── test_coexistence.py
+│   │   └── results.md
+│   └── poc4_model_download/      # PoC 4: Model Management (NEW)
+│       ├── test_downloader.py
+│       ├── test_resume.py
+│       └── results.md
+</div></code></pre>
+<p><strong>PoC Rules:</strong></p>
+<ol>
+<li><strong>Isolate:</strong> All PoC code in <code>poc/</code> folder only</li>
+<li><strong>Don't modify src/:</strong> Main codebase remains untouched during PoC</li>
+<li><strong>Copy if needed:</strong> Copy relevant files from <code>src/</code> to <code>poc/</code> for testing</li>
+<li><strong>Document:</strong> Each PoC must have <code>results.md</code> with findings</li>
+<li><strong>Clean:</strong> PoC folder can be deleted after implementation starts</li>
+</ol>
+<h3 id="poc-1-pyqt-fluent-widgets-compatibility-test">PoC 1: PyQt-Fluent-Widgets Compatibility Test</h3>
+<p><strong>Duration:</strong> 2-3 days<br>
+<strong>Location:</strong> <code>poc/poc1_fluent_widgets/</code><br>
+<strong>Goal:</strong> Verify PyQt-Fluent-Widgets works with existing PySide6 codebase</p>
+<p><strong>Test Scenarios:</strong></p>
+<ol>
+<li>
+<p><strong>Basic Integration</strong> (<code>test_fluent_theme.py</code>)</p>
+<pre class="hljs"><code><div><span class="hljs-comment"># In poc/poc1_fluent_widgets/test_fluent_theme.py</span>
+<span class="hljs-keyword">import</span> sys
+sys.path.insert(<span class="hljs-number">0</span>, <span class="hljs-string">'../../src'</span>)  <span class="hljs-comment"># Access src without modifying</span>
+
+<span class="hljs-keyword">from</span> qfluentwidgets <span class="hljs-keyword">import</span> FluentWindow, setTheme, Theme
+<span class="hljs-keyword">from</span> PySide6.QtWidgets <span class="hljs-keyword">import</span> QApplication
+
+app = QApplication([])
+setTheme(Theme.DARK)
+window = FluentWindow()
+<span class="hljs-comment"># Test with copied TranslationDisplay widget from src/</span>
+</div></code></pre>
+</li>
+<li>
+<p><strong>Audio Threading Compatibility</strong> (<code>test_threading.py</code>)</p>
+<ul>
+<li>Copy existing audio capture code from <code>src/audio/</code></li>
+<li>Test if Fluent widgets work with QThread-based audio</li>
+<li>Verify no UI freezing with real-time updates</li>
+<li>Check signal/slot behavior with Fluent components</li>
+</ul>
+</li>
+<li>
+<p><strong>Performance Impact</strong></p>
+<ul>
+<li>Measure startup time difference (Fluent vs standard Qt)</li>
+<li>Check memory usage increase</li>
+<li>Verify no regression in ASR latency</li>
+</ul>
+</li>
+</ol>
+<p><strong>Deliverables:</strong></p>
+<ul>
+<li><code>poc/poc1_fluent_widgets/test_fluent_theme.py</code> - Basic theme test</li>
+<li><code>poc/poc1_fluent_widgets/test_threading.py</code> - Audio threading test</li>
+<li><code>poc/poc1_fluent_widgets/results.md</code> - Findings and benchmarks</li>
+</ul>
+<p><strong>Success Criteria:</strong></p>
+<ul>
+<li><input type="checkbox" id="checkbox0"><label for="checkbox0">Existing translation pipeline works with Fluent theme</label></li>
+<li><input type="checkbox" id="checkbox1"><label for="checkbox1">No audio dropouts or UI freezing</label></li>
+<li><input type="checkbox" id="checkbox2"><label for="checkbox2">Startup time increase &lt; 20%</label></li>
+<li><input type="checkbox" id="checkbox3"><label for="checkbox3">Memory increase &lt; 50MB</label></li>
+</ul>
+<p><strong>Decision Points:</strong></p>
+<ul>
+<li>✅ <strong>PASS:</strong> Proceed with PyQt-Fluent-Widgets for Meeting Mode</li>
+<li>❌ <strong>FAIL:</strong> Use custom QSS theme instead (fallback option in Section 4.3)</li>
+</ul>
+<h3 id="poc-2-speaker-diarization-integration">PoC 2: Speaker Diarization Integration</h3>
+<p><strong>Duration:</strong> 2-3 days<br>
+<strong>Location:</strong> <code>poc/poc2_speaker_diarization/</code><br>
+<strong>Goal:</strong> Test turn-based speaker detection with existing pipeline</p>
+<p><strong>Test Setup:</strong></p>
+<pre class="hljs"><code><div><span class="hljs-comment"># In poc/poc2_speaker_diarization/test_diarization.py</span>
+<span class="hljs-keyword">import</span> sys
+sys.path.insert(<span class="hljs-number">0</span>, <span class="hljs-string">'../../src'</span>)
+
+<span class="hljs-keyword">from</span> src.core.pipeline.orchestrator <span class="hljs-keyword">import</span> TranslationPipeline
+<span class="hljs-comment"># Create test version of SimpleSpeakerDiarization in poc/</span>
+<span class="hljs-keyword">from</span> speaker_test <span class="hljs-keyword">import</span> SimpleSpeakerDiarization
+
+pipeline = TranslationPipeline(config)
+diarization = SimpleSpeakerDiarization(max_speakers=<span class="hljs-number">3</span>)
+
+<span class="hljs-comment"># Test: Does adding speaker detection affect ASR latency?</span>
+<span class="hljs-comment"># Measure: Processing time with/without diarization</span>
+</div></code></pre>
+<p><strong>Test Scenarios:</strong></p>
+<ol>
+<li>
+<p><strong>Latency Test</strong> (<code>test_latency.py</code>)</p>
+<ul>
+<li>Measure ASR processing time with/without diarization</li>
+<li>Test with varying speaker counts (2, 3, 4)</li>
+<li>Verify thread safety with concurrent audio capture</li>
+</ul>
+</li>
+<li>
+<p><strong>Integration Test</strong> (<code>test_integration.py</code>)</p>
+<ul>
+<li>Test diarization with draft/final streaming modes</li>
+<li>Verify speaker assignment accuracy with simulated audio</li>
+<li>Test speaker count changes mid-session</li>
+</ul>
+</li>
+</ol>
+<p><strong>Deliverables:</strong></p>
+<ul>
+<li><code>poc/poc2_speaker_diarization/speaker_test.py</code> - Test diarization implementation</li>
+<li><code>poc/poc2_speaker_diarization/test_latency.py</code> - Latency benchmarks</li>
+<li><code>poc/poc2_speaker_diarization/test_integration.py</code> - Pipeline integration test</li>
+<li><code>poc/poc2_speaker_diarization/results.md</code> - Findings and metrics</li>
+</ul>
+<p><strong>Success Criteria:</strong></p>
+<ul>
+<li><input type="checkbox" id="checkbox4"><label for="checkbox4">Speaker detection adds &lt; 50ms latency</label></li>
+<li><input type="checkbox" id="checkbox5"><label for="checkbox5">Works with 2-4 speaker scenarios</label></li>
+<li><input type="checkbox" id="checkbox6"><label for="checkbox6">Can coexist with draft/final streaming modes</label></li>
+<li><input type="checkbox" id="checkbox7"><label for="checkbox7">Thread-safe operation verified</label></li>
+</ul>
+<p><strong>Decision Points:</strong></p>
+<ul>
+<li>✅ <strong>PASS:</strong> Proceed with turn-based approach</li>
+<li>❌ <strong>FAIL:</strong> Delay speaker recognition to V2, focus on minutes format only</li>
+</ul>
+<h3 id="poc-3-meeting-data-model-coexistence">PoC 3: Meeting Data Model Coexistence</h3>
+<p><strong>Duration:</strong> 1-2 days<br>
+<strong>Location:</strong> <code>poc/poc3_data_model/</code><br>
+<strong>Goal:</strong> Verify MeetingEntry model works alongside existing TranslationEntry</p>
+<p><strong>Test Scenarios:</strong></p>
+<ol>
+<li>
+<p><strong>Model Coexistence</strong> (<code>test_coexistence.py</code>)</p>
+<ul>
+<li>Create MeetingEntry and TranslationEntry in same test session</li>
+<li>Verify no conflicts between data models</li>
+<li>Test memory usage with both models active</li>
+</ul>
+</li>
+<li>
+<p><strong>Export Compatibility</strong> (<code>test_export.py</code>)</p>
+<ul>
+<li>Test export functions for both formats</li>
+<li>Verify no data loss when converting between modes</li>
+<li>Test simultaneous export of both formats</li>
+</ul>
+</li>
+</ol>
+<p><strong>Deliverables:</strong></p>
+<ul>
+<li><code>poc/poc3_data_model/test_coexistence.py</code> - Model coexistence test</li>
+<li><code>poc/poc3_data_model/test_export.py</code> - Export functionality test</li>
+<li><code>poc/poc3_data_model/results.md</code> - Findings</li>
+</ul>
+<p><strong>Success Criteria:</strong></p>
+<ul>
+<li><input type="checkbox" id="checkbox8"><label for="checkbox8">Both models can coexist without conflicts</label></li>
+<li><input type="checkbox" id="checkbox9"><label for="checkbox9">Export functions work independently</label></li>
+<li><input type="checkbox" id="checkbox10"><label for="checkbox10">No data loss when switching modes</label></li>
+<li><input type="checkbox" id="checkbox11"><label for="checkbox11">Memory usage acceptable (&lt;100MB overhead)</label></li>
+</ul>
+<p><strong>Decision Points:</strong></p>
+<ul>
+<li>✅ <strong>PASS:</strong> Proceed with dual-mode architecture</li>
+<li>❌ <strong>FAIL:</strong> Consider separate applications for each mode</li>
+</ul>
+<h3 id="poc-4-model-download--management-new---critical">PoC 4: Model Download &amp; Management (NEW - Critical)</h3>
+<p><strong>Duration:</strong> 2 days<br>
+<strong>Location:</strong> <code>poc/poc4_model_download/</code><br>
+<strong>Goal:</strong> Test robust model downloading without installer</p>
+<p><strong>Test Scenarios:</strong></p>
+<ol>
+<li>
+<p><strong>Basic Download</strong> (<code>test_downloader.py</code>)</p>
+<ul>
+<li>Download small test file (10MB) from HuggingFace</li>
+<li>Verify progress bar updates correctly</li>
+<li>Test checksum verification</li>
+</ul>
+</li>
+<li>
+<p><strong>Resume &amp; Retry</strong> (<code>test_resume.py</code>)</p>
+<ul>
+<li>Simulate interrupted download (kill mid-download)</li>
+<li>Test resume capability</li>
+<li>Test retry logic on network failure</li>
+<li>Test mirror fallback</li>
+</ul>
+</li>
+<li>
+<p><strong>Permission Test</strong> (<code>test_permissions.py</code>)</p>
+<ul>
+<li>Test log directory creation in user home</li>
+<li>Test model directory creation</li>
+<li>Verify graceful handling of permission denied</li>
+</ul>
+</li>
+</ol>
+<p><strong>Deliverables:</strong></p>
+<ul>
+<li><code>poc/poc4_model_download/model_manager_test.py</code> - Test ModelManager implementation</li>
+<li><code>poc/poc4_model_download/test_downloader.py</code> - Download functionality</li>
+<li><code>poc/poc4_model_download/test_resume.py</code> - Resume/retry logic</li>
+<li><code>poc/poc4_model_download/test_permissions.py</code> - Directory permissions</li>
+<li><code>poc/poc4_model_download/results.md</code> - Findings</li>
+</ul>
+<p><strong>Success Criteria:</strong></p>
+<ul>
+<li><input type="checkbox" id="checkbox12"><label for="checkbox12">Downloads work on both Windows and macOS</label></li>
+<li><input type="checkbox" id="checkbox13"><label for="checkbox13">Progress bars show accurate % and speed</label></li>
+<li><input type="checkbox" id="checkbox14"><label for="checkbox14">Resume interrupted downloads</label></li>
+<li><input type="checkbox" id="checkbox15"><label for="checkbox15">Retry on network failure (3 attempts)</label></li>
+<li><input type="checkbox" id="checkbox16"><label for="checkbox16">Graceful handling of permission errors</label></li>
+<li><input type="checkbox" id="checkbox17"><label for="checkbox17">Checksum verification catches corrupt downloads</label></li>
+</ul>
+<p><strong>Decision Points:</strong></p>
+<ul>
+<li>✅ <strong>PASS:</strong> Proceed with portable distribution + model download</li>
+<li>❌ <strong>FAIL:</strong> Require manual model download by users</li>
+</ul>
+<hr>
+<p><strong>Current Focus:</strong> Phase 4 - Meeting Minutes with Speaker Recognition</p>
+<hr>
+<h2 id="%F0%9F%9B%A0%EF%B8%8F-technology-stack">🛠️ Technology Stack</h2>
+<table>
+<thead>
+<tr>
+<th>Component</th>
+<th>Technology</th>
+<th>Reason</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Language</strong></td>
+<td>Python 3.10+</td>
+<td>Best ecosystem for AI/ML</td>
+</tr>
+<tr>
+<td><strong>GUI Framework</strong></td>
+<td>PySide6 + PyQt-Fluent-Widgets</td>
+<td>Modern UI. Critical: Verify compatibility in PoC</td>
+</tr>
+<tr>
+<td><strong>Speech-to-Text</strong></td>
+<td>faster-whisper</td>
+<td>Optimized for Edge (CPU/GPU), low latency</td>
+</tr>
+<tr>
+<td><strong>Speaker Diarization</strong></td>
+<td>SimpleSpeakerDiarization (V1)</td>
+<td>Turn-based detection. Low resource usage for MVP</td>
+</tr>
+<tr>
+<td><strong>Audio Input</strong></td>
+<td>sounddevice</td>
+<td>Cross-platform microphone access</td>
+</tr>
+<tr>
+<td><strong>Logging</strong></td>
+<td>loguru</td>
+<td>Easy rotation, formatting, and privacy modes</td>
+</tr>
+<tr>
+<td><strong>Distribution</strong></td>
+<td>Portable Executable / Script</td>
+<td>No installer wizard. Users run directly</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 id="%E2%9A%A0%EF%B8%8F-critical-technical-risks-revised">⚠️ Critical Technical Risks (Revised)</h2>
+<h3 id="risk-1-pyside6-vs-pyqt-fluent-widgets-compatibility-%F0%9F%94%B4-high">Risk 1: PySide6 vs PyQt-Fluent-Widgets Compatibility 🔴 HIGH</h3>
+<p><strong>Issue:</strong> PyQt-Fluent-Widgets may conflict with existing PySide6 code, causing UI freezing or threading issues.</p>
+<p><strong>Mitigation:</strong></p>
+<ul>
+<li><strong>PoC 1 is CRITICAL:</strong> Must verify compatibility before proceeding</li>
+<li>If PoC fails, revert to standard Qt Styling (QSS) immediately</li>
+<li>Test specifically with audio threading and real-time updates</li>
+</ul>
+<p><strong>Impact:</strong> If failed, modern UI goal fails. Have fallback ready.</p>
+<h3 id="risk-2-model-management-no-installer-%F0%9F%9F%A1-medium">Risk 2: Model Management (No Installer) 🟡 MEDIUM</h3>
+<p><strong>Issue:</strong> Without installer, cannot guarantee models exist on first run. Must handle downloads robustly.</p>
+<p><strong>Mitigation:</strong></p>
+<ul>
+<li><strong>ModelManager class:</strong> Dedicated downloader with retries, progress bars, error handling</li>
+<li><strong>Checksum verification:</strong> Verify SHA256 before loading to catch corrupt downloads</li>
+<li><strong>Mirror support:</strong> Allow switching to secondary mirror if HuggingFace is blocked/slow</li>
+<li><strong>Offline mode:</strong> Allow app launch even if models fail (show error state, don't block)</li>
+</ul>
+<h3 id="risk-3-portable-app-permissions-%F0%9F%9F%A1-medium">Risk 3: Portable App Permissions 🟡 MEDIUM</h3>
+<p><strong>Issue:</strong> Without installer, macOS/Windows may flag the app. Users need manual permission guidance.</p>
+<p><strong>Mitigation:</strong></p>
+<ul>
+<li><strong>First Run Wizard:</strong> Clear guidance for microphone access in OS settings</li>
+<li><strong>Permission check:</strong> Detect denied permissions and show helpful dialog</li>
+<li><strong>User-writable paths:</strong> Write logs to ~/Documents or ~/AppData, not Program Files</li>
+</ul>
+<h3 id="risk-4-diarization-latency-%F0%9F%9F%A1-medium">Risk 4: Diarization Latency 🟡 MEDIUM</h3>
+<p><strong>Issue:</strong> Speaker detection could block ASR thread if not implemented correctly.</p>
+<p><strong>Mitigation:</strong></p>
+<ul>
+<li><strong>V1 Turn-Based:</strong> Must be proven &lt;50ms latency in PoC</li>
+<li><strong>Offload to QRunnable:</strong> If upgrading to V2 embeddings, use separate thread pool</li>
+<li><strong>Asynchronous processing:</strong> Never block UI or audio capture threads</li>
+</ul>
+<h3 id="risk-5-logging-permissions-%F0%9F%9F%A2-low">Risk 5: Logging Permissions 🟢 LOW</h3>
+<p><strong>Issue:</strong> Portable app must handle log directory creation gracefully.</p>
+<p><strong>Mitigation:</strong></p>
+<ul>
+<li><strong>Auto-create directories:</strong> <code>~/.voicetranslate/logs</code> created on first run</li>
+<li><strong>Graceful fallback:</strong> If permission denied, log to console only</li>
+<li><strong>Pathlib usage:</strong> Use <code>Path.home()</code> for all user data paths</li>
+</ul>
+<hr>
+<h2 id="%F0%9F%8E%AF-new-design-goals">🎯 New Design Goals</h2>
+<p>Based on user requirements for a professional meeting transcription application:</p>
+<h3 id="approach-option-a---incremental-integration">Approach: Option A - Incremental Integration</h3>
+<blockquote>
+<p><strong>⚠️ Design Decision:</strong> Meeting Mode will be added as a <strong>new view/window</strong> alongside the existing Translation Mode, NOT a complete replacement.</p>
+</blockquote>
+<p><strong>Rationale:</strong></p>
+<ul>
+<li>Existing GUI (<code>src/gui/main.py</code>, 54KB+) has mature translation functionality</li>
+<li>Interview Mode and Documentary Mode serve different use cases</li>
+<li>Gradual migration reduces risk and maintains backward compatibility</li>
+<li>Users can choose between Translation Mode and Meeting Mode</li>
+</ul>
+<h3 id="core-features">Core Features</h3>
+<ol>
+<li><strong>Meeting Mode</strong> - New window/view for meeting transcription with minutes format</li>
+<li><strong>Speaker Recognition</strong> - Identify and label different speakers (with user-configurable count)</li>
+<li><strong>Modern GUI Theme (Optional)</strong> - PyQt-Fluent-Widgets for new Meeting Mode only</li>
+<li><strong>Audio Test Function</strong> - Real-time level meter for any mode</li>
+<li><strong>Debug Logging</strong> - Comprehensive logging for troubleshooting</li>
+</ol>
+<h3 id="architecture-principles">Architecture Principles</h3>
+<ul>
+<li><strong>Backward Compatible:</strong> Existing Translation Mode remains unchanged</li>
+<li><strong>Shared Components:</strong> Reuse ASR pipeline, add speaker diarization as optional addon</li>
+<li><strong>Gradual Theme Migration:</strong> New Meeting Mode gets modern theme first</li>
+<li><strong>Data Separation:</strong> Meeting minutes data model alongside existing translation entries</li>
+</ul>
+<hr>
+<h2 id="%F0%9F%8E%A8-gui-design-specification">🎨 GUI Design Specification</h2>
+<blockquote>
+<p><strong>Target Audience:</strong> Customers, Stakeholders, Development Team<br>
+<strong>Design Philosophy:</strong> Professional, Minimalist, Focus on Content<br>
+<strong>Architecture:</strong> New Meeting Mode window coexists with existing Translation Mode</p>
+</blockquote>
+<h3 id="mode-selection-new">Mode Selection (New)</h3>
+<p>On launch, user selects mode:</p>
+<pre class="hljs"><code><div>┌─────────────────────────────────────────────────────────────┐
+│  VoiceTranslate Pro                                    v2.5 │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  Select Mode:                                               │
+│                                                             │
+│  ┌─────────────────────────┐  ┌─────────────────────────┐  │
+│  │    🔄 TRANSLATION       │  │     📋 MEETING          │  │
+│  │         MODE            │  │       MINUTES           │  │
+│  │                         │  │         MODE            │  │
+│  │  Real-time translation  │  │  Transcribe meetings    │  │
+│  │  with draft/final       │  │  with speaker labels    │  │
+│  │  streaming              │  │  and export minutes     │  │
+│  │                         │  │                         │  │
+│  │  [Classic Qt Theme]     │  │  [Modern Fluent Theme]  │  │
+│  │                         │  │                         │  │
+│  │    [ Launch Mode ]      │  │    [ Launch Mode ]      │  │
+│  └─────────────────────────┘  └─────────────────────────┘  │
+│                                                             │
+│  💡 Tip: You can switch modes anytime from the File menu   │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+</div></code></pre>
+<h3 id="meeting-mode-layout-new-window">Meeting Mode Layout (New Window)</h3>
+<blockquote>
+<p><strong>Note:</strong> This is a NEW window class <code>MeetingWindow</code>, not a replacement for existing GUI.</p>
+</blockquote>
+<h3 id="layout-overview">Layout Overview</h3>
+<pre class="hljs"><code><div>┌─────────────────────────────────────────────────────────────────────────────┐
+│  VoiceTranslate Pro                                    [🌙] [⚙️] [🐛]     │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  ┌─────────────────────────────────┐  ┌───────────────────────────────────┐ │
+│  │  📊 SESSION INFO                │  │  🎤 LIVE TRANSCRIPT               │ │
+│  │  ─────────────────────────────  │  │  ─────────────────────────────    │ │
+│  │                                 │  │                                   │ │
+│  │  Meeting: Q4 Planning Session   │  │  ┌───── Speaker 1 🔵 ──────────┐ │ │
+│  │  Duration: 00:23:45             │  │  │ [10:23:15]                    │ │
+│  │  👥 Speakers: [3 ▼]             │  │  │ Good morning everyone.       │ │
+│  │                                 │  │  │ → 大家早上好。               │ │
+│  │  [▶️ Start] [⏹️ Stop] [💾 Save]│  │  └─────────────────────────────┘ │ │
+│  │                                 │  │                                   │ │
+│  │  ── Audio Settings ──           │  │  ┌───── Speaker 2 🔴 ──────────┐ │ │
+│  │  🎙️ Input: Microphone (USB)     │  │  │ [10:23:28] +13s              │ │
+│  │      [🎤 Test Audio]            │  │  │ Let's review the agenda.     │ │
+│  │  🌍 Source: English             │  │  │ → 让我们看一下议程。         │ │
+│  │  🌐 Target: Chinese (Simplified)│  │  └─────────────────────────────┘ │ │
+│  │                                 │  │                                   │ │
+│  │  ── Speaker Legend ──           │  │  ┌───── Speaker 1 🔵 ──────────┐ │ │
+│  │  🔵 Speaker 1 (Host)            │  │  │ [10:23:45] +17s              │ │
+│  │  🔴 Speaker 2                   │  │  │ ··· (transcribing)           │ │
+│  │  🟢 Speaker 3                   │  │  │ ● ○ ○ Draft                  │ │
+│  │  ⚪ Unassigned                  │  │  └─────────────────────────────┘ │ │
+│  │                                 │  │                                   │ │
+│  └─────────────────────────────────┘  │                                   │ │
+│                                       │                                   │ │
+│  ┌─────────────────────────────────┐  │  [Auto-scroll enabled]          │ │
+│  │  📈 ANALYTICS                   │  │                                   │ │
+│  │  ─────────────────────────────  │  └───────────────────────────────────┘ │
+│  │                                 │                                       │
+│  │  Words/Min: 145      ⚡ Low Latency                                   │
+│  │  ━━━━━━━━━━━━                                                        │
+│  │  Avg Confidence: 92%                                                 │
+│  │  ████████████████████░░░                                             │
+│  │  Total Entries: 47                                                   │
+│  │                                                                     │
+│  └─────────────────────────────────┘                                       │
+│                                                                             │
+├─────────────────────────────────────────────────────────────────────────────┤
+│  Status: Recording │ Last Save: Auto │ Log: ~/.voicetranslate/logs/...   │
+└─────────────────────────────────────────────────────────────────────────────┘
+</div></code></pre>
+<p><strong>Key Differences from Existing Translation Mode:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Feature</th>
+<th>Translation Mode (Existing)</th>
+<th>Meeting Mode (New)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Primary Output</strong></td>
+<td>Real-time translation</td>
+<td>Meeting minutes with speakers</td>
+</tr>
+<tr>
+<td><strong>Speaker Support</strong></td>
+<td>None</td>
+<td>2-8 speakers with color coding</td>
+</tr>
+<tr>
+<td><strong>Export Formats</strong></td>
+<td>TXT, SRT, VTT</td>
+<td>Markdown, JSON</td>
+</tr>
+<tr>
+<td><strong>UI Theme</strong></td>
+<td>Classic PySide6/Qt</td>
+<td>PyQt-Fluent-Widgets (if PoC passes)</td>
+</tr>
+<tr>
+<td><strong>Display Style</strong></td>
+<td>Sequential text</td>
+<td>Speaker bubbles</td>
+</tr>
+<tr>
+<td><strong>Target Use Case</strong></td>
+<td>Live translation</td>
+<td>Meeting transcription</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>Both modes share: Audio device selection, ASR pipeline, debug logging, CPU/RAM indicator</p>
+</blockquote>
+<h3 id="component-breakdown">Component Breakdown</h3>
+<h4 id="1-header-bar">1. Header Bar</h4>
+<table>
+<thead>
+<tr>
+<th>Element</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>App Title</strong></td>
+<td>&quot;VoiceTranslate Pro&quot; with version badge</td>
+</tr>
+<tr>
+<td><strong>Theme Toggle</strong></td>
+<td>🌙/☀️ Dark/Light mode switch</td>
+</tr>
+<tr>
+<td><strong>Settings</strong></td>
+<td>⚙️ Preferences (language defaults, audio device)</td>
+</tr>
+<tr>
+<td><strong>Debug</strong></td>
+<td>🐛 Open log folder / Generate crash report</td>
+</tr>
+</tbody>
+</table>
+<h4 id="2-left-panel-control--info-30-width">2. Left Panel: Control &amp; Info (30% width)</h4>
+<p><strong>Session Info Card</strong></p>
+<ul>
+<li>Editable meeting title</li>
+<li>Live duration timer</li>
+<li><strong>Speaker Count Selector:</strong> Input expected number of speakers (2-8)</li>
+<li>Transport controls (Start/Stop/Save)</li>
+<li>Audio test button</li>
+</ul>
+<p><strong>Audio Settings Card</strong></p>
+<ul>
+<li>Input device dropdown with levels</li>
+<li>Source language selector</li>
+<li>Target language selector (optional)</li>
+<li>Quality/Mode toggle (Speed vs Accuracy)</li>
+</ul>
+<p><strong>Speaker Legend Card</strong></p>
+<ul>
+<li>Color-coded speaker list</li>
+<li>Click to rename speakers (updates all previous entries retroactively)</li>
+<li>Drag to merge speakers</li>
+</ul>
+<p><strong>Analytics Card</strong> (collapsible)</p>
+<ul>
+<li>Real-time WPM (Words Per Minute)</li>
+<li>Confidence score bar</li>
+<li>Session statistics</li>
+</ul>
+<h4 id="3-right-panel-live-transcript-70-width">3. Right Panel: Live Transcript (70% width)</h4>
+<p><strong>Speaker Bubble Design</strong></p>
+<pre class="hljs"><code><div>┌─────────────────────────────────────┐
+│ 👤 Speaker 1 🔵              10:23:15│
+│                                     │
+│  Good morning everyone.             │
+│  Let's start with the Q4 review.    │
+│                                     │
+│  → 大家早上好。让我们从Q4回顾开始。  │
+│                          [✓ Final]  │
+└─────────────────────────────────────┘
+</div></code></pre>
+<p><strong>Bubble States:</strong></p>
+<ul>
+<li>🟡 <strong>Draft:</strong> Pale yellow background, &quot;Draft&quot; label, pulsing indicator</li>
+<li>🟢 <strong>Final:</strong> White/dark background, checkmark, timestamp locked</li>
+<li>🔵 <strong>Translating:</strong> Blue tint, spinner, &quot;Translating...&quot; text</li>
+</ul>
+<p><strong>Visual Indicators:</strong></p>
+<ul>
+<li><strong>Timestamp:</strong> Top-right corner <code>[HH:MM:SS]</code></li>
+<li><strong>Delta Time:</strong> Small text below timestamp <code>+12s</code></li>
+<li><strong>Speaker Avatar:</strong> Colored circle with first letter</li>
+<li><strong>Translation:</strong> Italic, slightly muted, preceded by arrow <code>→</code></li>
+<li><strong>Confidence:</strong> Subtle border color (green=high, yellow=medium, red=low)</li>
+</ul>
+<h4 id="4-status-bar">4. Status Bar</h4>
+<ul>
+<li><strong>Left:</strong> Connection/Recording status with colored dot</li>
+<li><strong>Center:</strong>
+<ul>
+<li>Last auto-save time</li>
+<li>CPU/RAM usage indicator (hover for details)</li>
+</ul>
+</li>
+<li><strong>Right:</strong> Log file location (click to open)</li>
+</ul>
+<p><strong>CPU/RAM Indicator:</strong></p>
+<pre class="hljs"><code><div>⚡ CPU: 12% | RAM: 45% [████████░░░░░░░░░░░░]
+</div></code></pre>
+<ul>
+<li>Shows real-time resource usage</li>
+<li>Warns if CPU &gt;80% or RAM &gt;85%</li>
+<li>Click to open detailed performance panel</li>
+</ul>
+<h3 id="user-flow">User Flow</h3>
+<pre class="hljs"><code><div>┌─────────┐    ┌──────────┐    ┌──────────┐    ┌──────────┐    ┌─────────┐
+│ Launch  │───▶│ Configure│───▶│  Start   │───▶│  Record  │───▶│  Export │
+│   App   │    │ Settings │    │ Session  │    │ Meeting  │    │ Minutes │
+└─────────┘    └──────────┘    └──────────┘    └──────────┘    └─────────┘
+     │              │               │               │               │
+     ▼              ▼               ▼               ▼               ▼
+  Check mic    Select input     Set title      Monitor live    Choose format
+  permissions  &amp; languages      (optional)     transcript      (MD/JSON/TXT)
+</div></code></pre>
+<h3 id="first-run-wizard">First Run Wizard</h3>
+<p><strong>Shown on first launch or when microphone permission is denied:</strong></p>
+<pre class="hljs"><code><div>┌─────────────────────────────────────────────────────────────┐
+│  Welcome to VoiceTranslate Pro                 [Skip] [Next]│
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  Step 1/3: Microphone Access                                │
+│                                                             │
+│  This app needs microphone access to transcribe meetings.   │
+│                                                             │
+│  [🔴 Permission Denied]                                     │
+│                                                             │
+│  Please enable microphone access:                           │
+│  1. Open System Settings → Privacy &amp; Security → Microphone  │
+│  2. Enable &quot;VoiceTranslate Pro&quot;                             │
+│  3. Restart the app                                         │
+│                                                             │
+│  [Open System Settings]           [Test Microphone]         │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+</div></code></pre>
+<p><strong>Wizard Steps:</strong></p>
+<ol>
+<li><strong>Microphone Permission</strong> - Check and guide user to enable access</li>
+<li><strong>Audio Test</strong> - Visual level meter to confirm mic is working</li>
+<li><strong>Model Download</strong> - Download ASR models if not bundled (~100MB)</li>
+<li><strong>Default Languages</strong> - Set preferred source/target languages</li>
+<li><strong>Privacy Settings</strong> - Enable/disable transcript logging</li>
+</ol>
+<hr>
+<h3 id="44-audio-test-function">4.4 Audio Test Function</h3>
+<p><strong>File:</strong> <code>src/gui/audio_test.py</code></p>
+<p><strong>Purpose:</strong> Real-time microphone testing with visual feedback before starting transcription.</p>
+<p><strong>Features:</strong></p>
+<ul>
+<li>Visual level meter (0-100%)</li>
+<li>Peak level indicator</li>
+<li>Signal quality assessment (clipping detection)</li>
+<li>Real-time waveform display</li>
+<li>Noise floor detection</li>
+</ul>
+<p><strong>UI Design:</strong></p>
+<pre class="hljs"><code><div>┌─────────────────────────────────────────────────────────────┐
+│  🎤 Audio Test                                   [Close X]  │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  Input Device: [USB Microphone ▼]                           │
+│                                                             │
+│  Level Meter                                                │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │ ████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ │   │
+│  │     ▲                                               │   │
+│  │     Peak: -12dB                                     │   │
+│  └─────────────────────────────────────────────────────┘   │
+│                                                             │
+│  Waveform Preview                                           │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │    ~~~~    ~~~~    ~~~~    ~~~~    ~~~~            │   │
+│  └─────────────────────────────────────────────────────┘   │
+│                                                             │
+│  Signal Quality: ✅ Good                                    │
+│  • No clipping detected                                     │
+│  • Noise floor: -48dB (acceptable)                          │
+│                                                             │
+│  [🔴 Stop Test]    [✅ Test Passed - Use This Device]      │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+</div></code></pre>
+<p><strong>Implementation:</strong></p>
+<pre class="hljs"><code><div><span class="hljs-string">"""
+Audio test dialog with real-time level meter and waveform display.
+"""</span>
+
+<span class="hljs-keyword">from</span> PySide6.QtWidgets <span class="hljs-keyword">import</span> (
+    QDialog, QVBoxLayout, QHBoxLayout, QLabel, 
+    QPushButton, QComboBox, QProgressBar, QWidget
+)
+<span class="hljs-keyword">from</span> PySide6.QtCore <span class="hljs-keyword">import</span> Qt, QTimer, Signal
+<span class="hljs-keyword">from</span> PySide6.QtGui <span class="hljs-keyword">import</span> QPainter, QColor, QPen
+<span class="hljs-keyword">import</span> numpy <span class="hljs-keyword">as</span> np
+<span class="hljs-keyword">import</span> sounddevice <span class="hljs-keyword">as</span> sd
+
+<span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">LevelMeter</span><span class="hljs-params">(QWidget)</span>:</span>
+    <span class="hljs-string">"""Custom level meter widget."""</span>
+    
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">__init__</span><span class="hljs-params">(self, parent=None)</span>:</span>
+        super().__init__(parent)
+        self.setMinimumHeight(<span class="hljs-number">40</span>)
+        self.level = <span class="hljs-number">0.0</span>  <span class="hljs-comment"># 0.0 to 1.0</span>
+        self.peak = <span class="hljs-number">0.0</span>
+        self.peak_hold_frames = <span class="hljs-number">0</span>
+    
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">set_level</span><span class="hljs-params">(self, level: float)</span>:</span>
+        <span class="hljs-string">"""Update level (0.0 to 1.0)."""</span>
+        self.level = min(<span class="hljs-number">1.0</span>, max(<span class="hljs-number">0.0</span>, level))
+        <span class="hljs-keyword">if</span> self.level &gt; self.peak:
+            self.peak = self.level
+            self.peak_hold_frames = <span class="hljs-number">30</span>  <span class="hljs-comment"># Hold for 30 frames (~500ms)</span>
+        self.update()
+    
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">paintEvent</span><span class="hljs-params">(self, event)</span>:</span>
+        painter = QPainter(self)
+        
+        <span class="hljs-comment"># Background</span>
+        painter.fillRect(self.rect(), QColor(<span class="hljs-string">"#2D2D44"</span>))
+        
+        <span class="hljs-comment"># Level bar</span>
+        width = int(self.width() * self.level)
+        height = self.height() - <span class="hljs-number">4</span>
+        
+        <span class="hljs-comment"># Color gradient based on level</span>
+        <span class="hljs-keyword">if</span> self.level &gt; <span class="hljs-number">0.9</span>:
+            color = QColor(<span class="hljs-string">"#F44336"</span>)  <span class="hljs-comment"># Red (clipping)</span>
+        <span class="hljs-keyword">elif</span> self.level &gt; <span class="hljs-number">0.7</span>:
+            color = QColor(<span class="hljs-string">"#FFC107"</span>)  <span class="hljs-comment"># Yellow</span>
+        <span class="hljs-keyword">else</span>:
+            color = QColor(<span class="hljs-string">"#4CAF50"</span>)  <span class="hljs-comment"># Green</span>
+        
+        painter.fillRect(<span class="hljs-number">2</span>, <span class="hljs-number">2</span>, width, height, color)
+        
+        <span class="hljs-comment"># Peak indicator</span>
+        <span class="hljs-keyword">if</span> self.peak &gt; <span class="hljs-number">0</span>:
+            peak_x = int(self.width() * self.peak)
+            painter.fillRect(peak_x - <span class="hljs-number">2</span>, <span class="hljs-number">2</span>, <span class="hljs-number">4</span>, height, QColor(<span class="hljs-string">"#FFFFFF"</span>))
+        
+        <span class="hljs-comment"># Decay peak</span>
+        <span class="hljs-keyword">if</span> self.peak_hold_frames &gt; <span class="hljs-number">0</span>:
+            self.peak_hold_frames -= <span class="hljs-number">1</span>
+        <span class="hljs-keyword">else</span>:
+            self.peak *= <span class="hljs-number">0.95</span>  <span class="hljs-comment"># Decay</span>
+
+<span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">WaveformWidget</span><span class="hljs-params">(QWidget)</span>:</span>
+    <span class="hljs-string">"""Real-time waveform display."""</span>
+    
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">__init__</span><span class="hljs-params">(self, parent=None, history_size=<span class="hljs-number">1000</span>)</span>:</span>
+        super().__init__(parent)
+        self.setMinimumHeight(<span class="hljs-number">60</span>)
+        self.history = np.zeros(history_size)
+        self.write_pos = <span class="hljs-number">0</span>
+    
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">add_samples</span><span class="hljs-params">(self, samples: np.ndarray)</span>:</span>
+        <span class="hljs-string">"""Add audio samples to display buffer."""</span>
+        samples_to_write = min(len(samples), len(self.history))
+        self.history[self.write_pos:self.write_pos + samples_to_write] = samples[:samples_to_write]
+        self.write_pos = (self.write_pos + samples_to_write) % len(self.history)
+        self.update()
+    
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">paintEvent</span><span class="hljs-params">(self, event)</span>:</span>
+        painter = QPainter(self)
+        painter.fillRect(self.rect(), QColor(<span class="hljs-string">"#1E1E2E"</span>))
+        
+        <span class="hljs-comment"># Draw waveform</span>
+        pen = QPen(QColor(<span class="hljs-string">"#6C5DD3"</span>))
+        pen.setWidth(<span class="hljs-number">2</span>)
+        painter.setPen(pen)
+        
+        width = self.width()
+        height = self.height()
+        center_y = height // <span class="hljs-number">2</span>
+        
+        <span class="hljs-comment"># Draw samples</span>
+        points = []
+        <span class="hljs-keyword">for</span> x <span class="hljs-keyword">in</span> range(<span class="hljs-number">0</span>, width, <span class="hljs-number">2</span>):
+            idx = (self.write_pos + int(x * len(self.history) / width)) % len(self.history)
+            sample = self.history[idx]
+            y = center_y + int(sample * (height // <span class="hljs-number">3</span>))
+            points.append((x, y))
+        
+        <span class="hljs-keyword">for</span> i <span class="hljs-keyword">in</span> range(len(points) - <span class="hljs-number">1</span>):
+            painter.drawLine(points[i][<span class="hljs-number">0</span>], points[i][<span class="hljs-number">1</span>], 
+                           points[i+<span class="hljs-number">1</span>][<span class="hljs-number">0</span>], points[i+<span class="hljs-number">1</span>][<span class="hljs-number">1</span>])
+
+<span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">AudioTestDialog</span><span class="hljs-params">(QDialog)</span>:</span>
+    <span class="hljs-string">"""Audio test dialog with level meter and waveform."""</span>
+    
+    device_selected = Signal(int, str)  <span class="hljs-comment"># device_index, device_name</span>
+    
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">__init__</span><span class="hljs-params">(self, parent=None)</span>:</span>
+        super().__init__(parent)
+        self.setWindowTitle(<span class="hljs-string">"Audio Test"</span>)
+        self.setMinimumSize(<span class="hljs-number">500</span>, <span class="hljs-number">400</span>)
+        
+        self.stream = <span class="hljs-literal">None</span>
+        self.is_testing = <span class="hljs-literal">False</span>
+        
+        self._setup_ui()
+        self._populate_devices()
+    
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">_setup_ui</span><span class="hljs-params">(self)</span>:</span>
+        layout = QVBoxLayout(self)
+        
+        <span class="hljs-comment"># Device selection</span>
+        device_layout = QHBoxLayout()
+        device_layout.addWidget(QLabel(<span class="hljs-string">"Input Device:"</span>))
+        self.device_combo = QComboBox()
+        self.device_combo.currentIndexChanged.connect(self._on_device_changed)
+        device_layout.addWidget(self.device_combo, <span class="hljs-number">1</span>)
+        layout.addLayout(device_layout)
+        
+        <span class="hljs-comment"># Level meter</span>
+        layout.addWidget(QLabel(<span class="hljs-string">"Level Meter:"</span>))
+        self.level_meter = LevelMeter()
+        layout.addWidget(self.level_meter)
+        
+        self.peak_label = QLabel(<span class="hljs-string">"Peak: -- dB"</span>)
+        layout.addWidget(self.peak_label)
+        
+        <span class="hljs-comment"># Waveform</span>
+        layout.addWidget(QLabel(<span class="hljs-string">"Waveform Preview:"</span>))
+        self.waveform = WaveformWidget()
+        layout.addWidget(self.waveform)
+        
+        <span class="hljs-comment"># Quality assessment</span>
+        self.quality_label = QLabel(<span class="hljs-string">"Signal Quality: Click 'Start Test' to begin"</span>)
+        layout.addWidget(self.quality_label)
+        
+        <span class="hljs-comment"># Buttons</span>
+        button_layout = QHBoxLayout()
+        self.test_button = QPushButton(<span class="hljs-string">"🎤 Start Test"</span>)
+        self.test_button.clicked.connect(self._toggle_test)
+        button_layout.addWidget(self.test_button)
+        
+        self.save_audio_button = QPushButton(<span class="hljs-string">"💾 Save Test Audio"</span>)
+        self.save_audio_button.setEnabled(<span class="hljs-literal">False</span>)
+        self.save_audio_button.clicked.connect(self._save_test_audio)
+        self.save_audio_button.setToolTip(<span class="hljs-string">"Save 5-second sample for debugging"</span>)
+        button_layout.addWidget(self.save_audio_button)
+        
+        self.use_button = QPushButton(<span class="hljs-string">"✅ Use This Device"</span>)
+        self.use_button.setEnabled(<span class="hljs-literal">False</span>)
+        self.use_button.clicked.connect(self._accept_device)
+        button_layout.addWidget(self.use_button)
+        
+        layout.addLayout(button_layout)
+    
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">_populate_devices</span><span class="hljs-params">(self)</span>:</span>
+        <span class="hljs-string">"""Populate audio device dropdown."""</span>
+        devices = sd.query_devices()
+        <span class="hljs-keyword">for</span> i, device <span class="hljs-keyword">in</span> enumerate(devices):
+            <span class="hljs-keyword">if</span> device[<span class="hljs-string">'max_input_channels'</span>] &gt; <span class="hljs-number">0</span>:
+                self.device_combo.addItem(
+                    <span class="hljs-string">f"<span class="hljs-subst">{device[<span class="hljs-string">'name'</span>]}</span>"</span>, 
+                    userData=i
+                )
+    
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">_toggle_test</span><span class="hljs-params">(self)</span>:</span>
+        <span class="hljs-string">"""Start or stop audio test."""</span>
+        <span class="hljs-keyword">if</span> self.is_testing:
+            self._stop_test()
+        <span class="hljs-keyword">else</span>:
+            self._start_test()
+    
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">_start_test</span><span class="hljs-params">(self)</span>:</span>
+        <span class="hljs-string">"""Start audio capture for testing."""</span>
+        device_id = self.device_combo.currentData()
+        
+        <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">audio_callback</span><span class="hljs-params">(indata, frames, time_info, status)</span>:</span>
+            <span class="hljs-string">"""Process incoming audio."""</span>
+            <span class="hljs-comment"># Calculate RMS level</span>
+            rms = np.sqrt(np.mean(indata**<span class="hljs-number">2</span>))
+            level = min(<span class="hljs-number">1.0</span>, rms * <span class="hljs-number">10</span>)  <span class="hljs-comment"># Scale to 0-1</span>
+            
+            <span class="hljs-comment"># Update UI from main thread</span>
+            self.level_meter.set_level(level)
+            self.waveform.add_samples(indata[:, <span class="hljs-number">0</span>])
+            
+            <span class="hljs-comment"># Calculate dB</span>
+            db = <span class="hljs-number">20</span> * np.log10(rms + <span class="hljs-number">1e-10</span>)
+            self.peak_label.setText(<span class="hljs-string">f"Peak: <span class="hljs-subst">{db:<span class="hljs-number">.1</span>f}</span> dB"</span>)
+            
+            <span class="hljs-comment"># Quality assessment</span>
+            self._assess_quality(rms, np.max(np.abs(indata)))
+        
+        self.stream = sd.InputStream(
+            device=device_id,
+            channels=<span class="hljs-number">1</span>,
+            samplerate=<span class="hljs-number">16000</span>,
+            callback=audio_callback
+        )
+        self.stream.start()
+        
+        self.is_testing = <span class="hljs-literal">True</span>
+        self.test_button.setText(<span class="hljs-string">"🔴 Stop Test"</span>)
+        self.use_button.setEnabled(<span class="hljs-literal">True</span>)
+    
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">_stop_test</span><span class="hljs-params">(self)</span>:</span>
+        <span class="hljs-string">"""Stop audio capture."""</span>
+        <span class="hljs-keyword">if</span> self.stream:
+            self.stream.stop()
+            self.stream.close()
+            self.stream = <span class="hljs-literal">None</span>
+        
+        self.is_testing = <span class="hljs-literal">False</span>
+        self.test_button.setText(<span class="hljs-string">"🎤 Start Test"</span>)
+        self.use_button.setEnabled(<span class="hljs-literal">False</span>)
+    
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">_assess_quality</span><span class="hljs-params">(self, rms: float, peak: float)</span>:</span>
+        <span class="hljs-string">"""Assess audio quality."""</span>
+        <span class="hljs-keyword">if</span> peak &gt; <span class="hljs-number">0.95</span>:
+            quality = <span class="hljs-string">"⚠️ Clipping detected - Lower your input volume"</span>
+        <span class="hljs-keyword">elif</span> rms &lt; <span class="hljs-number">0.01</span>:
+            quality = <span class="hljs-string">"⚠️ Signal too quiet - Check microphone"</span>
+        <span class="hljs-keyword">else</span>:
+            noise_floor = <span class="hljs-number">-48</span>  <span class="hljs-comment"># Placeholder</span>
+            quality = <span class="hljs-string">f"✅ Good (Noise floor: <span class="hljs-subst">{noise_floor}</span>dB)"</span>
+        
+        self.quality_label.setText(<span class="hljs-string">f"Signal Quality: <span class="hljs-subst">{quality}</span>"</span>)
+    
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">_on_device_changed</span><span class="hljs-params">(self)</span>:</span>
+        <span class="hljs-string">"""Handle device change."""</span>
+        <span class="hljs-keyword">if</span> self.is_testing:
+            self._stop_test()
+            self._start_test()
+    
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">_accept_device</span><span class="hljs-params">(self)</span>:</span>
+        <span class="hljs-string">"""Accept selected device."""</span>
+        device_id = self.device_combo.currentData()
+        device_name = self.device_combo.currentText()
+        self.device_selected.emit(device_id, device_name)
+        self.accept()
+    
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">_save_test_audio</span><span class="hljs-params">(self)</span>:</span>
+        <span class="hljs-string">"""Save 5-second test audio sample for debugging.
+        
+        Useful for support: if user reports 'Mic not working,'
+        they can send this recorded sample.
+        """</span>
+        <span class="hljs-keyword">from</span> PySide6.QtWidgets <span class="hljs-keyword">import</span> QFileDialog
+        <span class="hljs-keyword">import</span> wave
+        <span class="hljs-keyword">import</span> io
+        
+        <span class="hljs-comment"># Get save location</span>
+        filepath, _ = QFileDialog.getSaveFileName(
+            self,
+            <span class="hljs-string">"Save Test Audio"</span>,
+            <span class="hljs-string">"test_audio.wav"</span>,
+            <span class="hljs-string">"WAV files (*.wav)"</span>
+        )
+        
+        <span class="hljs-keyword">if</span> <span class="hljs-keyword">not</span> filepath:
+            <span class="hljs-keyword">return</span>
+        
+        <span class="hljs-keyword">try</span>:
+            <span class="hljs-comment"># Record 5 seconds of audio</span>
+            device_id = self.device_combo.currentData()
+            sample_rate = <span class="hljs-number">16000</span>
+            duration = <span class="hljs-number">5</span>
+            
+            recording = sd.rec(
+                int(duration * sample_rate),
+                samplerate=sample_rate,
+                channels=<span class="hljs-number">1</span>,
+                dtype=np.int16,
+                device=device_id
+            )
+            sd.wait()  <span class="hljs-comment"># Wait until recording is finished</span>
+            
+            <span class="hljs-comment"># Save as WAV</span>
+            <span class="hljs-keyword">with</span> wave.open(filepath, <span class="hljs-string">'wb'</span>) <span class="hljs-keyword">as</span> wf:
+                wf.setnchannels(<span class="hljs-number">1</span>)
+                wf.setsampwidth(<span class="hljs-number">2</span>)  <span class="hljs-comment"># 16-bit</span>
+                wf.setframerate(sample_rate)
+                wf.writeframes(recording.tobytes())
+            
+            logger.info(<span class="hljs-string">f"Test audio saved: <span class="hljs-subst">{filepath}</span>"</span>)
+            
+        <span class="hljs-keyword">except</span> Exception <span class="hljs-keyword">as</span> e:
+            logger.error(<span class="hljs-string">f"Failed to save test audio: <span class="hljs-subst">{e}</span>"</span>)
+    
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">closeEvent</span><span class="hljs-params">(self, event)</span>:</span>
+        <span class="hljs-string">"""Clean up on close."""</span>
+        self._stop_test()
+        super().closeEvent(event)
+</div></code></pre>
+<p><strong>Integration Points:</strong></p>
+<ol>
+<li><strong>First Run Wizard:</strong> Step 2 uses AudioTestDialog</li>
+<li><strong>Settings Menu:</strong> &quot;Test Audio&quot; button opens dialog</li>
+<li><strong>Main Window:</strong> Audio device selector includes &quot;Test&quot; button</li>
+</ol>
+<h3 id="color-scheme-dark-mode">Color Scheme (Dark Mode)</h3>
+<table>
+<thead>
+<tr>
+<th>Element</th>
+<th>Color</th>
+<th>Hex</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Background</td>
+<td>Deep Navy</td>
+<td><code>#1E1E2E</code></td>
+</tr>
+<tr>
+<td>Surface</td>
+<td>Dark Purple-Gray</td>
+<td><code>#2D2D44</code></td>
+</tr>
+<tr>
+<td>Primary</td>
+<td>Purple</td>
+<td><code>#6C5DD3</code></td>
+</tr>
+<tr>
+<td>Secondary</td>
+<td>Teal</td>
+<td><code>#00D4AA</code></td>
+</tr>
+<tr>
+<td>Accent</td>
+<td>Coral</td>
+<td><code>#FF6B6B</code></td>
+</tr>
+<tr>
+<td>Text Primary</td>
+<td>White</td>
+<td><code>#FFFFFF</code></td>
+</tr>
+<tr>
+<td>Text Secondary</td>
+<td>Gray</td>
+<td><code>#B4B4BE</code></td>
+</tr>
+<tr>
+<td>Speaker 1</td>
+<td>Blue</td>
+<td><code>#4A90D9</code></td>
+</tr>
+<tr>
+<td>Speaker 2</td>
+<td>Coral</td>
+<td><code>#E85D75</code></td>
+</tr>
+<tr>
+<td>Speaker 3</td>
+<td>Green</td>
+<td><code>#50C878</code></td>
+</tr>
+<tr>
+<td>Speaker 4</td>
+<td>Orange</td>
+<td><code>#F5A623</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="responsive-behavior">Responsive Behavior</h3>
+<table>
+<thead>
+<tr>
+<th>Screen Size</th>
+<th>Layout</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Desktop (&gt;1200px)</strong></td>
+<td>Full 2-panel layout</td>
+</tr>
+<tr>
+<td><strong>Tablet (800-1200px)</strong></td>
+<td>Collapsible left panel</td>
+</tr>
+<tr>
+<td><strong>Small (&lt;800px)</strong></td>
+<td>Single panel, tabs for controls</td>
+</tr>
+</tbody>
+</table>
+<h3 id="keyboard-shortcuts">Keyboard Shortcuts</h3>
+<table>
+<thead>
+<tr>
+<th>Shortcut</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Space</code></td>
+<td>Start/Stop recording</td>
+</tr>
+<tr>
+<td><code>Ctrl+S</code></td>
+<td>Save session</td>
+</tr>
+<tr>
+<td><code>Ctrl+E</code></td>
+<td>Export minutes</td>
+</tr>
+<tr>
+<td><code>Ctrl+,</code></td>
+<td>Open preferences</td>
+</tr>
+<tr>
+<td><code>Ctrl+D</code></td>
+<td>Toggle debug panel</td>
+</tr>
+<tr>
+<td><code>Esc</code></td>
+<td>Stop recording / Close dialog</td>
+</tr>
+</tbody>
+</table>
+<h3 id="accessibility-features">Accessibility Features</h3>
+<ul>
+<li><strong>High Contrast Mode:</strong> Pure black/white theme</li>
+<li><strong>Font Scaling:</strong> 3 sizes (Small/Medium/Large)</li>
+<li><strong>Screen Reader:</strong> Full ARIA labels on all controls</li>
+<li><strong>Keyboard Navigation:</strong> Tab order optimized for workflow</li>
+</ul>
+<hr>
+<h2 id="phase-4-meeting-minutes--speaker-recognition">Phase 4: Meeting Minutes &amp; Speaker Recognition</h2>
+<h3 id="41-meeting-minutes-format">4.1 Meeting Minutes Format</h3>
+<p><strong>Purpose:</strong> Transform translation output into professional meeting minutes with timestamps and speaker labels.</p>
+<h4 id="411-meeting-minutes-data-model">4.1.1 Meeting Minutes Data Model</h4>
+<p><strong>File:</strong> <code>src/gui/meeting/minutes_model.py</code></p>
+<pre class="hljs"><code><div><span class="hljs-string">"""
+Meeting minutes data model with speaker and timing information.
+"""</span>
+
+<span class="hljs-keyword">from</span> dataclasses <span class="hljs-keyword">import</span> dataclass, field
+<span class="hljs-keyword">from</span> typing <span class="hljs-keyword">import</span> List, Optional
+<span class="hljs-keyword">from</span> datetime <span class="hljs-keyword">import</span> datetime
+<span class="hljs-keyword">from</span> enum <span class="hljs-keyword">import</span> Enum
+
+<span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">SpeakerRole</span><span class="hljs-params">(Enum)</span>:</span>
+    <span class="hljs-string">"""Speaker role in meeting."""</span>
+    UNKNOWN = <span class="hljs-string">"unknown"</span>
+    HOST = <span class="hljs-string">"host"</span>
+    PARTICIPANT = <span class="hljs-string">"participant"</span>
+    SPEAKER_A = <span class="hljs-string">"A"</span>
+    SPEAKER_B = <span class="hljs-string">"B"</span>
+    SPEAKER_C = <span class="hljs-string">"C"</span>
+
+<span class="hljs-meta">@dataclass</span>
+<span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">MeetingEntry</span>:</span>
+    <span class="hljs-string">"""Single entry in meeting minutes."""</span>
+    entry_id: int
+    timestamp_utc: datetime  <span class="hljs-comment"># Stored as UTC internally</span>
+    speaker_id: str  <span class="hljs-comment"># "Speaker 1", "Speaker 2", etc.</span>
+    speaker_role: SpeakerRole
+    original_text: str
+    translated_text: Optional[str] = <span class="hljs-literal">None</span>
+    confidence: float = <span class="hljs-number">0.0</span>
+    duration_ms: int = <span class="hljs-number">0</span>
+    
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">get_local_timestamp</span><span class="hljs-params">(self)</span> -&gt; datetime:</span>
+        <span class="hljs-string">"""Convert UTC timestamp to local time for display."""</span>
+        <span class="hljs-keyword">from</span> datetime <span class="hljs-keyword">import</span> timezone
+        <span class="hljs-keyword">return</span> self.timestamp_utc.astimezone(timezone.utc).astimezone()
+    
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">to_minutes_format</span><span class="hljs-params">(self)</span> -&gt; str:</span>
+        <span class="hljs-string">"""Format as meeting minutes line."""</span>
+        time_str = self.get_local_timestamp().strftime(<span class="hljs-string">"%H:%M:%S"</span>)
+        <span class="hljs-keyword">if</span> self.translated_text:
+            <span class="hljs-keyword">return</span> <span class="hljs-string">f"[<span class="hljs-subst">{time_str}</span>] <span class="hljs-subst">{self.speaker_id}</span>: <span class="hljs-subst">{self.original_text}</span>\n              → <span class="hljs-subst">{self.translated_text}</span>"</span>
+        <span class="hljs-keyword">return</span> <span class="hljs-string">f"[<span class="hljs-subst">{time_str}</span>] <span class="hljs-subst">{self.speaker_id}</span>: <span class="hljs-subst">{self.original_text}</span>"</span>
+
+<span class="hljs-meta">@dataclass</span>
+<span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">MeetingSession</span>:</span>
+    <span class="hljs-string">"""Complete meeting session."""</span>
+    session_id: str
+    start_time: datetime
+    title: str = <span class="hljs-string">"Meeting Transcription"</span>
+    entries: List[MeetingEntry] = field(default_factory=list)
+    
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">add_entry</span><span class="hljs-params">(self, entry: MeetingEntry)</span>:</span>
+        <span class="hljs-string">"""Add entry and auto-assign speaker if not set."""</span>
+        entry.entry_id = len(self.entries) + <span class="hljs-number">1</span>
+        self.entries.append(entry)
+    
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">export_as_minutes</span><span class="hljs-params">(self)</span> -&gt; str:</span>
+        <span class="hljs-string">"""Export as formatted meeting minutes."""</span>
+        lines = [
+            <span class="hljs-string">f"# <span class="hljs-subst">{self.title}</span>"</span>,
+            <span class="hljs-string">f"Date: <span class="hljs-subst">{self.start_time.strftime(<span class="hljs-string">'%Y-%m-%d %H:%M'</span>)}</span>"</span>,
+            <span class="hljs-string">f"Duration: <span class="hljs-subst">{self.get_duration()}</span> minutes"</span>,
+            <span class="hljs-string">f"Total Entries: <span class="hljs-subst">{len(self.entries)}</span>"</span>,
+            <span class="hljs-string">""</span>,
+            <span class="hljs-string">"## Meeting Minutes"</span>,
+            <span class="hljs-string">""</span>
+        ]
+        
+        current_speaker = <span class="hljs-literal">None</span>
+        <span class="hljs-keyword">for</span> entry <span class="hljs-keyword">in</span> self.entries:
+            <span class="hljs-keyword">if</span> entry.speaker_id != current_speaker:
+                lines.append(<span class="hljs-string">f"\n**<span class="hljs-subst">{entry.speaker_id}</span>:**"</span>)
+                current_speaker = entry.speaker_id
+            lines.append(<span class="hljs-string">f"[<span class="hljs-subst">{entry.timestamp.strftime(<span class="hljs-string">'%H:%M:%S'</span>)}</span>] <span class="hljs-subst">{entry.original_text}</span>"</span>)
+            <span class="hljs-keyword">if</span> entry.translated_text:
+                lines.append(<span class="hljs-string">f"  → <span class="hljs-subst">{entry.translated_text}</span>"</span>)
+        
+        <span class="hljs-keyword">return</span> <span class="hljs-string">"\n"</span>.join(lines)
+    
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">get_duration</span><span class="hljs-params">(self)</span> -&gt; int:</span>
+        <span class="hljs-string">"""Get meeting duration in minutes."""</span>
+        <span class="hljs-keyword">if</span> <span class="hljs-keyword">not</span> self.entries:
+            <span class="hljs-keyword">return</span> <span class="hljs-number">0</span>
+        duration = self.entries[<span class="hljs-number">-1</span>].timestamp - self.start_time
+        <span class="hljs-keyword">return</span> int(duration.total_seconds() / <span class="hljs-number">60</span>)
+</div></code></pre>
+<h4 id="412-meeting-minutes-display">4.1.2 Meeting Minutes Display</h4>
+<p><strong>File:</strong> <code>src/gui/meeting/minutes_display.py</code></p>
+<pre class="hljs"><code><div><span class="hljs-string">"""
+Meeting minutes display widget with speaker timeline.
+"""</span>
+
+<span class="hljs-keyword">from</span> PySide6.QtWidgets <span class="hljs-keyword">import</span> (
+    QWidget, QVBoxLayout, QHBoxLayout, QLabel, 
+    QScrollArea, QFrame, QPushButton
+)
+<span class="hljs-keyword">from</span> PySide6.QtCore <span class="hljs-keyword">import</span> Qt, Signal
+<span class="hljs-keyword">from</span> PySide6.QtGui <span class="hljs-keyword">import</span> QColor, QFont
+
+<span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">SpeakerBubble</span><span class="hljs-params">(QFrame)</span>:</span>
+    <span class="hljs-string">"""Visual bubble for speaker entry with confidence-based styling."""</span>
+    
+    <span class="hljs-comment"># Speaker color mapping</span>
+    SPEAKER_COLORS = {
+        <span class="hljs-string">"Speaker 1"</span>: <span class="hljs-string">"#4A90D9"</span>,  <span class="hljs-comment"># Blue</span>
+        <span class="hljs-string">"Speaker 2"</span>: <span class="hljs-string">"#E85D75"</span>,  <span class="hljs-comment"># Coral</span>
+        <span class="hljs-string">"Speaker 3"</span>: <span class="hljs-string">"#50C878"</span>,  <span class="hljs-comment"># Green</span>
+        <span class="hljs-string">"Speaker 4"</span>: <span class="hljs-string">"#F5A623"</span>,  <span class="hljs-comment"># Orange</span>
+        <span class="hljs-string">"Unknown"</span>: <span class="hljs-string">"#9B9B9B"</span>,    <span class="hljs-comment"># Gray</span>
+    }
+    
+    <span class="hljs-comment"># Confidence styling: border color indicates quality</span>
+    CONFIDENCE_HIGH = <span class="hljs-number">0.8</span>   <span class="hljs-comment"># Green border</span>
+    CONFIDENCE_MED = <span class="hljs-number">0.6</span>    <span class="hljs-comment"># Yellow border</span>
+    CONFIDENCE_LOW = <span class="hljs-number">0.4</span>    <span class="hljs-comment"># Red border</span>
+    
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">__init__</span><span class="hljs-params">(self, entry: MeetingEntry, parent=None)</span>:</span>
+        super().__init__(parent)
+        self.entry = entry
+        self._setup_ui()
+    
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">_get_confidence_style</span><span class="hljs-params">(self)</span> -&gt; str:</span>
+        <span class="hljs-string">"""Get border color based on confidence score."""</span>
+        conf = self.entry.confidence
+        <span class="hljs-keyword">if</span> conf &gt;= self.CONFIDENCE_HIGH:
+            <span class="hljs-keyword">return</span> <span class="hljs-string">"border: 2px solid #4CAF50;"</span>  <span class="hljs-comment"># Green</span>
+        <span class="hljs-keyword">elif</span> conf &gt;= self.CONFIDENCE_MED:
+            <span class="hljs-keyword">return</span> <span class="hljs-string">"border: 2px solid #FFC107;"</span>  <span class="hljs-comment"># Yellow</span>
+        <span class="hljs-keyword">elif</span> conf &gt;= self.CONFIDENCE_LOW:
+            <span class="hljs-keyword">return</span> <span class="hljs-string">"border: 2px solid #FF9800;"</span>  <span class="hljs-comment"># Orange</span>
+        <span class="hljs-keyword">else</span>:
+            <span class="hljs-keyword">return</span> <span class="hljs-string">"border: 2px solid #F44336;"</span>  <span class="hljs-comment"># Red</span>
+    
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">_get_text_opacity</span><span class="hljs-params">(self)</span> -&gt; str:</span>
+        <span class="hljs-string">"""Get text opacity based on confidence (low confidence = fainter)."""</span>
+        conf = self.entry.confidence
+        opacity = max(<span class="hljs-number">0.5</span>, conf)  <span class="hljs-comment"># Minimum 50% opacity</span>
+        <span class="hljs-keyword">return</span> <span class="hljs-string">f"color: rgba(255, 255, 255, <span class="hljs-subst">{opacity}</span>);"</span>
+    
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">_setup_ui</span><span class="hljs-params">(self)</span>:</span>
+        layout = QHBoxLayout(self)
+        layout.setContentsMargins(<span class="hljs-number">10</span>, <span class="hljs-number">8</span>, <span class="hljs-number">10</span>, <span class="hljs-number">8</span>)
+        
+        <span class="hljs-comment"># Apply confidence-based border</span>
+        confidence_border = self._get_confidence_style()
+        self.setStyleSheet(<span class="hljs-string">f"""
+            SpeakerBubble {{
+                background-color: #2D2D44;
+                border-radius: 12px;
+                <span class="hljs-subst">{confidence_border}</span>
+            }}
+        """</span>)
+        
+        <span class="hljs-comment"># Speaker avatar circle</span>
+        avatar = QLabel(self.entry.speaker_id[<span class="hljs-number">0</span>])  <span class="hljs-comment"># First letter</span>
+        avatar.setFixedSize(<span class="hljs-number">32</span>, <span class="hljs-number">32</span>)
+        avatar.setAlignment(Qt.AlignCenter)
+        color = self.SPEAKER_COLORS.get(self.entry.speaker_id, <span class="hljs-string">"#9B9B9B"</span>)
+        avatar.setStyleSheet(<span class="hljs-string">f"""
+            background-color: <span class="hljs-subst">{color}</span>;
+            color: white;
+            border-radius: 16px;
+            font-weight: bold;
+            font-size: 14px;
+        """</span>)
+        layout.addWidget(avatar)
+        
+        <span class="hljs-comment"># Content</span>
+        content = QVBoxLayout()
+        
+        <span class="hljs-comment"># Header: Speaker name + time</span>
+        header = QHBoxLayout()
+        speaker_label = QLabel(<span class="hljs-string">f"&lt;b&gt;<span class="hljs-subst">{self.entry.speaker_id}</span>&lt;/b&gt;"</span>)
+        time_label = QLabel(<span class="hljs-string">f"&lt;span style='color: gray;'&gt;<span class="hljs-subst">{self.entry.timestamp.strftime(<span class="hljs-string">'%H:%M:%S'</span>)}</span>&lt;/span&gt;"</span>)
+        header.addWidget(speaker_label)
+        header.addWidget(time_label)
+        header.addStretch()
+        content.addLayout(header)
+        
+        <span class="hljs-comment"># Original text</span>
+        orig_label = QLabel(self.entry.original_text)
+        orig_label.setWordWrap(<span class="hljs-literal">True</span>)
+        content.addWidget(orig_label)
+        
+        <span class="hljs-comment"># Translation (if available)</span>
+        <span class="hljs-keyword">if</span> self.entry.translated_text:
+            trans_label = QLabel(<span class="hljs-string">f"→ <span class="hljs-subst">{self.entry.translated_text}</span>"</span>)
+            trans_label.setWordWrap(<span class="hljs-literal">True</span>)
+            trans_label.setStyleSheet(<span class="hljs-string">"color: #666; font-style: italic;"</span>)
+            content.addWidget(trans_label)
+        
+        layout.addLayout(content, <span class="hljs-number">1</span>)
+
+<span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">MinutesDisplayWidget</span><span class="hljs-params">(QScrollArea)</span>:</span>
+    <span class="hljs-string">"""Scrollable meeting minutes display."""</span>
+    
+    entry_selected = Signal(MeetingEntry)
+    
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">__init__</span><span class="hljs-params">(self, parent=None)</span>:</span>
+        super().__init__(parent)
+        self._entries: List[MeetingEntry] = []
+        self._setup_ui()
+    
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">_setup_ui</span><span class="hljs-params">(self)</span>:</span>
+        self.setWidgetResizable(<span class="hljs-literal">True</span>)
+        
+        container = QWidget()
+        self._layout = QVBoxLayout(container)
+        self._layout.setSpacing(<span class="hljs-number">8</span>)
+        self._layout.addStretch()
+        
+        self.setWidget(container)
+    
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">add_entry</span><span class="hljs-params">(self, entry: MeetingEntry)</span>:</span>
+        <span class="hljs-string">"""Add new meeting entry."""</span>
+        self._entries.append(entry)
+        bubble = SpeakerBubble(entry)
+        
+        <span class="hljs-comment"># Insert before stretch</span>
+        self._layout.insertWidget(self._layout.count() - <span class="hljs-number">1</span>, bubble)
+        
+        <span class="hljs-comment"># Auto-scroll to bottom</span>
+        self.verticalScrollBar().setValue(
+            self.verticalScrollBar().maximum()
+        )
+    
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">clear</span><span class="hljs-params">(self)</span>:</span>
+        <span class="hljs-string">"""Clear all entries."""</span>
+        self._entries.clear()
+        <span class="hljs-comment"># Remove all widgets except stretch</span>
+        <span class="hljs-keyword">while</span> self._layout.count() &gt; <span class="hljs-number">1</span>:
+            item = self._layout.takeAt(<span class="hljs-number">0</span>)
+            <span class="hljs-keyword">if</span> item.widget():
+                item.widget().deleteLater()
+    
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">export_as_markdown</span><span class="hljs-params">(self, filepath: str)</span> -&gt; bool:</span>
+        <span class="hljs-string">"""Export minutes as Markdown."""</span>
+        <span class="hljs-keyword">if</span> <span class="hljs-keyword">not</span> self._entries:
+            <span class="hljs-keyword">return</span> <span class="hljs-literal">False</span>
+        
+        session = MeetingSession(
+            session_id=<span class="hljs-string">"export"</span>,
+            start_time=self._entries[<span class="hljs-number">0</span>].timestamp,
+            entries=self._entries
+        )
+        
+        <span class="hljs-keyword">with</span> open(filepath, <span class="hljs-string">'w'</span>, encoding=<span class="hljs-string">'utf-8'</span>) <span class="hljs-keyword">as</span> f:
+            f.write(session.export_as_minutes())
+        
+        <span class="hljs-keyword">return</span> <span class="hljs-literal">True</span>
+</div></code></pre>
+<hr>
+<h3 id="42-speaker-recognition">4.2 Speaker Recognition</h3>
+<p><strong>Purpose:</strong> Identify and differentiate speakers in real-time.</p>
+<blockquote>
+<p><strong>⚠️ V1 Implementation Note:</strong> Use <code>SimpleSpeakerDiarization</code> (turn-based) for MVP to ensure performance. AI-based diarization (embeddings) reserved for V2.</p>
+</blockquote>
+<h4 id="421-speaker-diarization-engine-v1-turn-based">4.2.1 Speaker Diarization Engine (V1: Turn-Based)</h4>
+<p><strong>File:</strong> <code>src/core/speaker/diarization.py</code></p>
+<p><strong>V1 Strategy - Turn-Based Detection:</strong></p>
+<ul>
+<li>Detect speaker turns using pause detection</li>
+<li>Assume alternating speakers for structured meetings</li>
+<li>Computationally free, no ML model required</li>
+<li>Works well for 2-4 person meetings with clear turn-taking</li>
+</ul>
+<p><strong>User-Configurable Speaker Count:</strong></p>
+<ul>
+<li>End-user inputs expected number of speakers (2-8) before meeting starts</li>
+<li>System pre-allocates speaker slots with color coding</li>
+<li>Turn-based algorithm cycles through known speaker count</li>
+<li>Reduces ambiguity: &quot;Which of the 3 speakers is talking?&quot; vs &quot;Is this a new speaker?&quot;</li>
+<li>Allows manual correction: user can drag misattributed segments to correct speaker</li>
+</ul>
+<p><strong>V2 Strategy - AI Embeddings (Future):</strong></p>
+<ul>
+<li>Use pyannote.audio or speechbrain ECAPA-TDNN</li>
+<li>Run in separate low-priority thread post-transcription</li>
+<li>Higher accuracy but resource-intensive</li>
+<li>Benefits from known speaker count constraint</li>
+</ul>
+<pre class="hljs"><code><div><span class="hljs-string">"""
+Speaker diarization using edge-based approach with user-configurable speaker count.
+Uses turn-based detection for V1 (MVP) - computationally efficient.
+"""</span>
+
+<span class="hljs-keyword">import</span> numpy <span class="hljs-keyword">as</span> np
+<span class="hljs-keyword">from</span> typing <span class="hljs-keyword">import</span> List, Dict, Optional, Tuple
+<span class="hljs-keyword">from</span> dataclasses <span class="hljs-keyword">import</span> dataclass
+<span class="hljs-keyword">from</span> collections <span class="hljs-keyword">import</span> deque
+<span class="hljs-keyword">import</span> hashlib
+
+<span class="hljs-meta">@dataclass</span>
+<span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">SpeakerSegment</span>:</span>
+    <span class="hljs-string">"""Segment attributed to a speaker."""</span>
+    speaker_id: str
+    start_time: float
+    end_time: float
+    embedding: np.ndarray
+    confidence: float
+
+<span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">SpeakerDiarization</span>:</span>
+    <span class="hljs-string">"""
+    Real-time speaker diarization for meeting transcription.
+    
+    Approach:
+    1. Extract voice embedding from audio segment
+    2. Compare with known speaker embeddings (cosine similarity)
+    3. Assign to existing speaker or create new one
+    4. Maintain rolling window for speaker consistency
+    """</span>
+    
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">__init__</span><span class="hljs-params">(
+        self,
+        max_speakers: int = <span class="hljs-number">4</span>,
+        similarity_threshold: float = <span class="hljs-number">0.75</span>,
+        embedding_dim: int = <span class="hljs-number">256</span>
+    )</span>:</span>
+        self.max_speakers = max_speakers
+        self.similarity_threshold = similarity_threshold
+        self.embedding_dim = embedding_dim
+        
+        <span class="hljs-comment"># Known speakers: speaker_id -&gt; list of embeddings</span>
+        self._speakers: Dict[str, List[np.ndarray]] = {}
+        self._speaker_counter = <span class="hljs-number">0</span>
+        
+        <span class="hljs-comment"># Rolling window for recent assignments</span>
+        self._recent_segments: deque = deque(maxlen=<span class="hljs-number">10</span>)
+    
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">process_segment</span><span class="hljs-params">(
+        self, 
+        audio_segment: np.ndarray,
+        start_time: float,
+        end_time: float
+    )</span> -&gt; SpeakerSegment:</span>
+        <span class="hljs-string">"""
+        Process audio segment and identify speaker.
+        
+        Args:
+            audio_segment: Audio samples (numpy array)
+            start_time: Segment start time in seconds
+            end_time: Segment end time in seconds
+            
+        Returns:
+            SpeakerSegment with identified speaker
+        """</span>
+        <span class="hljs-comment"># Extract embedding (simplified - use actual model in production)</span>
+        embedding = self._extract_embedding(audio_segment)
+        
+        <span class="hljs-comment"># Find best matching speaker</span>
+        speaker_id, confidence = self._identify_speaker(embedding)
+        
+        <span class="hljs-comment"># Store embedding for speaker</span>
+        <span class="hljs-keyword">if</span> speaker_id <span class="hljs-keyword">not</span> <span class="hljs-keyword">in</span> self._speakers:
+            self._speakers[speaker_id] = []
+        self._speakers[speaker_id].append(embedding)
+        
+        <span class="hljs-comment"># Keep only recent embeddings per speaker</span>
+        self._speakers[speaker_id] = self._speakers[speaker_id][<span class="hljs-number">-10</span>:]
+        
+        segment = SpeakerSegment(
+            speaker_id=speaker_id,
+            start_time=start_time,
+            end_time=end_time,
+            embedding=embedding,
+            confidence=confidence
+        )
+        
+        self._recent_segments.append(segment)
+        <span class="hljs-keyword">return</span> segment
+    
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">_extract_embedding</span><span class="hljs-params">(self, audio: np.ndarray)</span> -&gt; np.ndarray:</span>
+        <span class="hljs-string">"""
+        Extract voice embedding from audio.
+        
+        Note: In production, use a proper speaker embedding model like:
+        - speechbrain/ecapa-tdnn
+        - pyannote/embedding
+        - or lightweight edge model
+        """</span>
+        <span class="hljs-comment"># Placeholder: Use audio features as embedding</span>
+        <span class="hljs-comment"># In production, replace with actual speaker embedding model</span>
+        features = self._extract_audio_features(audio)
+        
+        <span class="hljs-comment"># Normalize</span>
+        norm = np.linalg.norm(features)
+        <span class="hljs-keyword">if</span> norm &gt; <span class="hljs-number">0</span>:
+            features = features / norm
+        
+        <span class="hljs-keyword">return</span> features
+    
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">_extract_audio_features</span><span class="hljs-params">(self, audio: np.ndarray)</span> -&gt; np.ndarray:</span>
+        <span class="hljs-string">"""Extract basic audio features for embedding."""</span>
+        <span class="hljs-comment"># Simple feature extraction (placeholder)</span>
+        <span class="hljs-comment"># Real implementation would use MFCC, pitch, etc.</span>
+        
+        <span class="hljs-comment"># Pad or truncate to fixed length</span>
+        target_length = <span class="hljs-number">16000</span>  <span class="hljs-comment"># 1 second at 16kHz</span>
+        <span class="hljs-keyword">if</span> len(audio) &lt; target_length:
+            audio = np.pad(audio, (<span class="hljs-number">0</span>, target_length - len(audio)))
+        <span class="hljs-keyword">else</span>:
+            audio = audio[:target_length]
+        
+        <span class="hljs-comment"># Compute spectrogram-like features</span>
+        fft = np.fft.rfft(audio)
+        magnitude = np.abs(fft)
+        
+        <span class="hljs-comment"># Downsample to embedding dimension</span>
+        embedding = np.interp(
+            np.linspace(<span class="hljs-number">0</span>, len(magnitude), self.embedding_dim),
+            np.arange(len(magnitude)),
+            magnitude
+        )
+        
+        <span class="hljs-keyword">return</span> embedding
+    
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">_identify_speaker</span><span class="hljs-params">(self, embedding: np.ndarray)</span> -&gt; Tuple[str, float]:</span>
+        <span class="hljs-string">"""
+        Identify speaker from embedding.
+        
+        Returns:
+            (speaker_id, confidence)
+        """</span>
+        <span class="hljs-keyword">if</span> <span class="hljs-keyword">not</span> self._speakers:
+            <span class="hljs-keyword">return</span> self._create_new_speaker(embedding), <span class="hljs-number">1.0</span>
+        
+        best_match = <span class="hljs-literal">None</span>
+        best_similarity = <span class="hljs-number">0.0</span>
+        
+        <span class="hljs-keyword">for</span> speaker_id, embeddings <span class="hljs-keyword">in</span> self._speakers.items():
+            <span class="hljs-comment"># Compare with average embedding for speaker</span>
+            avg_embedding = np.mean(embeddings, axis=<span class="hljs-number">0</span>)
+            similarity = self._cosine_similarity(embedding, avg_embedding)
+            
+            <span class="hljs-keyword">if</span> similarity &gt; best_similarity:
+                best_similarity = similarity
+                best_match = speaker_id
+        
+        <span class="hljs-comment"># Check if similarity exceeds threshold</span>
+        <span class="hljs-keyword">if</span> best_similarity &gt;= self.similarity_threshold:
+            <span class="hljs-keyword">return</span> best_match, best_similarity
+        
+        <span class="hljs-comment"># Create new speaker if under limit</span>
+        <span class="hljs-keyword">if</span> len(self._speakers) &lt; self.max_speakers:
+            <span class="hljs-keyword">return</span> self._create_new_speaker(embedding), <span class="hljs-number">1.0</span>
+        
+        <span class="hljs-comment"># Otherwise, assign to closest match</span>
+        <span class="hljs-keyword">return</span> best_match, best_similarity
+    
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">_create_new_speaker</span><span class="hljs-params">(self, embedding: np.ndarray)</span> -&gt; str:</span>
+        <span class="hljs-string">"""Create new speaker entry."""</span>
+        self._speaker_counter += <span class="hljs-number">1</span>
+        speaker_id = <span class="hljs-string">f"Speaker <span class="hljs-subst">{self._speaker_counter}</span>"</span>
+        self._speakers[speaker_id] = [embedding]
+        <span class="hljs-keyword">return</span> speaker_id
+    
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">_cosine_similarity</span><span class="hljs-params">(self, a: np.ndarray, b: np.ndarray)</span> -&gt; float:</span>
+        <span class="hljs-string">"""Compute cosine similarity between two vectors."""</span>
+        <span class="hljs-keyword">return</span> np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
+    
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">get_speaker_stats</span><span class="hljs-params">(self)</span> -&gt; Dict[str, dict]:</span>
+        <span class="hljs-string">"""Get statistics for each speaker."""</span>
+        stats = {}
+        <span class="hljs-keyword">for</span> speaker_id <span class="hljs-keyword">in</span> self._speakers:
+            speaker_segments = [
+                s <span class="hljs-keyword">for</span> s <span class="hljs-keyword">in</span> self._recent_segments 
+                <span class="hljs-keyword">if</span> s.speaker_id == speaker_id
+            ]
+            total_time = sum(
+                s.end_time - s.start_time <span class="hljs-keyword">for</span> s <span class="hljs-keyword">in</span> speaker_segments
+            )
+            stats[speaker_id] = {
+                <span class="hljs-string">"segment_count"</span>: len(speaker_segments),
+                <span class="hljs-string">"total_time_seconds"</span>: total_time
+            }
+        <span class="hljs-keyword">return</span> stats
+    
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">reset</span><span class="hljs-params">(self)</span>:</span>
+        <span class="hljs-string">"""Reset all speaker data."""</span>
+        self._speakers.clear()
+        self._speaker_counter = <span class="hljs-number">0</span>
+        self._recent_segments.clear()
+
+
+<span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">SimpleSpeakerDiarization</span><span class="hljs-params">(SpeakerDiarization)</span>:</span>
+    <span class="hljs-string">"""
+    Simplified speaker diarization using turn-based detection.
+    
+    Alternative approach: Detect speaker turns using pause detection
+    and assume alternating speakers for dialogue.
+    """</span>
+    
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">__init__</span><span class="hljs-params">(self, max_speakers: int = <span class="hljs-number">2</span>, **kwargs)</span>:</span>
+        super().__init__(max_speakers=max_speakers, **kwargs)
+        self._last_speaker = <span class="hljs-literal">None</span>
+        self._turn_counter = <span class="hljs-number">0</span>
+    
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">process_segment</span><span class="hljs-params">(
+        self,
+        audio_segment: np.ndarray,
+        start_time: float,
+        end_time: float,
+        is_new_turn: bool = False
+    )</span> -&gt; SpeakerSegment:</span>
+        <span class="hljs-string">"""
+        Process with turn detection.
+        
+        Args:
+            is_new_turn: True if this is detected as a new speaker turn
+        """</span>
+        <span class="hljs-keyword">if</span> is_new_turn <span class="hljs-keyword">or</span> self._last_speaker <span class="hljs-keyword">is</span> <span class="hljs-literal">None</span>:
+            self._turn_counter += <span class="hljs-number">1</span>
+            speaker_id = <span class="hljs-string">f"Speaker <span class="hljs-subst">{(self._turn_counter % self.max_speakers) + <span class="hljs-number">1</span>}</span>"</span>
+        <span class="hljs-keyword">else</span>:
+            speaker_id = self._last_speaker
+        
+        self._last_speaker = speaker_id
+        
+        <span class="hljs-keyword">return</span> SpeakerSegment(
+            speaker_id=speaker_id,
+            start_time=start_time,
+            end_time=end_time,
+            embedding=np.array([]),
+            confidence=<span class="hljs-number">0.8</span> <span class="hljs-keyword">if</span> is_new_turn <span class="hljs-keyword">else</span> <span class="hljs-number">0.9</span>
+        )
+</div></code></pre>
+<h4 id="422-speaker-aware-pipeline-integration">4.2.2 Speaker-Aware Pipeline Integration</h4>
+<p><strong>File:</strong> <code>src/core/pipeline/meeting_pipeline.py</code></p>
+<pre class="hljs"><code><div><span class="hljs-string">"""
+Meeting transcription pipeline with speaker diarization.
+"""</span>
+
+<span class="hljs-keyword">from</span> typing <span class="hljs-keyword">import</span> Optional, Callable
+<span class="hljs-keyword">from</span> dataclasses <span class="hljs-keyword">import</span> dataclass
+<span class="hljs-keyword">from</span> datetime <span class="hljs-keyword">import</span> datetime
+
+<span class="hljs-keyword">from</span> src.core.pipeline.orchestrator <span class="hljs-keyword">import</span> TranslationPipeline, PipelineConfig
+<span class="hljs-keyword">from</span> src.core.speaker.diarization <span class="hljs-keyword">import</span> SpeakerDiarization, SpeakerSegment
+<span class="hljs-keyword">from</span> src.gui.meeting.minutes_model <span class="hljs-keyword">import</span> MeetingEntry, MeetingSession
+
+<span class="hljs-meta">@dataclass</span>
+<span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">MeetingConfig</span>:</span>
+    <span class="hljs-string">"""Configuration for meeting transcription."""</span>
+    enable_speaker_diarization: bool = <span class="hljs-literal">True</span>
+    max_speakers: int = <span class="hljs-number">4</span>
+    enable_translation: bool = <span class="hljs-literal">True</span>
+    source_language: str = <span class="hljs-string">"auto"</span>
+    target_language: Optional[str] = <span class="hljs-literal">None</span>
+    session_title: str = <span class="hljs-string">"Meeting Transcription"</span>
+
+<span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">MeetingPipeline</span>:</span>
+    <span class="hljs-string">"""
+    End-to-end meeting transcription pipeline.
+    
+    Combines:
+    - Audio capture
+    - Voice Activity Detection
+    - Speaker Diarization
+    - Speech Recognition (ASR)
+    - Translation (optional)
+    - Meeting minutes generation
+    """</span>
+    
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">__init__</span><span class="hljs-params">(
+        self,
+        config: MeetingConfig,
+        asr_pipeline_config: PipelineConfig
+    )</span>:</span>
+        self.config = config
+        self.asr_config = asr_pipeline_config
+        
+        <span class="hljs-comment"># Initialize components</span>
+        self.asr_pipeline = TranslationPipeline(asr_pipeline_config)
+        self.diarization = SpeakerDiarization(max_speakers=config.max_speakers)
+        
+        <span class="hljs-comment"># Session state</span>
+        self.session: Optional[MeetingSession] = <span class="hljs-literal">None</span>
+        self._on_entry_callback: Optional[Callable[[MeetingEntry], <span class="hljs-literal">None</span>]] = <span class="hljs-literal">None</span>
+        self._is_running = <span class="hljs-literal">False</span>
+    
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">start_session</span><span class="hljs-params">(self, title: Optional[str] = None)</span>:</span>
+        <span class="hljs-string">"""Start new meeting session."""</span>
+        <span class="hljs-keyword">import</span> uuid
+        
+        self.session = MeetingSession(
+            session_id=str(uuid.uuid4()),
+            start_time=datetime.now(),
+            title=title <span class="hljs-keyword">or</span> self.config.session_title
+        )
+        
+        self.diarization.reset()
+        self._is_running = <span class="hljs-literal">True</span>
+        
+        <span class="hljs-comment"># Start ASR pipeline with custom callback</span>
+        self.asr_pipeline.set_output_callback(self._on_asr_output)
+        self.asr_pipeline.start()
+    
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">_on_asr_output</span><span class="hljs-params">(self, text: str, is_final: bool = True)</span>:</span>
+        <span class="hljs-string">"""Handle ASR output with speaker attribution."""</span>
+        <span class="hljs-keyword">if</span> <span class="hljs-keyword">not</span> self.session <span class="hljs-keyword">or</span> <span class="hljs-keyword">not</span> text.strip():
+            <span class="hljs-keyword">return</span>
+        
+        <span class="hljs-comment"># Get current audio timing</span>
+        current_time = datetime.now()
+        
+        <span class="hljs-comment"># Perform speaker diarization</span>
+        <span class="hljs-comment"># Note: In real implementation, pass actual audio segment</span>
+        speaker_segment = self.diarization.process_segment(
+            audio_segment=np.array([]),  <span class="hljs-comment"># Placeholder</span>
+            start_time=current_time.timestamp(),
+            end_time=current_time.timestamp()
+        )
+        
+        <span class="hljs-comment"># Translate if enabled</span>
+        translated = <span class="hljs-literal">None</span>
+        <span class="hljs-keyword">if</span> self.config.enable_translation <span class="hljs-keyword">and</span> self.config.target_language:
+            translated = self._translate_text(text)
+        
+        <span class="hljs-comment"># Create meeting entry</span>
+        entry = MeetingEntry(
+            entry_id=<span class="hljs-number">0</span>,  <span class="hljs-comment"># Will be auto-assigned</span>
+            timestamp=current_time,
+            speaker_id=speaker_segment.speaker_id,
+            speaker_role=self._infer_speaker_role(speaker_segment),
+            original_text=text,
+            translated_text=translated,
+            confidence=speaker_segment.confidence,
+            duration_ms=<span class="hljs-number">0</span>  <span class="hljs-comment"># Calculate from audio segment</span>
+        )
+        
+        self.session.add_entry(entry)
+        
+        <span class="hljs-comment"># Notify callback</span>
+        <span class="hljs-keyword">if</span> self._on_entry_callback:
+            self._on_entry_callback(entry)
+    
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">_translate_text</span><span class="hljs-params">(self, text: str)</span> -&gt; str:</span>
+        <span class="hljs-string">"""Translate text using pipeline translator."""</span>
+        <span class="hljs-comment"># Use existing translation pipeline</span>
+        <span class="hljs-comment"># Implementation depends on existing translation system</span>
+        <span class="hljs-keyword">return</span> text  <span class="hljs-comment"># Placeholder</span>
+    
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">_infer_speaker_role</span><span class="hljs-params">(self, segment: SpeakerSegment)</span> -&gt; SpeakerRole:</span>
+        <span class="hljs-string">"""Infer speaker role from segment."""</span>
+        <span class="hljs-keyword">from</span> src.gui.meeting.minutes_model <span class="hljs-keyword">import</span> SpeakerRole
+        
+        <span class="hljs-comment"># Simple mapping based on speaker ID</span>
+        <span class="hljs-keyword">if</span> segment.speaker_id == <span class="hljs-string">"Speaker 1"</span>:
+            <span class="hljs-keyword">return</span> SpeakerRole.HOST
+        <span class="hljs-keyword">return</span> SpeakerRole.PARTICIPANT
+    
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">set_entry_callback</span><span class="hljs-params">(self, callback: Callable[[MeetingEntry], None])</span>:</span>
+        <span class="hljs-string">"""Set callback for new entries."""</span>
+        self._on_entry_callback = callback
+    
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">stop_session</span><span class="hljs-params">(self)</span> -&gt; MeetingSession:</span>
+        <span class="hljs-string">"""Stop session and return complete minutes."""</span>
+        self._is_running = <span class="hljs-literal">False</span>
+        self.asr_pipeline.stop()
+        <span class="hljs-keyword">return</span> self.session
+    
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">export_session</span><span class="hljs-params">(self, filepath: str, format: str = <span class="hljs-string">"markdown"</span>)</span>:</span>
+        <span class="hljs-string">"""Export session to file."""</span>
+        <span class="hljs-keyword">if</span> <span class="hljs-keyword">not</span> self.session:
+            <span class="hljs-keyword">return</span> <span class="hljs-literal">False</span>
+        
+        <span class="hljs-keyword">if</span> format == <span class="hljs-string">"markdown"</span>:
+            content = self.session.export_as_minutes()
+            <span class="hljs-keyword">with</span> open(filepath, <span class="hljs-string">'w'</span>, encoding=<span class="hljs-string">'utf-8'</span>) <span class="hljs-keyword">as</span> f:
+                f.write(content)
+        <span class="hljs-keyword">elif</span> format == <span class="hljs-string">"json"</span>:
+            <span class="hljs-keyword">import</span> json
+            <span class="hljs-comment"># Convert to JSON</span>
+            data = {
+                <span class="hljs-string">"session_id"</span>: self.session.session_id,
+                <span class="hljs-string">"title"</span>: self.session.title,
+                <span class="hljs-string">"start_time"</span>: self.session.start_time.isoformat(),
+                <span class="hljs-string">"entries"</span>: [
+                    {
+                        <span class="hljs-string">"timestamp"</span>: e.timestamp.isoformat(),
+                        <span class="hljs-string">"speaker"</span>: e.speaker_id,
+                        <span class="hljs-string">"text"</span>: e.original_text,
+                        <span class="hljs-string">"translation"</span>: e.translated_text,
+                        <span class="hljs-string">"confidence"</span>: e.confidence
+                    }
+                    <span class="hljs-keyword">for</span> e <span class="hljs-keyword">in</span> self.session.entries
+                ]
+            }
+            <span class="hljs-keyword">with</span> open(filepath, <span class="hljs-string">'w'</span>, encoding=<span class="hljs-string">'utf-8'</span>) <span class="hljs-keyword">as</span> f:
+                json.dump(data, f, indent=<span class="hljs-number">2</span>, ensure_ascii=<span class="hljs-literal">False</span>)
+        
+        <span class="hljs-keyword">return</span> <span class="hljs-literal">True</span>
+</div></code></pre>
+<hr>
+<h3 id="43-modern-gui-theme">4.3 Modern GUI Theme</h3>
+<p><strong>Purpose:</strong> Replace default Qt6 styling with a modern, professional theme.</p>
+<h4 id="431-modern-theme-system">4.3.1 Modern Theme System</h4>
+<p><strong>File:</strong> <code>src/gui/theme/modern_theme.py</code></p>
+<pre class="hljs"><code><div><span class="hljs-string">"""
+Modern UI theme for VoiceTranslate Pro.
+Clean, professional design with dark/light modes.
+"""</span>
+
+<span class="hljs-keyword">from</span> PySide6.QtWidgets <span class="hljs-keyword">import</span> QApplication
+<span class="hljs-keyword">from</span> PySide6.QtCore <span class="hljs-keyword">import</span> Qt
+<span class="hljs-keyword">from</span> PySide6.QtGui <span class="hljs-keyword">import</span> QColor, QPalette, QFont
+<span class="hljs-keyword">from</span> enum <span class="hljs-keyword">import</span> Enum
+
+<span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">ThemeMode</span><span class="hljs-params">(Enum)</span>:</span>
+    DARK = <span class="hljs-string">"dark"</span>
+    LIGHT = <span class="hljs-string">"light"</span>
+    AUTO = <span class="hljs-string">"auto"</span>
+
+<span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">ModernTheme</span>:</span>
+    <span class="hljs-string">"""
+    Modern theme system with customizable colors and fonts.
+    """</span>
+    
+    <span class="hljs-comment"># Color palette</span>
+    COLORS = {
+        ThemeMode.DARK: {
+            <span class="hljs-string">"background"</span>: <span class="hljs-string">"#1E1E2E"</span>,
+            <span class="hljs-string">"surface"</span>: <span class="hljs-string">"#2D2D44"</span>,
+            <span class="hljs-string">"surface_hover"</span>: <span class="hljs-string">"#3D3D5C"</span>,
+            <span class="hljs-string">"primary"</span>: <span class="hljs-string">"#6C5DD3"</span>,
+            <span class="hljs-string">"primary_hover"</span>: <span class="hljs-string">"#5B4EC2"</span>,
+            <span class="hljs-string">"secondary"</span>: <span class="hljs-string">"#00D4AA"</span>,
+            <span class="hljs-string">"accent"</span>: <span class="hljs-string">"#FF6B6B"</span>,
+            <span class="hljs-string">"text_primary"</span>: <span class="hljs-string">"#FFFFFF"</span>,
+            <span class="hljs-string">"text_secondary"</span>: <span class="hljs-string">"#B4B4BE"</span>,
+            <span class="hljs-string">"border"</span>: <span class="hljs-string">"#3D3D5C"</span>,
+            <span class="hljs-string">"success"</span>: <span class="hljs-string">"#4CAF50"</span>,
+            <span class="hljs-string">"warning"</span>: <span class="hljs-string">"#FFC107"</span>,
+            <span class="hljs-string">"error"</span>: <span class="hljs-string">"#F44336"</span>,
+        },
+        ThemeMode.LIGHT: {
+            <span class="hljs-string">"background"</span>: <span class="hljs-string">"#F5F5F7"</span>,
+            <span class="hljs-string">"surface"</span>: <span class="hljs-string">"#FFFFFF"</span>,
+            <span class="hljs-string">"surface_hover"</span>: <span class="hljs-string">"#F0F0F5"</span>,
+            <span class="hljs-string">"primary"</span>: <span class="hljs-string">"#6C5DD3"</span>,
+            <span class="hljs-string">"primary_hover"</span>: <span class="hljs-string">"#5B4EC2"</span>,
+            <span class="hljs-string">"secondary"</span>: <span class="hljs-string">"#00B894"</span>,
+            <span class="hljs-string">"accent"</span>: <span class="hljs-string">"#FF6B6B"</span>,
+            <span class="hljs-string">"text_primary"</span>: <span class="hljs-string">"#1A1A2E"</span>,
+            <span class="hljs-string">"text_secondary"</span>: <span class="hljs-string">"#6B6B7B"</span>,
+            <span class="hljs-string">"border"</span>: <span class="hljs-string">"#E0E0E8"</span>,
+            <span class="hljs-string">"success"</span>: <span class="hljs-string">"#4CAF50"</span>,
+            <span class="hljs-string">"warning"</span>: <span class="hljs-string">"#FFC107"</span>,
+            <span class="hljs-string">"error"</span>: <span class="hljs-string">"#F44336"</span>,
+        }
+    }
+    
+    <span class="hljs-comment"># Typography</span>
+    FONTS = {
+        <span class="hljs-string">"heading"</span>: QFont(<span class="hljs-string">"Inter"</span>, <span class="hljs-number">24</span>, QFont.Bold),
+        <span class="hljs-string">"subheading"</span>: QFont(<span class="hljs-string">"Inter"</span>, <span class="hljs-number">18</span>, QFont.DemiBold),
+        <span class="hljs-string">"body"</span>: QFont(<span class="hljs-string">"Inter"</span>, <span class="hljs-number">13</span>),
+        <span class="hljs-string">"body_small"</span>: QFont(<span class="hljs-string">"Inter"</span>, <span class="hljs-number">11</span>),
+        <span class="hljs-string">"caption"</span>: QFont(<span class="hljs-string">"Inter"</span>, <span class="hljs-number">10</span>),
+        <span class="hljs-string">"monospace"</span>: QFont(<span class="hljs-string">"JetBrains Mono"</span>, <span class="hljs-number">12</span>),
+    }
+    
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">__init__</span><span class="hljs-params">(self, mode: ThemeMode = ThemeMode.DARK)</span>:</span>
+        self.mode = mode
+        self.colors = self.COLORS[mode]
+    
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">apply_to_app</span><span class="hljs-params">(self, app: QApplication)</span>:</span>
+        <span class="hljs-string">"""Apply theme to entire application."""</span>
+        app.setStyleSheet(self.get_stylesheet())
+        
+        <span class="hljs-comment"># Set default font</span>
+        app.setFont(self.FONTS[<span class="hljs-string">"body"</span>])
+    
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">get_stylesheet</span><span class="hljs-params">(self)</span> -&gt; str:</span>
+        <span class="hljs-string">"""Generate QSS stylesheet."""</span>
+        c = self.colors
+        
+        <span class="hljs-keyword">return</span> <span class="hljs-string">f"""
+        /* Main Window */
+        QMainWindow {{
+            background-color: <span class="hljs-subst">{c[<span class="hljs-string">'background'</span>]}</span>;
+        }}
+        
+        /* Central Widget */
+        QWidget {{
+            background-color: <span class="hljs-subst">{c[<span class="hljs-string">'background'</span>]}</span>;
+            color: <span class="hljs-subst">{c[<span class="hljs-string">'text_primary'</span>]}</span>;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }}
+        
+        /* Buttons */
+        QPushButton {{
+            background-color: <span class="hljs-subst">{c[<span class="hljs-string">'surface'</span>]}</span>;
+            color: <span class="hljs-subst">{c[<span class="hljs-string">'text_primary'</span>]}</span>;
+            border: 1px solid <span class="hljs-subst">{c[<span class="hljs-string">'border'</span>]}</span>;
+            border-radius: 8px;
+            padding: 10px 20px;
+            font-weight: 500;
+            min-width: 80px;
+        }}
+        
+        QPushButton:hover {{
+            background-color: <span class="hljs-subst">{c[<span class="hljs-string">'surface_hover'</span>]}</span>;
+        }}
+        
+        QPushButton:pressed {{
+            background-color: <span class="hljs-subst">{c[<span class="hljs-string">'primary'</span>]}</span>;
+        }}
+        
+        QPushButton:disabled {{
+            background-color: <span class="hljs-subst">{c[<span class="hljs-string">'surface'</span>]}</span>;
+            color: <span class="hljs-subst">{c[<span class="hljs-string">'text_secondary'</span>]}</span>;
+            border-color: <span class="hljs-subst">{c[<span class="hljs-string">'border'</span>]}</span>;
+        }}
+        
+        QPushButton#primary {{
+            background-color: <span class="hljs-subst">{c[<span class="hljs-string">'primary'</span>]}</span>;
+            color: white;
+            border: none;
+        }}
+        
+        QPushButton#primary:hover {{
+            background-color: <span class="hljs-subst">{c[<span class="hljs-string">'primary_hover'</span>]}</span>;
+        }}
+        
+        /* Combo Box */
+        QComboBox {{
+            background-color: <span class="hljs-subst">{c[<span class="hljs-string">'surface'</span>]}</span>;
+            color: <span class="hljs-subst">{c[<span class="hljs-string">'text_primary'</span>]}</span>;
+            border: 1px solid <span class="hljs-subst">{c[<span class="hljs-string">'border'</span>]}</span>;
+            border-radius: 6px;
+            padding: 8px 12px;
+            min-width: 120px;
+        }}
+        
+        QComboBox:hover {{
+            border-color: <span class="hljs-subst">{c[<span class="hljs-string">'primary'</span>]}</span>;
+        }}
+        
+        QComboBox::drop-down {{
+            border: none;
+            width: 24px;
+        }}
+        
+        QComboBox QAbstractItemView {{
+            background-color: <span class="hljs-subst">{c[<span class="hljs-string">'surface'</span>]}</span>;
+            color: <span class="hljs-subst">{c[<span class="hljs-string">'text_primary'</span>]}</span>;
+            selection-background-color: <span class="hljs-subst">{c[<span class="hljs-string">'primary'</span>]}</span>;
+            border: 1px solid <span class="hljs-subst">{c[<span class="hljs-string">'border'</span>]}</span>;
+            border-radius: 6px;
+        }}
+        
+        /* Text Edit */
+        QTextEdit {{
+            background-color: <span class="hljs-subst">{c[<span class="hljs-string">'surface'</span>]}</span>;
+            color: <span class="hljs-subst">{c[<span class="hljs-string">'text_primary'</span>]}</span>;
+            border: 1px solid <span class="hljs-subst">{c[<span class="hljs-string">'border'</span>]}</span>;
+            border-radius: 8px;
+            padding: 12px;
+            font-size: 14px;
+            line-height: 1.5;
+        }}
+        
+        QTextEdit:focus {{
+            border-color: <span class="hljs-subst">{c[<span class="hljs-string">'primary'</span>]}</span>;
+        }}
+        
+        /* Group Box */
+        QGroupBox {{
+            background-color: <span class="hljs-subst">{c[<span class="hljs-string">'surface'</span>]}</span>;
+            border: 1px solid <span class="hljs-subst">{c[<span class="hljs-string">'border'</span>]}</span>;
+            border-radius: 12px;
+            margin-top: 16px;
+            padding-top: 16px;
+            font-weight: 600;
+        }}
+        
+        QGroupBox::title {{
+            subcontrol-origin: margin;
+            left: 16px;
+            padding: 0 8px;
+            color: <span class="hljs-subst">{c[<span class="hljs-string">'text_secondary'</span>]}</span>;
+        }}
+        
+        /* Labels */
+        QLabel {{
+            color: <span class="hljs-subst">{c[<span class="hljs-string">'text_primary'</span>]}</span>;
+        }}
+        
+        QLabel#heading {{
+            font-size: 24px;
+            font-weight: bold;
+            color: <span class="hljs-subst">{c[<span class="hljs-string">'text_primary'</span>]}</span>;
+        }}
+        
+        QLabel#subheading {{
+            font-size: 16px;
+            font-weight: 600;
+            color: <span class="hljs-subst">{c[<span class="hljs-string">'text_secondary'</span>]}</span>;
+        }}
+        
+        QLabel#caption {{
+            font-size: 12px;
+            color: <span class="hljs-subst">{c[<span class="hljs-string">'text_secondary'</span>]}</span>;
+        }}
+        
+        /* Scroll Area */
+        QScrollArea {{
+            border: none;
+            background-color: transparent;
+        }}
+        
+        QScrollBar:vertical {{
+            background-color: transparent;
+            width: 8px;
+            margin: 0;
+        }}
+        
+        QScrollBar::handle:vertical {{
+            background-color: <span class="hljs-subst">{c[<span class="hljs-string">'border'</span>]}</span>;
+            border-radius: 4px;
+            min-height: 32px;
+        }}
+        
+        QScrollBar::handle:vertical:hover {{
+            background-color: <span class="hljs-subst">{c[<span class="hljs-string">'text_secondary'</span>]}</span>;
+        }}
+        
+        /* Status Bar */
+        QStatusBar {{
+            background-color: <span class="hljs-subst">{c[<span class="hljs-string">'surface'</span>]}</span>;
+            color: <span class="hljs-subst">{c[<span class="hljs-string">'text_secondary'</span>]}</span>;
+            border-top: 1px solid <span class="hljs-subst">{c[<span class="hljs-string">'border'</span>]}</span>;
+        }}
+        
+        /* Progress Bar */
+        QProgressBar {{
+            background-color: <span class="hljs-subst">{c[<span class="hljs-string">'surface'</span>]}</span>;
+            border: none;
+            border-radius: 4px;
+            height: 6px;
+            text-align: center;
+        }}
+        
+        QProgressBar::chunk {{
+            background-color: <span class="hljs-subst">{c[<span class="hljs-string">'primary'</span>]}</span>;
+            border-radius: 4px;
+        }}
+        
+        /* Check Box */
+        QCheckBox {{
+            color: <span class="hljs-subst">{c[<span class="hljs-string">'text_primary'</span>]}</span>;
+            spacing: 8px;
+        }}
+        
+        QCheckBox::indicator {{
+            width: 18px;
+            height: 18px;
+            border-radius: 4px;
+            border: 2px solid <span class="hljs-subst">{c[<span class="hljs-string">'border'</span>]}</span>;
+            background-color: <span class="hljs-subst">{c[<span class="hljs-string">'surface'</span>]}</span>;
+        }}
+        
+        QCheckBox::indicator:checked {{
+            background-color: <span class="hljs-subst">{c[<span class="hljs-string">'primary'</span>]}</span>;
+            border-color: <span class="hljs-subst">{c[<span class="hljs-string">'primary'</span>]}</span>;
+        }}
+        
+        /* Line Edit */
+        QLineEdit {{
+            background-color: <span class="hljs-subst">{c[<span class="hljs-string">'surface'</span>]}</span>;
+            color: <span class="hljs-subst">{c[<span class="hljs-string">'text_primary'</span>]}</span>;
+            border: 1px solid <span class="hljs-subst">{c[<span class="hljs-string">'border'</span>]}</span>;
+            border-radius: 6px;
+            padding: 8px 12px;
+        }}
+        
+        QLineEdit:focus {{
+            border-color: <span class="hljs-subst">{c[<span class="hljs-string">'primary'</span>]}</span>;
+        }}
+        """</span>
+    
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">get_card_style</span><span class="hljs-params">(self)</span> -&gt; str:</span>
+        <span class="hljs-string">"""Get style for card containers."""</span>
+        c = self.colors
+        <span class="hljs-keyword">return</span> <span class="hljs-string">f"""
+            background-color: <span class="hljs-subst">{c[<span class="hljs-string">'surface'</span>]}</span>;
+            border-radius: 12px;
+            border: 1px solid <span class="hljs-subst">{c[<span class="hljs-string">'border'</span>]}</span>;
+        """</span>
+
+
+<span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">ThemeManager</span>:</span>
+    <span class="hljs-string">"""Manages theme application-wide."""</span>
+    
+    _instance = <span class="hljs-literal">None</span>
+    
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">__new__</span><span class="hljs-params">(cls)</span>:</span>
+        <span class="hljs-keyword">if</span> cls._instance <span class="hljs-keyword">is</span> <span class="hljs-literal">None</span>:
+            cls._instance = super().__new__(cls)
+            cls._instance._theme = ModernTheme(ThemeMode.DARK)
+        <span class="hljs-keyword">return</span> cls._instance
+    
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">set_theme</span><span class="hljs-params">(self, mode: ThemeMode)</span>:</span>
+        <span class="hljs-string">"""Change theme."""</span>
+        self._theme = ModernTheme(mode)
+        
+        <span class="hljs-comment"># Reapply to active application</span>
+        app = QApplication.instance()
+        <span class="hljs-keyword">if</span> app:
+            self._theme.apply_to_app(app)
+    
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">get_theme</span><span class="hljs-params">(self)</span> -&gt; ModernTheme:</span>
+        <span class="hljs-string">"""Get current theme."""</span>
+        <span class="hljs-keyword">return</span> self._theme
+</div></code></pre>
+<hr>
+<h2 id="phase-5-debug-logging-system">Phase 5: Debug Logging System</h2>
+<p><strong>Purpose:</strong> Comprehensive logging for troubleshooting user issues.</p>
+<h4 id="61-debug-logger">6.1 Debug Logger</h4>
+<p><strong>File:</strong> <code>src/core/utils/debug_logger.py</code></p>
+<pre class="hljs"><code><div><span class="hljs-string">"""
+Comprehensive debug logging system using loguru.
+Generates detailed logs for troubleshooting.
+"""</span>
+
+<span class="hljs-keyword">import</span> sys
+<span class="hljs-keyword">import</span> os
+<span class="hljs-keyword">import</span> platform
+<span class="hljs-keyword">import</span> traceback
+<span class="hljs-keyword">from</span> datetime <span class="hljs-keyword">import</span> datetime
+<span class="hljs-keyword">from</span> pathlib <span class="hljs-keyword">import</span> Path
+<span class="hljs-keyword">from</span> typing <span class="hljs-keyword">import</span> Optional
+<span class="hljs-keyword">from</span> dataclasses <span class="hljs-keyword">import</span> dataclass, asdict
+<span class="hljs-keyword">import</span> json
+
+<span class="hljs-keyword">from</span> loguru <span class="hljs-keyword">import</span> logger
+
+<span class="hljs-meta">@dataclass</span>
+<span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">SystemInfo</span>:</span>
+    <span class="hljs-string">"""System information for debugging."""</span>
+    platform: str
+    platform_version: str
+    python_version: str
+    cpu_count: int
+    memory_gb: float
+    gpu_info: str = <span class="hljs-string">"Unknown"</span>
+
+<span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">DebugLogger</span>:</span>
+    <span class="hljs-string">"""
+    Comprehensive debug logging for VoiceTranslate Pro using loguru.
+    
+    Features:
+    - Rotating log files
+    - System info capture
+    - Component-level logging
+    - Crash dump generation
+    - Privacy mode (disable text logging)
+    - Runtime log level switching
+    """</span>
+    
+    LOG_DIR = Path.home() / <span class="hljs-string">".voicetranslate"</span> / <span class="hljs-string">"logs"</span>
+    MAX_BYTES = <span class="hljs-string">"10 MB"</span>
+    BACKUP_COUNT = <span class="hljs-number">5</span>
+    
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">__init__</span><span class="hljs-params">(self, name: str = <span class="hljs-string">"voicetranslate"</span>)</span>:</span>
+        self.name = name
+        self.log_file = <span class="hljs-literal">None</span>
+        
+        <span class="hljs-comment"># Privacy mode - when True, don't log transcript text</span>
+        self.privacy_mode = <span class="hljs-literal">False</span>
+        
+        self._setup_handlers()
+        self._log_system_info()
+    
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">_setup_handlers</span><span class="hljs-params">(self)</span>:</span>
+        <span class="hljs-string">"""Setup loguru handlers."""</span>
+        self.LOG_DIR.mkdir(parents=<span class="hljs-literal">True</span>, exist_ok=<span class="hljs-literal">True</span>)
+        
+        timestamp = datetime.now().strftime(<span class="hljs-string">"%Y%m%d_%H%M%S"</span>)
+        self.log_file = self.LOG_DIR / <span class="hljs-string">f"<span class="hljs-subst">{self.name}</span>_<span class="hljs-subst">{timestamp}</span>.log"</span>
+        
+        <span class="hljs-comment"># Remove default handler</span>
+        logger.remove()
+        
+        <span class="hljs-comment"># File handler with rotation</span>
+        logger.add(
+            self.log_file,
+            rotation=self.MAX_BYTES,
+            retention=self.BACKUP_COUNT,
+            encoding=<span class="hljs-string">'utf-8'</span>,
+            level=<span class="hljs-string">"DEBUG"</span>,
+            format=<span class="hljs-string">"{time:YYYY-MM-DD HH:mm:ss} | {level:&lt;8} | {name} | {function}:{line} | {message}"</span>
+        )
+        
+        <span class="hljs-comment"># Console handler</span>
+        logger.add(
+            sys.stdout,
+            level=<span class="hljs-string">"INFO"</span>,
+            format=<span class="hljs-string">"{level}: {message}"</span>
+        )
+    
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">set_log_level</span><span class="hljs-params">(self, level: str)</span>:</span>
+        <span class="hljs-string">"""Change log level at runtime (INFO or DEBUG)."""</span>
+        <span class="hljs-comment"># loguru requires re-adding handlers to change levels</span>
+        logger.remove()
+        self._setup_handlers()
+        logger.info(<span class="hljs-string">f"Log level changed to <span class="hljs-subst">{level}</span>"</span>)
+    
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">set_privacy_mode</span><span class="hljs-params">(self, enabled: bool)</span>:</span>
+        <span class="hljs-string">"""Enable privacy mode - disables transcript text in logs."""</span>
+        self.privacy_mode = enabled
+        self.logger.info(<span class="hljs-string">f"Privacy mode <span class="hljs-subst">{<span class="hljs-string">'enabled'</span> <span class="hljs-keyword">if</span> enabled <span class="hljs-keyword">else</span> <span class="hljs-string">'disabled'</span>}</span>"</span>)
+    
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">_log_system_info</span><span class="hljs-params">(self)</span>:</span>
+        <span class="hljs-string">"""Log system information."""</span>
+        <span class="hljs-keyword">import</span> psutil
+        
+        info = SystemInfo(
+            platform=platform.system(),
+            platform_version=platform.version(),
+            python_version=platform.python_version(),
+            cpu_count=os.cpu_count(),
+            memory_gb=psutil.virtual_memory().total / (<span class="hljs-number">1024</span>**<span class="hljs-number">3</span>),
+        )
+        
+        <span class="hljs-comment"># Try to get GPU info</span>
+        <span class="hljs-keyword">try</span>:
+            <span class="hljs-keyword">import</span> torch
+            <span class="hljs-keyword">if</span> torch.cuda.is_available():
+                info.gpu_info = <span class="hljs-string">f"CUDA: <span class="hljs-subst">{torch.cuda.get_device_name(<span class="hljs-number">0</span>)}</span>"</span>
+            <span class="hljs-keyword">elif</span> torch.backends.mps.is_available():
+                info.gpu_info = <span class="hljs-string">"Apple MPS (Metal)"</span>
+        <span class="hljs-keyword">except</span>:
+            <span class="hljs-keyword">pass</span>
+        
+        logger.info(<span class="hljs-string">"="</span> * <span class="hljs-number">60</span>)
+        logger.info(<span class="hljs-string">"VoiceTranslate Pro - Debug Log"</span>)
+        logger.info(<span class="hljs-string">f"Log File: <span class="hljs-subst">{self.log_file}</span>"</span>)
+        logger.info(<span class="hljs-string">"="</span> * <span class="hljs-number">60</span>)
+        logger.info(<span class="hljs-string">"System Information:"</span>)
+        <span class="hljs-keyword">for</span> key, value <span class="hljs-keyword">in</span> asdict(info).items():
+            logger.info(<span class="hljs-string">f"  <span class="hljs-subst">{key}</span>: <span class="hljs-subst">{value}</span>"</span>)
+        logger.info(<span class="hljs-string">"="</span> * <span class="hljs-number">60</span>)
+    
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">log_component_init</span><span class="hljs-params">(self, component: str, config: dict = None)</span>:</span>
+        <span class="hljs-string">"""Log component initialization."""</span>
+        logger.info(<span class="hljs-string">f"[INIT] <span class="hljs-subst">{component}</span>"</span>)
+        <span class="hljs-keyword">if</span> config:
+            logger.debug(<span class="hljs-string">f"  Config: <span class="hljs-subst">{json.dumps(config, indent=<span class="hljs-number">2</span>)}</span>"</span>)
+    
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">log_audio_device</span><span class="hljs-params">(self, device_info: dict)</span>:</span>
+        <span class="hljs-string">"""Log audio device selection."""</span>
+        logger.info(<span class="hljs-string">f"[AUDIO] Device: <span class="hljs-subst">{device_info.get(<span class="hljs-string">'name'</span>, <span class="hljs-string">'Unknown'</span>)}</span>"</span>)
+        logger.debug(<span class="hljs-string">f"  Info: <span class="hljs-subst">{json.dumps(device_info, indent=<span class="hljs-number">2</span>)}</span>"</span>)
+    
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">log_asr_result</span><span class="hljs-params">(self, text: str, confidence: float, latency_ms: float)</span>:</span>
+        <span class="hljs-string">"""Log ASR result. Respects privacy mode."""</span>
+        logger.info(<span class="hljs-string">f"[ASR] Confidence: <span class="hljs-subst">{confidence:<span class="hljs-number">.2</span>f}</span>, Latency: <span class="hljs-subst">{latency_ms:<span class="hljs-number">.0</span>f}</span>ms"</span>)
+        <span class="hljs-keyword">if</span> <span class="hljs-keyword">not</span> self.privacy_mode:
+            logger.debug(<span class="hljs-string">f"  Text: <span class="hljs-subst">{text[:<span class="hljs-number">100</span>]}</span>..."</span>)
+        <span class="hljs-keyword">else</span>:
+            logger.debug(<span class="hljs-string">f"  Text: [REDACTED - Privacy Mode]"</span>)
+    
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">log_translation</span><span class="hljs-params">(self, source: str, target: str, latency_ms: float)</span>:</span>
+        <span class="hljs-string">"""Log translation result. Respects privacy mode."""</span>
+        logger.info(<span class="hljs-string">f"[TRANSLATE] Latency: <span class="hljs-subst">{latency_ms:<span class="hljs-number">.0</span>f}</span>ms"</span>)
+        <span class="hljs-keyword">if</span> <span class="hljs-keyword">not</span> self.privacy_mode:
+            logger.debug(<span class="hljs-string">f"  Source: <span class="hljs-subst">{source[:<span class="hljs-number">100</span>]}</span>..."</span>)
+            logger.debug(<span class="hljs-string">f"  Target: <span class="hljs-subst">{target[:<span class="hljs-number">100</span>]}</span>..."</span>)
+        <span class="hljs-keyword">else</span>:
+            logger.debug(<span class="hljs-string">f"  Source/Target: [REDACTED - Privacy Mode]"</span>)
+    
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">log_error</span><span class="hljs-params">(self, error: Exception, context: str = <span class="hljs-string">""</span>)</span>:</span>
+        <span class="hljs-string">"""Log error with traceback."""</span>
+        logger.error(<span class="hljs-string">f"[ERROR] <span class="hljs-subst">{context}</span>: <span class="hljs-subst">{str(error)}</span>"</span>)
+        logger.error(traceback.format_exc())
+    
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">log_performance</span><span class="hljs-params">(self, metric_name: str, value: float, unit: str = <span class="hljs-string">"ms"</span>)</span>:</span>
+        <span class="hljs-string">"""Log performance metric."""</span>
+        logger.info(<span class="hljs-string">f"[PERF] <span class="hljs-subst">{metric_name}</span>: <span class="hljs-subst">{value:<span class="hljs-number">.2</span>f}</span><span class="hljs-subst">{unit}</span>"</span>)
+    
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">generate_crash_dump</span><span class="hljs-params">(self, exc_info: tuple = None)</span> -&gt; Path:</span>
+        <span class="hljs-string">"""Generate crash dump file."""</span>
+        dump_file = self.LOG_DIR / <span class="hljs-string">f"crash_<span class="hljs-subst">{datetime.now().strftime(<span class="hljs-string">'%Y%m%d_%H%M%S'</span>)}</span>.txt"</span>
+        
+        <span class="hljs-keyword">with</span> open(dump_file, <span class="hljs-string">'w'</span>) <span class="hljs-keyword">as</span> f:
+            f.write(<span class="hljs-string">"VoiceTranslate Pro - Crash Report\n"</span>)
+            f.write(<span class="hljs-string">"="</span> * <span class="hljs-number">60</span> + <span class="hljs-string">"\n"</span>)
+            f.write(<span class="hljs-string">f"Time: <span class="hljs-subst">{datetime.now().isoformat()}</span>\n"</span>)
+            f.write(<span class="hljs-string">f"Log File: <span class="hljs-subst">{self.log_file}</span>\n"</span>)
+            f.write(<span class="hljs-string">"\nException:\n"</span>)
+            
+            <span class="hljs-keyword">if</span> exc_info:
+                f.write(<span class="hljs-string">''</span>.join(traceback.format_exception(*exc_info)))
+            <span class="hljs-keyword">else</span>:
+                f.write(traceback.format_exc())
+            
+            f.write(<span class="hljs-string">"\nRecent Log Entries:\n"</span>)
+            <span class="hljs-comment"># Include last 50 log lines if possible</span>
+        
+        logger.critical(<span class="hljs-string">f"Crash dump generated: <span class="hljs-subst">{dump_file}</span>"</span>)
+        <span class="hljs-keyword">return</span> dump_file
+    
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">get_log_location</span><span class="hljs-params">(self)</span> -&gt; str:</span>
+        <span class="hljs-string">"""Get log file location for user."""</span>
+        <span class="hljs-keyword">return</span> str(self.log_file)
+
+
+<span class="hljs-comment"># Global logger instance</span>
+_debug_logger: Optional[DebugLogger] = <span class="hljs-literal">None</span>
+
+<span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">get_debug_logger</span><span class="hljs-params">()</span> -&gt; DebugLogger:</span>
+    <span class="hljs-string">"""Get or create global debug logger."""</span>
+    <span class="hljs-keyword">global</span> _debug_logger
+    <span class="hljs-keyword">if</span> _debug_logger <span class="hljs-keyword">is</span> <span class="hljs-literal">None</span>:
+        _debug_logger = DebugLogger()
+    <span class="hljs-keyword">return</span> _debug_logger
+</div></code></pre>
+<hr>
+<h4 id="512-modelmanager-new---critical-for-portable-distribution">5.1.2 ModelManager (NEW - Critical for Portable Distribution)</h4>
+<p><strong>File:</strong> <code>src/core/utils/model_manager.py</code></p>
+<p><strong>Purpose:</strong> Handle model downloads on first run without installer.</p>
+<pre class="hljs"><code><div><span class="hljs-string">"""
+Model download and management system.
+Handles large model downloads with progress, retries, and verification.
+"""</span>
+
+<span class="hljs-keyword">import</span> hashlib
+<span class="hljs-keyword">import</span> requests
+<span class="hljs-keyword">from</span> pathlib <span class="hljs-keyword">import</span> Path
+<span class="hljs-keyword">from</span> typing <span class="hljs-keyword">import</span> Optional, Callable
+<span class="hljs-keyword">from</span> dataclasses <span class="hljs-keyword">import</span> dataclass
+<span class="hljs-keyword">import</span> json
+
+<span class="hljs-meta">@dataclass</span>
+<span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">ModelConfig</span>:</span>
+    <span class="hljs-string">"""Configuration for a downloadable model."""</span>
+    name: str
+    url: str
+    mirror_url: Optional[str] = <span class="hljs-literal">None</span>
+    checksum: str = <span class="hljs-string">""</span>  <span class="hljs-comment"># SHA256</span>
+    size_mb: int = <span class="hljs-number">0</span>
+    local_path: Path = Path.home() / <span class="hljs-string">".voicetranslate"</span> / <span class="hljs-string">"models"</span>
+
+<span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">ModelManager</span>:</span>
+    <span class="hljs-string">"""
+    Manages AI model downloads and verification.
+    
+    Features:
+    - Progress tracking with callbacks
+    - Automatic retry on failure
+    - Checksum verification
+    - Mirror fallback
+    - Resume partial downloads
+    """</span>
+    
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">__init__</span><span class="hljs-params">(self, progress_callback: Optional[Callable[[float, int], None]] = None)</span>:</span>
+        <span class="hljs-string">"""
+        Args:
+            progress_callback: Function(percent, bytes_per_sec) called during download
+        """</span>
+        self.progress_callback = progress_callback
+        self.models_dir = Path.home() / <span class="hljs-string">".voicetranslate"</span> / <span class="hljs-string">"models"</span>
+        self.models_dir.mkdir(parents=<span class="hljs-literal">True</span>, exist_ok=<span class="hljs-literal">True</span>)
+    
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">download_model</span><span class="hljs-params">(self, config: ModelConfig, force: bool = False)</span> -&gt; bool:</span>
+        <span class="hljs-string">"""
+        Download model with progress tracking and verification.
+        
+        Args:
+            config: Model configuration
+            force: Re-download even if exists
+            
+        Returns:
+            True if successful
+        """</span>
+        local_file = self.models_dir / config.name
+        
+        <span class="hljs-comment"># Check if already downloaded</span>
+        <span class="hljs-keyword">if</span> local_file.exists() <span class="hljs-keyword">and</span> <span class="hljs-keyword">not</span> force:
+            <span class="hljs-keyword">if</span> self._verify_checksum(local_file, config.checksum):
+                logger.info(<span class="hljs-string">f"Model <span class="hljs-subst">{config.name}</span> already exists and verified"</span>)
+                <span class="hljs-keyword">return</span> <span class="hljs-literal">True</span>
+            <span class="hljs-keyword">else</span>:
+                logger.warning(<span class="hljs-string">f"Model <span class="hljs-subst">{config.name}</span> checksum mismatch, re-downloading"</span>)
+        
+        <span class="hljs-comment"># Try primary URL first, then mirror</span>
+        urls = [config.url]
+        <span class="hljs-keyword">if</span> config.mirror_url:
+            urls.append(config.mirror_url)
+        
+        <span class="hljs-keyword">for</span> url <span class="hljs-keyword">in</span> urls:
+            <span class="hljs-keyword">try</span>:
+                <span class="hljs-keyword">if</span> self._download_with_progress(url, local_file, config.size_mb):
+                    <span class="hljs-keyword">if</span> self._verify_checksum(local_file, config.checksum):
+                        logger.info(<span class="hljs-string">f"Model <span class="hljs-subst">{config.name}</span> downloaded and verified"</span>)
+                        <span class="hljs-keyword">return</span> <span class="hljs-literal">True</span>
+                    <span class="hljs-keyword">else</span>:
+                        logger.error(<span class="hljs-string">f"Checksum verification failed for <span class="hljs-subst">{config.name}</span>"</span>)
+                        local_file.unlink(missing_ok=<span class="hljs-literal">True</span>)
+            <span class="hljs-keyword">except</span> Exception <span class="hljs-keyword">as</span> e:
+                logger.error(<span class="hljs-string">f"Failed to download from <span class="hljs-subst">{url}</span>: <span class="hljs-subst">{e}</span>"</span>)
+                <span class="hljs-keyword">continue</span>
+        
+        <span class="hljs-keyword">return</span> <span class="hljs-literal">False</span>
+    
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">_download_with_progress</span><span class="hljs-params">(self, url: str, dest: Path, expected_mb: int)</span> -&gt; bool:</span>
+        <span class="hljs-string">"""Download file with progress tracking."""</span>
+        response = requests.get(url, stream=<span class="hljs-literal">True</span>, timeout=<span class="hljs-number">30</span>)
+        response.raise_for_status()
+        
+        total_size = int(response.headers.get(<span class="hljs-string">'content-length'</span>, <span class="hljs-number">0</span>))
+        downloaded = <span class="hljs-number">0</span>
+        
+        <span class="hljs-keyword">with</span> open(dest, <span class="hljs-string">'wb'</span>) <span class="hljs-keyword">as</span> f:
+            <span class="hljs-keyword">for</span> chunk <span class="hljs-keyword">in</span> response.iter_content(chunk_size=<span class="hljs-number">8192</span>):
+                <span class="hljs-keyword">if</span> chunk:
+                    f.write(chunk)
+                    downloaded += len(chunk)
+                    
+                    <span class="hljs-keyword">if</span> self.progress_callback <span class="hljs-keyword">and</span> total_size &gt; <span class="hljs-number">0</span>:
+                        percent = (downloaded / total_size) * <span class="hljs-number">100</span>
+                        <span class="hljs-comment"># Calculate speed (simplified)</span>
+                        self.progress_callback(percent, <span class="hljs-number">0</span>)
+        
+        <span class="hljs-keyword">return</span> <span class="hljs-literal">True</span>
+    
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">_verify_checksum</span><span class="hljs-params">(self, filepath: Path, expected: str)</span> -&gt; bool:</span>
+        <span class="hljs-string">"""Verify SHA256 checksum of file."""</span>
+        <span class="hljs-keyword">if</span> <span class="hljs-keyword">not</span> expected:
+            <span class="hljs-keyword">return</span> <span class="hljs-literal">True</span>  <span class="hljs-comment"># No checksum provided, skip verification</span>
+        
+        sha256_hash = hashlib.sha256()
+        <span class="hljs-keyword">with</span> open(filepath, <span class="hljs-string">"rb"</span>) <span class="hljs-keyword">as</span> f:
+            <span class="hljs-keyword">for</span> byte_block <span class="hljs-keyword">in</span> iter(<span class="hljs-keyword">lambda</span>: f.read(<span class="hljs-number">4096</span>), <span class="hljs-string">b""</span>):
+                sha256_hash.update(byte_block)
+        
+        <span class="hljs-keyword">return</span> sha256_hash.hexdigest() == expected
+    
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">get_model_path</span><span class="hljs-params">(self, name: str)</span> -&gt; Optional[Path]:</span>
+        <span class="hljs-string">"""Get path to model if it exists and is valid."""</span>
+        path = self.models_dir / name
+        <span class="hljs-keyword">if</span> path.exists():
+            <span class="hljs-keyword">return</span> path
+        <span class="hljs-keyword">return</span> <span class="hljs-literal">None</span>
+    
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">is_model_available</span><span class="hljs-params">(self, name: str)</span> -&gt; bool:</span>
+        <span class="hljs-string">"""Check if model is downloaded and ready to use."""</span>
+        <span class="hljs-keyword">return</span> self.get_model_path(name) <span class="hljs-keyword">is</span> <span class="hljs-keyword">not</span> <span class="hljs-literal">None</span>
+</div></code></pre>
+<p><strong>Integration with First Run Wizard:</strong></p>
+<pre class="hljs"><code><div><span class="hljs-comment"># In First Run Wizard, Step 3: Model Download</span>
+<span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">ModelDownloadPage</span><span class="hljs-params">(QWidget)</span>:</span>
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">__init__</span><span class="hljs-params">(self)</span>:</span>
+        self.progress_bar = QProgressBar()
+        self.status_label = QLabel(<span class="hljs-string">"Ready to download"</span>)
+        self.retry_button = QPushButton(<span class="hljs-string">"Retry"</span>)
+        self.retry_button.hide()
+    
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">start_download</span><span class="hljs-params">(self)</span>:</span>
+        self.manager = ModelManager(progress_callback=self._update_progress)
+        
+        <span class="hljs-comment"># Download Whisper model</span>
+        config = ModelConfig(
+            name=<span class="hljs-string">"whisper-base.pt"</span>,
+            url=<span class="hljs-string">"https://huggingface.co/.../model.pt"</span>,
+            mirror_url=<span class="hljs-string">"https://mirror.example.com/.../model.pt"</span>,
+            checksum=<span class="hljs-string">"sha256_hash_here"</span>,
+            size_mb=<span class="hljs-number">150</span>
+        )
+        
+        success = self.manager.download_model(config)
+        <span class="hljs-keyword">if</span> success:
+            self.status_label.setText(<span class="hljs-string">"✅ Download complete!"</span>)
+        <span class="hljs-keyword">else</span>:
+            self.status_label.setText(<span class="hljs-string">"❌ Download failed. Check connection."</span>)
+            self.retry_button.show()
+</div></code></pre>
+<hr>
+<h2 id="implementation-timeline-review-pending">Implementation Timeline (REVIEW PENDING)</h2>
+<blockquote>
+<p><strong>⚠️ IMPORTANT:</strong> This timeline is <strong>TENTATIVE</strong> and subject to change based on PoC results.
+<strong>DO NOT START</strong> until PoC is complete and approved.</p>
+</blockquote>
+<h3 id="phase-poc-proof-of-concept-week-0">Phase PoC: Proof of Concept (Week 0)</h3>
+<p><strong>Status:</strong> 📋 <strong>For Review</strong> - Must complete before implementation<br>
+<strong>Location:</strong> All work in <code>poc/</code> folder (isolated from <code>src/</code>)</p>
+<table>
+<thead>
+<tr>
+<th>Day</th>
+<th>Task</th>
+<th>Location</th>
+<th>Deliverable</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1-2</td>
+<td>PoC 1: PyQt-Fluent-Widgets compatibility</td>
+<td><code>poc/poc1_fluent_widgets/</code></td>
+<td>Test report with go/no-go decision</td>
+</tr>
+<tr>
+<td>3-4</td>
+<td>PoC 2: Speaker diarization integration</td>
+<td><code>poc/poc2_speaker_diarization/</code></td>
+<td>Latency benchmarks</td>
+</tr>
+<tr>
+<td>5</td>
+<td>PoC 3: Data model coexistence</td>
+<td><code>poc/poc3_data_model/</code></td>
+<td>Integration validation</td>
+</tr>
+<tr>
+<td>6</td>
+<td>PoC 4: Model download &amp; management</td>
+<td><code>poc/poc4_model_download/</code></td>
+<td>Download robustness test</td>
+</tr>
+<tr>
+<td>7</td>
+<td>PoC review and decision</td>
+<td>N/A</td>
+<td>Approved/revised roadmap</td>
+</tr>
+</tbody>
+</table>
+<p><strong>PoC Output Requirements:</strong>
+Each PoC folder must contain:</p>
+<ul>
+<li><code>README.md</code> - How to run the tests</li>
+<li><code>results.md</code> - Findings, benchmarks, and recommendations</li>
+<li>Test scripts (<code>.py</code> files)</li>
+<li>Any copied code from <code>src/</code> (do not modify original)</li>
+</ul>
+<p><strong>Decision Gates:</strong></p>
+<ul>
+<li>✅ <strong>All PoCs Pass:</strong> Proceed with full roadmap (8 weeks)</li>
+<li>⚠️ <strong>Partial Pass:</strong> Revise scope (6-8 weeks with reduced features)</li>
+<li>❌ <strong>PoC Fails:</strong> Redesign approach (timeline TBD)</li>
+</ul>
+<hr>
+<h3 id="phase-4-meeting-mode-implementation-weeks-1-6">Phase 4: Meeting Mode Implementation (Weeks 1-6)</h3>
+<p><strong>Prerequisite:</strong> PoC approved</p>
+<h4 id="week-1-2-foundation">Week 1-2: Foundation</h4>
+<ul>
+<li>Day 1-3: Meeting minutes data model (UTC timestamps) - <strong>separate from existing model</strong></li>
+<li>Day 4-5: Create <code>MeetingWindow</code> class (new window, existing app)</li>
+<li>Day 6-7: Basic meeting display widget (speaker bubbles)</li>
+<li>Day 8-10: Export functionality (Markdown, JSON)</li>
+</ul>
+<h4 id="week-3-4-speaker-recognition">Week 3-4: Speaker Recognition</h4>
+<ul>
+<li>Day 1-2: Implement <code>SimpleSpeakerDiarization</code> with user-configurable speaker count</li>
+<li>Day 3-4: Speaker legend with rename functionality</li>
+<li>Day 5-6: Integration with existing pipeline via QThread</li>
+<li>Day 7-10: Speaker visualization in UI</li>
+</ul>
+<h4 id="week-5-ui-polish-conditional-on-poc-result">Week 5: UI Polish (Conditional on PoC Result)</h4>
+<ul>
+<li><strong>If PoC 1 PASSED:</strong> Apply PyQt-Fluent-Widgets to Meeting Mode only</li>
+<li><strong>If PoC 1 FAILED:</strong> Implement custom QSS theme</li>
+<li>Day 1-2: Theme system</li>
+<li>Day 3-4: Apply theme to Meeting Mode components</li>
+<li>Day 5: First Run Wizard (Meeting Mode only)</li>
+<li>Day 6-7: Audio test function with visual level meter</li>
+</ul>
+<h4 id="week-6-integration">Week 6: Integration</h4>
+<ul>
+<li>Day 1-2: Mode switcher (Translation Mode ↔ Meeting Mode)</li>
+<li>Day 3-4: Shared audio device selection with test</li>
+<li>Day 5-7: Integration testing, bug fixes</li>
+</ul>
+<hr>
+<h3 id="phase-5-debug-logging-model-management--polish-weeks-7-8">Phase 5: Debug Logging, Model Management &amp; Polish (Weeks 7-8)</h3>
+<blockquote>
+<p><strong>Scope Change:</strong> Without installer, focus shifts to Model Management and Stability</p>
+</blockquote>
+<h4 id="week-7-debug-logging--robust-model-downloader">Week 7: Debug Logging &amp; Robust Model Downloader</h4>
+<ul>
+<li>Day 1-2: Debug logging system with privacy controls
+<ul>
+<li>Auto-create <code>~/.voicetranslate/logs</code> directory</li>
+<li>Handle PermissionError gracefully</li>
+<li>Privacy mode for transcript redaction</li>
+</ul>
+</li>
+<li>Day 3-5: <strong>ModelManager class (NEW PRIORITY)</strong>
+<ul>
+<li>Download progress bars (% and MB/s)</li>
+<li>Retry logic for failed downloads</li>
+<li>Checksum verification (SHA256)</li>
+<li>Mirror support for blocked regions</li>
+<li>Offline mode (launch without models)</li>
+</ul>
+</li>
+</ul>
+<h4 id="week-8-performance-tuning--portable-distribution-test">Week 8: Performance Tuning &amp; Portable Distribution Test</h4>
+<ul>
+<li>Day 1-2: Performance tuning
+<ul>
+<li>Memory leak checks</li>
+<li>CPU usage optimization</li>
+<li>Audio buffer tuning</li>
+</ul>
+</li>
+<li>Day 3-4: <strong>Portable Distribution Test</strong>
+<ul>
+<li>Verify app runs on clean machines without installation</li>
+<li>Test model download on slow connections</li>
+<li>Verify log directory creation</li>
+</ul>
+</li>
+<li>Day 5-6: Accessibility testing (WCAG AA contrast ratios)</li>
+<li>Day 7: Final integration testing, bug fixes</li>
+</ul>
+<p><strong>Key Deliverables:</strong></p>
+<ul>
+<li><input type="checkbox" id="checkbox18"><label for="checkbox18">Model downloads work reliably without installer</label></li>
+<li><input type="checkbox" id="checkbox19"><label for="checkbox19">App handles network failures gracefully</label></li>
+<li><input type="checkbox" id="checkbox20"><label for="checkbox20">Portable executable runs on clean Windows/Mac</label></li>
+<li><input type="checkbox" id="checkbox21"><label for="checkbox21">Debug logs write to user-writable directories</label></li>
+</ul>
+<hr>
+<h2 id="gono-go-checklist">Go/No-Go Checklist</h2>
+<p>Before starting implementation, verify:</p>
+<h3 id="poc-phase-week-0---isolated-in-poc-folder">PoC Phase (Week 0) - Isolated in <code>poc/</code> Folder</h3>
+<ul>
+<li><input type="checkbox" id="checkbox22"><label for="checkbox22"></label><strong>PoC 1 completed:</strong> PyQt-Fluent-Widgets compatibility (<code>poc/poc1_fluent_widgets/</code>)</li>
+<li><input type="checkbox" id="checkbox23"><label for="checkbox23"></label><strong>PoC 2 completed:</strong> Speaker diarization latency acceptable (<code>poc/poc2_speaker_diarization/</code>)</li>
+<li><input type="checkbox" id="checkbox24"><label for="checkbox24"></label><strong>PoC 3 completed:</strong> Data models can coexist (<code>poc/poc3_data_model/</code>)</li>
+<li><input type="checkbox" id="checkbox25"><label for="checkbox25"></label><strong>PoC 4 completed:</strong> Model download logic tested (<code>poc/poc4_model_download/</code>)
+<ul>
+<li><input type="checkbox" id="checkbox26"><label for="checkbox26">Resume interrupted downloads</label></li>
+<li><input type="checkbox" id="checkbox27"><label for="checkbox27">Retry on network failure</label></li>
+<li><input type="checkbox" id="checkbox28"><label for="checkbox28">Checksum verification</label></li>
+<li><input type="checkbox" id="checkbox29"><label for="checkbox29">Permission handling</label></li>
+</ul>
+</li>
+<li><input type="checkbox" id="checkbox30"><label for="checkbox30">All PoC results documented in respective </label><code>results.md</code> files</li>
+</ul>
+<h3 id="strategic-approval">Strategic Approval</h3>
+<ul>
+<li><input type="checkbox" id="checkbox31"><label for="checkbox31">Stakeholder approval on incremental approach (Option A)</label></li>
+<li><input type="checkbox" id="checkbox32"><label for="checkbox32">Resource allocation confirmed (8 weeks)</label></li>
+<li><input type="checkbox" id="checkbox33"><label for="checkbox33">Fallback plan documented (if PoC partially fails)</label>
+<ul>
+<li>PyQt-Fluent-Widgets fails → Use QSS theme</li>
+<li>Speaker diarization fails → Delay to V2</li>
+<li>Model download fails → Require manual download</li>
+</ul>
+</li>
+</ul>
+<h3 id="pre-implementation">Pre-Implementation</h3>
+<ul>
+<li><input type="checkbox" id="checkbox34"><label for="checkbox34">ModelManager class design reviewed</label></li>
+<li><input type="checkbox" id="checkbox35"><label for="checkbox35">First Run Wizard flow approved</label></li>
+<li><input type="checkbox" id="checkbox36"><label for="checkbox36">Audio Test &quot;Save Sample&quot; feature approved</label></li>
+</ul>
+<hr>
+<h2 id="file-structure">File Structure</h2>
+<h3 id="implementation-after-poc-approval">Implementation (After PoC Approval)</h3>
+<pre class="hljs"><code><div>src/                              # ⛔ DO NOT MODIFY during PoC
+├── gui/
+│   ├── theme/
+│   │   ├── __init__.py
+│   │   └── modern_theme.py       # Modern UI theme (Meeting Mode only)
+│   ├── meeting/
+│   │   ├── __init__.py
+│   │   ├── minutes_model.py      # Meeting data model (NEW)
+│   │   ├── minutes_display.py    # Meeting display widget (NEW)
+│   │   └── meeting_window.py     # Meeting Mode window (NEW)
+│   ├── audio_test.py             # Audio test dialog (shared)
+│   └── main.py                   # EXISTING - Translation Mode (unchanged)
+├── core/
+│   ├── speaker/
+│   │   ├── __init__.py
+│   │   ├── diarization.py        # Speaker recognition (NEW)
+│   │   └── embedding.py          # Voice embedding model (V2)
+│   ├── pipeline/
+│   │   ├── orchestrator.py       # EXISTING (unchanged)
+│   │   └── meeting_pipeline.py   # Meeting-aware pipeline (NEW)
+│   └── utils/
+│       ├── debug_logger.py       # Debug logging (shared)
+│       └── model_manager.py      # Model download &amp; management (NEW)
+</div></code></pre>
+<h3 id="poc-phase-before-implementation">PoC Phase (Before Implementation)</h3>
+<pre class="hljs"><code><div>poc/                              # ✅ PoC WORK DIRECTORY
+├── README.md                     # PoC setup instructions
+├── requirements.txt              # PoC dependencies
+├── poc1_fluent_widgets/          # PoC 1: UI Compatibility
+│   ├── test_fluent_theme.py
+│   ├── test_threading.py
+│   └── results.md
+├── poc2_speaker_diarization/     # PoC 2: Speaker Detection
+│   ├── speaker_test.py
+│   ├── test_latency.py
+│   └── results.md
+├── poc3_data_model/              # PoC 3: Model Coexistence
+│   ├── test_coexistence.py
+│   └── results.md
+└── poc4_model_download/          # PoC 4: Model Management
+    ├── model_manager_test.py
+    ├── test_downloader.py
+    └── results.md
+</div></code></pre>
+<p><strong>File Status Legend:</strong></p>
+<ul>
+<li><strong>NEW:</strong> Created for this feature</li>
+<li><strong>EXISTING:</strong> Unchanged from current version</li>
+<li><strong>(shared):</strong> Used by both Translation and Meeting modes</li>
+</ul>
+<hr>
+<h2 id="%F0%9F%93%8B-review-checklist-for-stakeholders">📋 Review Checklist for Stakeholders</h2>
+<p><strong>Before approving this roadmap, please confirm:</strong></p>
+<h3 id="%E2%9C%85-executive-summary">✅ Executive Summary</h3>
+<p><strong>Status:</strong> Approved for PoC Phase<br>
+<strong>Impact of Change:</strong> Removing installer eliminates code signing, notarization, and complex build scripts. Phase 5 workload reduced by ~40%.<br>
+<strong>New Focus:</strong> Model Management (robust downloading) and Performance Optimization (portable app stability).</p>
+<hr>
+<h3 id="strategic-decisions">Strategic Decisions</h3>
+<ul>
+<li><input type="checkbox" id="checkbox37"><label for="checkbox37"></label><strong>Option A (Incremental Integration)</strong> is the correct approach</li>
+<li><input type="checkbox" id="checkbox38"><label for="checkbox38">Coexistence of Translation Mode and Meeting Mode is acceptable</label></li>
+<li><input type="checkbox" id="checkbox39"><label for="checkbox39">8-week timeline (including PoC) is feasible</label></li>
+<li><input type="checkbox" id="checkbox40"><label for="checkbox40"></label><strong>Portable executable distribution</strong> (no installer) is acceptable</li>
+</ul>
+<h3 id="technical-decisions">Technical Decisions</h3>
+<ul>
+<li><input type="checkbox" id="checkbox41"><label for="checkbox41">PyQt-Fluent-Widgets dependency is approved (contingent on PoC)</label></li>
+<li><input type="checkbox" id="checkbox42"><label for="checkbox42">Turn-based speaker diarization is sufficient for V1</label></li>
+<li><input type="checkbox" id="checkbox43"><label for="checkbox43">User-configurable speaker count (2-8) meets requirements</label></li>
+<li><input type="checkbox" id="checkbox44"><label for="checkbox44">loguru logging library is approved</label></li>
+<li><input type="checkbox" id="checkbox45"><label for="checkbox45"></label><strong>Model download on first run</strong> (not bundled) is acceptable</li>
+</ul>
+<h3 id="revised-critical-risks-acknowledged">Revised Critical Risks Acknowledged</h3>
+<ul>
+<li><input type="checkbox" id="checkbox46"><label for="checkbox46"></label><strong>Risk 1:</strong> PyQt-Fluent-Widgets compatibility (🔴 High - PoC 1 critical)</li>
+<li><input type="checkbox" id="checkbox47"><label for="checkbox47"></label><strong>Risk 2:</strong> Model Management without installer (🟡 Medium - robust download required)</li>
+<li><input type="checkbox" id="checkbox48"><label for="checkbox48"></label><strong>Risk 3:</strong> Portable app permissions (🟡 Medium - user guidance needed)</li>
+<li><input type="checkbox" id="checkbox49"><label for="checkbox49"></label><strong>Risk 4:</strong> Diarization latency (🟡 Medium - must not block ASR)</li>
+<li><input type="checkbox" id="checkbox50"><label for="checkbox50"></label><strong>Risk 5:</strong> Logging permissions (🟢 Low - user-writable paths)</li>
+</ul>
+<h3 id="poc-scope-week-0---revised">PoC Scope (Week 0) - REVISED</h3>
+<p><strong>Location:</strong> All PoC work isolated in <code>poc/</code> folder (do not modify <code>src/</code>)</p>
+<ul>
+<li><input type="checkbox" id="checkbox51"><label for="checkbox51"></label><strong>PoC 1:</strong> PyQt-Fluent-Widgets compatibility (2-3 days) - <strong>CRITICAL</strong>
+<ul>
+<li>Location: <code>poc/poc1_fluent_widgets/</code></li>
+<li>Output: <code>results.md</code> with go/no-go decision</li>
+</ul>
+</li>
+<li><input type="checkbox" id="checkbox52"><label for="checkbox52"></label><strong>PoC 2:</strong> Speaker diarization integration (2-3 days)
+<ul>
+<li>Location: <code>poc/poc2_speaker_diarization/</code></li>
+<li>Output: Latency benchmarks in <code>results.md</code></li>
+</ul>
+</li>
+<li><input type="checkbox" id="checkbox53"><label for="checkbox53"></label><strong>PoC 3:</strong> Data model coexistence (1-2 days)
+<ul>
+<li>Location: <code>poc/poc3_data_model/</code></li>
+<li>Output: Integration validation in <code>results.md</code></li>
+</ul>
+</li>
+<li><input type="checkbox" id="checkbox54"><label for="checkbox54"></label><strong>PoC 4:</strong> Model download &amp; management (2 days) - <strong>NEW</strong>
+<ul>
+<li>Location: <code>poc/poc4_model_download/</code></li>
+<li>Output: Download robustness test results</li>
+<li>Must test: Resume, retry, checksum, permissions</li>
+</ul>
+</li>
+<li><input type="checkbox" id="checkbox55"><label for="checkbox55"></label><strong>PoC Isolation Verified:</strong> No modifications to <code>src/</code> during PoC phase</li>
+</ul>
+<h3 id="design--ux-features-approved">Design &amp; UX Features Approved</h3>
+<ul>
+<li><input type="checkbox" id="checkbox56"><label for="checkbox56"></label><strong>First Run Wizard</strong> with model download progress bars and retry logic</li>
+<li><input type="checkbox" id="checkbox57"><label for="checkbox57"></label><strong>Audio Test</strong> with &quot;Save Test Audio&quot; button for debugging</li>
+<li><input type="checkbox" id="checkbox58"><label for="checkbox58"></label><strong>Offline Mode</strong> - app launches even if model download fails</li>
+<li><input type="checkbox" id="checkbox59"><label for="checkbox59"></label><strong>CPU/RAM indicator</strong> in status bar</li>
+<li><input type="checkbox" id="checkbox60"><label for="checkbox60"></label><strong>Debug Logging</strong> with privacy mode and auto-directory creation</li>
+</ul>
+<h3 id="fallback-acceptance">Fallback Acceptance</h3>
+<ul>
+<li><input type="checkbox" id="checkbox61"><label for="checkbox61">If PyQt-Fluent-Widgets PoC fails → Use QSS theme immediately</label></li>
+<li><input type="checkbox" id="checkbox62"><label for="checkbox62">If speaker diarization PoC fails → Delay to V2 (minutes without speaker ID)</label></li>
+<li><input type="checkbox" id="checkbox63"><label for="checkbox63">If model download fails → Allow manual download or offline mode</label></li>
+<li><input type="checkbox" id="checkbox64"><label for="checkbox64">Partial PoC success may require scope reduction</label></li>
+</ul>
+<h3 id="pre-implementation-requirements">Pre-Implementation Requirements</h3>
+<ul>
+<li><input type="checkbox" id="checkbox65"><label for="checkbox65">ModelManager class design reviewed</label></li>
+<li><input type="checkbox" id="checkbox66"><label for="checkbox66">First Run Wizard flow approved</label></li>
+<li><input type="checkbox" id="checkbox67"><label for="checkbox67">Audio Test &quot;Save Sample&quot; feature approved</label></li>
+<li><input type="checkbox" id="checkbox68"><label for="checkbox68">Portable path handling strategy confirmed (Path.home() usage)</label></li>
+</ul>
+<h3 id="immediate-next-steps-upon-approval">Immediate Next Steps (Upon Approval)</h3>
+<ol>
+<li><strong>Create <code>poc/</code> folder</strong> and set up isolated environment</li>
+<li><strong>Start PoC 1 immediately</strong> - PyQt-Fluent-Widgets is the biggest technical unknown
+<ul>
+<li>Work in <code>poc/poc1_fluent_widgets/</code> only</li>
+<li>Copy needed code from <code>src/</code>, do not modify originals</li>
+</ul>
+</li>
+<li><strong>Draft ModelManager</strong> in <code>poc/poc4_model_download/</code></li>
+<li>Freeze UI design - Meeting Mode layout approved for prototyping</li>
+<li>Allocate resources for PoC phase (1 week)</li>
+<li>Schedule PoC review meeting (review all <code>results.md</code> files)</li>
+</ol>
+<hr>
+<p><strong>Status:</strong> 🔄 <strong>APPROVED FOR PoC</strong> → Implementation pending PoC success<br>
+<strong>Last Updated:</strong> 2026-02-21<br>
+<strong>Version:</strong> 2.1-review-ready</p>
+<p><strong>End of Roadmap Document</strong></p>
+
+</body>
+</html>
