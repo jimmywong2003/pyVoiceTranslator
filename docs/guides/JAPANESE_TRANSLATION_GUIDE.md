@@ -34,7 +34,7 @@ python cli/demo_realtime_translation.py \
   --device 4
 
 # Or with interview mode (less filtering)
-./run_interview_mode.sh --source ja --target en --asr-model base
+scripts/run/run_interview_mode.sh --source ja --target en --asr-model base
 ```
 
 ---

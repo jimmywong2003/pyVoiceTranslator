@@ -39,7 +39,7 @@ VoiceTranslate Pro is now **production-ready** with:
 **Purpose:** Optimized for documentary/interview content
 
 ```bash
-./run_interview_mode.sh
+scripts/run/run_interview_mode.sh
 ```
 
 **Features:**
@@ -82,7 +82,7 @@ Shows the time delta between consecutive translation entries.
 **Model:** Helsinki-NLP/opus-mt-ja-en
 
 ```bash
-./run_japanese_to_english.sh
+scripts/run/run_japanese_to_english.sh
 ```
 
 **Tested phrases:**
@@ -295,7 +295,7 @@ python cli/demo_realtime_translation.py \
   --source zh --target en --asr-model base
 
 # Interview mode (documentary)
-./run_interview_mode.sh --source ja --target en
+scripts/run/run_interview_mode.sh --source ja --target en
 ```
 
 ### Streaming Mode
@@ -322,7 +322,7 @@ python cli/demo_streaming_mode.py \
 ### Issue: Segments cut off mid-sentence
 **Solution:** Use Interview Mode with 15s max segment
 ```bash
-./run_interview_mode.sh
+scripts/run/run_interview_mode.sh
 ```
 
 ### Issue: Translation filtered as hallucination
@@ -487,7 +487,7 @@ Potential future features:
 - **Architecture:** `docs/architecture/`
 - **API Reference:** `docs/api-reference.md`
 - **Development Roadmap:** `docs/ROADMAP.md` ← **Start here for next phase**
-- **Japanese Translation:** `JAPANESE_TRANSLATION_GUIDE.md`
+- **Japanese Translation:** `docs/guides/JAPANESE_TRANSLATION_GUIDE.md`
 - **Docker Setup:** `docker-compose.yml` comments
 
 ---

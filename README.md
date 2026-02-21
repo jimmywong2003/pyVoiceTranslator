@@ -92,13 +92,13 @@
 python src/gui/main.py
 
 # Interview mode (documentary)
-./run_interview_mode.sh
+scripts/run/run_interview_mode.sh
 
 # Sentence mode (dialogue)
-./run_sentence_mode.sh
+scripts/run/run_sentence_mode.sh
 
 # Japanese translation
-./run_japanese_to_english.sh
+scripts/run/run_japanese_to_english.sh
 ```
 
 ### 2. Run with CLI
@@ -205,7 +205,7 @@ python src/gui/main.py
 For documentaries and long-form content:
 
 ```bash
-./run_interview_mode.sh
+scripts/run/run_interview_mode.sh
 ```
 
 - 15s max segment
@@ -218,7 +218,7 @@ For documentaries and long-form content:
 For dialogue with clear sentence boundaries:
 
 ```bash
-./run_sentence_mode.sh
+scripts/run/run_sentence_mode.sh
 ```
 
 - 20s max segment
@@ -229,7 +229,7 @@ For dialogue with clear sentence boundaries:
 ### Japanese Translation
 
 ```bash
-./run_japanese_to_english.sh
+scripts/run/run_japanese_to_english.sh
 ```
 
 Or in GUI:
@@ -462,11 +462,11 @@ python test_microphone.py
 
 - Select "Japanese (ja)" as source (NOT "Auto-detect")
 - Use "base" or "small" model (not "tiny")
-- Check `JAPANESE_TRANSLATION_GUIDE.md`
+- Check `docs/guides/JAPANESE_TRANSLATION_GUIDE.md`
 
 ### Sentences Cut Mid-Way
 
-- Use **Sentence Mode**: `./run_sentence_mode.sh`
+- Use **Sentence Mode**: `scripts/run/run_sentence_mode.sh`
 - Increases max duration to 20s
 - Better pause detection
 
@@ -492,9 +492,9 @@ docker-compose up -d
 | Document | Description |
 |----------|-------------|
 | [STATUS.md](STATUS.md) | Development status |
-| [FINAL_IMPLEMENTATION_SUMMARY.md](FINAL_IMPLEMENTATION_SUMMARY.md) | Complete summary |
-| [JAPANESE_TRANSLATION_GUIDE.md](JAPANESE_TRANSLATION_GUIDE.md) | Japanese translation |
-| [SENTENCE_MODE_GUIDE.md](SENTENCE_MODE_GUIDE.md) | Sentence mode |
+| [docs/meta/FINAL_IMPLEMENTATION_SUMMARY.md](docs/meta/FINAL_IMPLEMENTATION_SUMMARY.md) | Complete summary |
+| [docs/guides/JAPANESE_TRANSLATION_GUIDE.md](docs/guides/JAPANESE_TRANSLATION_GUIDE.md) | Japanese translation |
+| [docs/guides/SENTENCE_MODE_GUIDE.md](docs/guides/SENTENCE_MODE_GUIDE.md) | Sentence mode |
 | [docs/](docs/) | Full documentation |
 
 ---

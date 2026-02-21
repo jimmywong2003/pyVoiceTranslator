@@ -203,7 +203,7 @@ Configuration:
   3. docs/CROSS_PLATFORM_GUIDE.md → Platform setup
   
 Advanced:
-  1. Interview Mode → ./run_interview_mode.sh
+  1. Interview Mode → scripts/run/run_interview_mode.sh
   2. Docker Deployment → docker-compose.yml
   3. CLI Usage → cli/ directory
 ```
@@ -376,7 +376,7 @@ Production:
 | Understand streaming | `docs/design/streaming_latency_optimization_plan.md` |
 | Deploy with Docker | `Dockerfile` + `docker-compose.yml` |
 | Translate Japanese | `JAPANESE_TRANSLATION_GUIDE.md` |
-| Use interview mode | `./run_interview_mode.sh` |
+| Use interview mode | `scripts/run/run_interview_mode.sh` |
 | See architecture | `docs/architecture.md` |
 | Fix issues | `docs/troubleshooting.md` |
 

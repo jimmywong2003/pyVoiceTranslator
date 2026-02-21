@@ -235,13 +235,13 @@ pyLiveTranslator_kimi/
 python src/gui/main.py
 
 # Interview mode (documentary)
-./run_interview_mode.sh
+scripts/run/run_interview_mode.sh
 
 # Sentence mode (dialogue)
-./run_sentence_mode.sh
+scripts/run/run_sentence_mode.sh
 
 # Japanese translation
-./run_japanese_to_english.sh
+scripts/run/run_japanese_to_english.sh
 ```
 
 ### 2. CLI Tools
@@ -661,7 +661,7 @@ python test_microphone.py
 
 ### Sentences Cut Mid-Way
 
-- Use **Sentence Mode**: `./run_sentence_mode.sh`
+- Use **Sentence Mode**: `scripts/run/run_sentence_mode.sh`
 - Increases max duration to 20s
 - Better pause detection
 

@@ -252,10 +252,10 @@ Max Segment: 12s (standard), 15s (interview mode)
 python src/gui/main.py
 
 # Japanese to English
-./run_japanese_to_english.sh
+scripts/run/run_japanese_to_english.sh
 
 # Interview mode (documentary)
-./run_interview_mode.sh
+scripts/run/run_interview_mode.sh
 
 # Test microphone
 python test_microphone.py

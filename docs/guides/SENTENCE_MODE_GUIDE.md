@@ -33,7 +33,7 @@ Sentence Mode is specifically designed for content where **clear sentence bounda
 
 ```bash
 # Run Sentence Mode
-./run_sentence_mode.sh
+scripts/run/run_sentence_mode.sh
 
 # Or with specific device
 python cli/demo_realtime_translation.py \
@@ -302,7 +302,7 @@ Audio Stream → VAD → Segment Detection
 ## 🚀 Try It Now
 
 ```bash
-./run_sentence_mode.sh
+scripts/run/run_sentence_mode.sh
 ```
 
 Enjoy better sentence detection! 📖
