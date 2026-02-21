@@ -13,7 +13,7 @@ This document provides a summary of the audio processing subsystem design for th
 - **CPU Usage**: ~0.43% on desktop, optimized for real-time
 - **Latency**: 30-100ms chunks (configurable)
 - **Model Size**: ~1MB
-- **License**: MIT (open source)
+- **License**: jimmywongIOT (see LICENSE file)
 - **Installation**: `pip install silero-vad`
 
 ### Fallback: WebRTC VAD v2.0.10

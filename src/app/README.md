@@ -130,4 +130,4 @@ python -m pytest tests/ --cov=src --cov-report=html
 
 ## License
 
-MIT License - See LICENSE file for details
+jimmywongIOT License - See LICENSE file for details

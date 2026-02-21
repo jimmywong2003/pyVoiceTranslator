@@ -1,6 +1,6 @@
 # VoiceTranslate Pro 🎙️🌐
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![License: jimmywongIOT](https://img.shields.io/badge/License-jimmywongIOT-blue.svg)](LICENSE)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey.svg)]()
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)]()
@@ -501,7 +501,7 @@ docker-compose up -d
 
 ## 📄 License
 
-MIT License - see [LICENSE](LICENSE) file.
+jimmywongIOT License - see [LICENSE](LICENSE) file.
 
 ---
 
