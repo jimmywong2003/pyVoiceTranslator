@@ -2636,6 +2636,112 @@
 
     ---
 
+    ### Phase 6: Real Speaker Diarization V2 (Voice-Based) (Weeks 9-12)
+    **Status:** 📋 **PLANNED** - Optional advanced feature  
+    **Goal:** Replace turn-based rotation with AI voice recognition
+
+    > **⚠️ Critical Requirements:**
+    > - Must run **asynchronously** (diarization must NOT block transcription)
+    > - Must handle **audio buffer management** (capture and cleanup)
+    > - Must support **persistent speaker profiles** across sessions
+    > - Recommended: **SpeechBrain ECAPA-TDNN** over pyannote (better for edge/portable)
+
+    #### Week 9: Architecture & Audio Pipeline
+    **Critical Fix: Audio Data Flow**
+    - Day 1-2: Modify ASR pipeline to return raw audio segments
+      ```python
+      # In TranslationOutput dataclass
+      audio_segment: Optional[np.ndarray] = None  # Raw audio for diarization
+      ```
+    - Day 3-4: Implement audio buffer capture in VAD/ASR workers
+    - Day 5-6: Add audio buffer cleanup (prevent memory leaks)
+    - Day 7: Integration testing with Meeting Mode
+
+    **Risk:** Audio buffers increase memory usage → Must implement automatic cleanup
+
+    #### Week 10: Voice-Based Diarization Engine
+    **Technology Choice: SpeechBrain ECAPA-TDNN (NOT pyannote)**
+    
+    | Factor | SpeechBrain | pyannote.audio | Winner |
+    |--------|-------------|----------------|--------|
+    | Model Size | ~20MB | ~100MB | SpeechBrain ✅ |
+    | Latency (CPU) | 150-400ms | 500-1500ms | SpeechBrain ✅ |
+    | HF Token Required | ❌ No | ✅ Yes | SpeechBrain ✅ |
+    | Edge-Friendly | ✅ Good | ⚠️ Marginal | SpeechBrain ✅ |
+    | Accuracy | ⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ | pyannote (acceptable trade-off) |
+
+    - Day 1-2: Implement `VoiceBasedDiarization` class with SpeechBrain
+    - Day 3-4: Create **async worker thread** (QThread-based)
+      ```python
+      class VoiceBasedDiarization(QThread):
+          speaker_identified = Signal(str, float)  # speaker_id, confidence
+          
+          def run(self):
+              # Process audio queue in background
+              # Does NOT block main transcription pipeline
+      ```
+    - Day 5-6: Voice embedding extraction and comparison
+    - Day 7: Similarity threshold tuning (cosine similarity > 0.7)
+
+    **Critical:** Diarization runs in background thread - transcription continues uninterrupted
+
+    #### Week 11: Speaker Profile Management
+    **Persistent Embedding Storage**
+    - Day 1-2: Implement `SpeakerEmbeddingStore` class
+      ```python
+      class SpeakerEmbeddingStore:
+          def __init__(self):
+              self.store_path = Path.home() / ".voicetranslate" / "speaker_profiles"
+              # Persistent storage across sessions
+      ```
+    - Day 3-4: Save/load speaker profiles (`.npy` format)
+    - Day 5-6: Speaker profile management UI (rename, delete profiles)
+    - Day 7: "Speaker Library" feature (recognize speakers across multiple meetings)
+
+    **Benefit:** Speaker 1 in Meeting A = Speaker 1 in Meeting B (if voice matches)
+
+    #### Week 12: Hybrid Mode & UI Integration
+    - Day 1-2: Implement `HybridDiarization` (V1 + V2 switchable)
+      ```python
+      class HybridDiarization:
+          def __init__(self, use_voice=False):
+              self.use_voice = use_voice
+              if use_voice:
+                  self.voice_diarizer = VoiceBasedDiarization()
+              else:
+                  self.turn_diarizer = TurnBasedDiarization()
+      ```
+    - Day 3-4: "Advanced Mode" toggle in Settings
+    - Day 5-6: Retroactive speaker label updates (when diarization completes)
+    - Day 7: Integration testing with real audio
+
+    **Key Deliverables:**
+    - [ ] Real voice-based speaker identification
+    - [ ] Async processing (non-blocking)
+    - [ ] Persistent speaker profiles
+    - [ ] "Advanced Mode" toggle in UI
+    - [ ] Backward compatibility with V1 turn-based
+
+    ---
+
+    ### Phase V1.5: UX Improvements (Parallel Track)
+    **Timeline:** Weeks 3-4 (parallel with Phase 4/5)  
+    **Goal:** Improve turn-based diarization UX before V2 is ready
+
+    **Critical UX Fixes (Compensate for V1 Limitations):**
+    - [ ] **Drag-and-drop speaker merging** (HIGH PRIORITY)
+      - Example: Drag "Speaker 2" onto "Speaker 1" → All segments update
+      - Why: Turn-based WILL mislabel (Speaker 1 talking twice in a row)
+    - [ ] **Retroactive speaker rename**
+      - Click "Speaker 1" → rename to "John" → all segments update
+    - [ ] **Speaker count selector** (2-8 speakers)
+    - [ ] **"Pause Diarization" button** (for offline conversations)
+    - [ ] **Confidence indicators** (show diarization uncertainty)
+
+    **Rationale:** These UX improvements make V1 usable while V2 is in development
+
+    ---
+
     ## Go/No-Go Checklist
 
     Before starting implementation, verify:
@@ -2656,8 +2762,16 @@
     - [ ] Resource allocation confirmed (8 weeks)
     - [ ] Fallback plan documented (if PoC partially fails)
     - PyQt-Fluent-Widgets fails → Use QSS theme
-    - Speaker diarization fails → Delay to V2
+    - Speaker diarization fails → Use turn-based V1, delay voice-based to V2
     - Model download fails → Require manual download
+    - SpeechBrain latency too high → Stay with turn-based V1
+
+    ### Phase 6 (V2) Pre-Requirements
+    - [ ] Phase 4 V1 completed and stable (turn-based working)
+    - [ ] UX improvements (V1.5) implemented
+    - [ ] Audio pipeline can return raw audio segments
+    - [ ] Async architecture validated
+    - [ ] User demand confirmed for voice-based diarization
 
     ### Pre-Implementation
     - [ ] ModelManager class design reviewed
@@ -2686,6 +2800,8 @@
     │   ├── speaker/
     │   │   ├── __init__.py
     │   │   ├── diarization.py        # Speaker recognition (NEW)
+    │   │   ├── diarization_voice.py  # Voice-based diarization V2 (Phase 6)
+    │   │   ├── embedding_store.py    # Persistent speaker profiles (V2)
     │   │   └── embedding.py          # Voice embedding model (V2)
     │   ├── pipeline/
     │   │   ├── orchestrator.py       # EXISTING (unchanged)
@@ -2724,6 +2840,49 @@
 
     ---
 
+    ## 🎯 Speaker Diarization Strategy: V1 vs V2
+
+    ### Current Implementation (V1 - Turn-Based) ✅ COMPLETE
+    **How it works:** Simple rotation (Speaker 1 → 2 → 3 → 1...)
+    ```python
+    speaker = self._speakers[self._current_speaker_idx]
+    self._current_speaker_idx = (self._current_speaker_idx + 1) % len(self._speakers)
+    ```
+    **Pros:** Zero latency, simple, works for structured meetings
+    **Cons:** Assumes turns alternate (fails if Speaker 1 talks twice in a row)
+    **Mitigation:** Drag-and-drop speaker merging UI (V1.5)
+
+    ### Planned Implementation (V2 - Voice-Based) 📋 PLANNED
+    **How it works:** AI voice recognition using SpeechBrain ECAPA-TDNN
+    ```python
+    embedding = speechbrain.encode_batch(audio)
+    speaker_id = self._find_matching_profile(embedding)
+    ```
+    **Pros:** Real voice identification, works with overlapping speech
+    **Cons:** 150-400ms latency, requires async processing, ~20MB model
+    **Critical Requirement:** Must run asynchronously (NOT block transcription)
+
+    ### Decision Matrix
+
+    | Scenario | Recommendation | Phase |
+    |----------|----------------|-------|
+    | Structured meetings (turns alternate) | V1 Turn-based | ✅ Implemented |
+    | Unstructured conversations | V2 Voice-based | 📋 Phase 6 |
+    | Need immediate value | V1 + UX improvements | ✅ Phase 4-5 |
+    | High accuracy required | V2 SpeechBrain | 📋 Phase 6 |
+    | Edge/portable use | V2 SpeechBrain (20MB) | 📋 Phase 6 |
+    | Cloud/server use | pyannote (100MB, more accurate) | Future |
+
+    ### Migration Path
+    1. **Now (V1):** Use turn-based with drag-and-drop correction
+    2. **V1.5:** Add UX improvements to make V1 usable
+    3. **V2 (Optional):** Add voice-based as "Advanced Mode"
+    4. **Hybrid:** User can switch between V1 and V2 in Settings
+
+    **Recommendation:** Implement V1.5 UX improvements immediately. Add V2 voice-based only if user demand justifies the complexity.
+
+    ---
+
     ## 📋 Review Checklist for Stakeholders
 
     **Before approving this roadmap, please confirm:**
@@ -2747,6 +2906,9 @@
     - [ ] User-configurable speaker count (2-8) meets requirements
     - [ ] loguru logging library is approved
     - [ ] **Model download on first run** (not bundled) is acceptable
+    - [ ] **Voice-based diarization (V2)** is optional Phase 6 (not required for V1)
+    - [ ] **SpeechBrain ECAPA-TDNN** preferred over pyannote for edge use
+    - [ ] **Async diarization** architecture approved (non-blocking)
 
     ### Revised Critical Risks Acknowledged
     - [ ] **Risk 1:** PyQt-Fluent-Widgets compatibility (🔴 High - PoC 1 critical)
