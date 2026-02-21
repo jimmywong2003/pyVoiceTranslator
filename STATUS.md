@@ -94,14 +94,38 @@ scripts/run/run_japanese_to_english.sh
 | 美味しそう | It looks delicious |
 | ありがとうございました | Thank you very much |
 
-### 4. ASR Post-Processor (Refined)
+### 4. ASR Post-Processor (Enhanced) 🎯
 **File:** `src/core/asr/post_processor.py`
 
-**Improvements:**
-- Disabled character diversity check (bad for CJK)
-- Word-level diversity only for >100 char text
-- Relaxed thresholds: 12% (was 30%), repetition 6x (was 4x)
-- Japanese filler words preserved: あの, えーと, えっと
+**Applied to all pipelines:** streaming_pipeline, orchestrator, orchestrator_parallel
+
+**Hallucination Detection:**
+- Repetitive pattern detection (6+ repeats)
+- Character repetition check (non-CJK only)
+- Word repetition filtering (60% threshold)
+- Low word diversity detection for long text
+
+**Context-Aware Filtering (NEW):**
+- Tracks recent 5 transcriptions in context window
+- Detects sudden changes in transcription style
+- Jaccard similarity scoring for context coherence
+- Anomaly detection for out-of-context outputs
+
+**Semantic Coherence Check (NEW):**
+- Validates average word length (filters gibberish)
+- Language-specific common word frequency check
+- Quality scoring based on semantic validity
+
+**Confidence Smoothing (NEW):**
+- Smooths confidence scores across recent segments
+- Reduces spurious low-confidence drops
+- Weighted average: 70% current, 30% recent average
+
+**Text Normalization:**
+- Filler word removal (language-specific)
+- ASR artifact removal (Laughter, Music, etc.)
+- Punctuation normalization
+- CJK-aware processing
 
 ---
 
