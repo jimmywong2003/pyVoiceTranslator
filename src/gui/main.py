@@ -1232,6 +1232,12 @@ class VoiceTranslateMainWindow(QMainWindow):
         # Settings menu
         settings_menu = menubar.addMenu("Settings")
         
+        # Audio Test (NEW)
+        audio_test_action = settings_menu.addAction("🎤 Audio Test...")
+        audio_test_action.triggered.connect(self._on_audio_test)
+        
+        settings_menu.addSeparator()
+        
         # Performance monitoring (Phase 5)
         if self._phase5_enabled:
             self.perf_monitor_action = settings_menu.addAction("📊 Performance Monitor")
@@ -1351,6 +1357,21 @@ class VoiceTranslateMainWindow(QMainWindow):
         """Handle update check failure."""
         self.status_bar.showMessage(f"Update check: {message}", 5000)
     
+    def _on_audio_test(self):
+        """Open audio test dialog."""
+        try:
+            from .audio_test_dialog import AudioTestDialog
+            dialog = AudioTestDialog(self)
+            dialog.exec()
+        except ImportError:
+            QMessageBox.information(
+                self,
+                "Audio Test",
+                "Audio test dialog not available.\n\n"
+                "Use CLI instead:\n"
+                "python tests/manual/test_microphone.py"
+            )
+    
     def _on_about(self):
         """Show about dialog."""
         QMessageBox.about(
@@ -1379,6 +1400,11 @@ class VoiceTranslateMainWindow(QMainWindow):
             meeting_action = menu.addAction("📋 Open Meeting Mode")
             meeting_action.triggered.connect(self._on_open_meeting_mode)
             menu.addSeparator()
+        
+        # Audio Test (NEW)
+        audio_test_action = menu.addAction("🎤 Audio Test...")
+        audio_test_action.triggered.connect(self._on_audio_test)
+        menu.addSeparator()
         
         # Phase 5 features
         if self._phase5_enabled:
