@@ -156,11 +156,21 @@ python src/gui/main.py
 **Menu:** Settings → 🎤 Audio Test...
 
 **Features:**
-- Real-time microphone level meter
+- **Live Level Meter:** Real-time audio level with color-coded display
+- **Loopback Test:** Record 3 seconds, play back to confirm microphone works
 - Device selection dropdown
 - Color-coded levels (green/yellow/red)
 - Peak level indicator
+- Recording progress bar
 - No additional dependencies (uses existing sounddevice)
+
+**How to use:**
+1. Select your microphone from the dropdown
+2. Use **Live Level Meter** to see real-time audio levels
+3. Use **Loopback Test** to record and playback:
+   - Click "⏺ Record (3s)" and speak
+   - Click "▶ Play Back" to hear yourself
+   - Confirm you can hear the recording → microphone works!
 
 ---
 
