@@ -18,6 +18,7 @@ from queue import Queue, Empty
 import numpy as np
 
 from ..asr.faster_whisper import FasterWhisperASR
+from ..asr.post_processor import create_post_processed_asr
 from ..asr.streaming_asr import StreamingASR, StreamingASRResult
 from ..translation.marian import MarianTranslator
 from ..translation.streaming_translator import StreamingTranslator
@@ -92,10 +93,17 @@ class StreamingTranslationPipeline:
         # Initialize components
         logger.info("Initializing Streaming Translation Pipeline...")
         
-        # ASR
-        self._base_asr = FasterWhisperASR(
+        # ASR with post-processing for improved accuracy
+        base_asr = FasterWhisperASR(
             model_size=config.asr_model_size,
             language=config.asr_language
+        )
+        self._base_asr = create_post_processed_asr(
+            base_asr=base_asr,
+            language=config.asr_language,
+            remove_filler_words=True,
+            enable_hallucination_filter=True,
+            min_confidence=0.3
         )
         self._streaming_asr = StreamingASR(self._base_asr)
         

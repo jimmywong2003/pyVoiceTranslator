@@ -32,6 +32,7 @@ except ImportError:
 
 # ASR components
 from src.core.asr.faster_whisper import FasterWhisperASR
+from src.core.asr.post_processor import create_post_processed_asr
 
 # Translation components
 from src.core.translation.marian import MarianTranslator
@@ -245,13 +246,21 @@ class TranslationPipeline:
                     min_speech_duration_ms=self.config.min_speech_duration_ms
                 )
             
-            # 3. Initialize ASR
+            # 3. Initialize ASR with post-processing
             logger.info(f"  - ASR ({self.config.asr_model_size})...")
-            self._asr = FasterWhisperASR(
+            base_asr = FasterWhisperASR(
                 model_size=self.config.asr_model_size,
                 device="cpu",
                 compute_type="int8",
                 language=self.config.asr_language
+            )
+            # Wrap with post-processor for hallucination filtering and text cleaning
+            self._asr = create_post_processed_asr(
+                base_asr=base_asr,
+                language=self.config.asr_language,
+                remove_filler_words=True,
+                enable_hallucination_filter=True,
+                min_confidence=0.3
             )
             self._asr.initialize()
             

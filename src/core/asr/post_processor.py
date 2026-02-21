@@ -4,6 +4,7 @@ import re
 import logging
 from typing import Optional, List, Iterator, Dict, Any, Callable
 from dataclasses import dataclass, field
+from collections import deque
 
 from .base import BaseASR, TranscriptionResult, Segment, Word
 
@@ -16,13 +17,24 @@ class PostProcessConfig:
     
     # Hallucination detection
     enable_hallucination_filter: bool = True
-    repetition_threshold: int = 6  # RELAXED: Pattern repeats 6+ times = hallucination (was 4)
-    repetition_ratio: float = 0.6  # RELAXED: 60% of text is repetition (was 50%)
-    min_diversity_ratio: float = 0.12  # RELAXED: Only catch extreme repetition (was 30%, then 20%, still too aggressive)
+    repetition_threshold: int = 6  # Pattern repeats 6+ times = hallucination
+    repetition_ratio: float = 0.6  # 60% of text is repetition
+    min_diversity_ratio: float = 0.12  # Minimum character diversity
     
     # Confidence filtering
     min_confidence: float = 0.3  # Skip segments below this confidence
     min_segment_confidence: float = 0.5  # Skip individual segments below this
+    enable_confidence_smoothing: bool = True  # Smooth confidence across context
+    
+    # Context-aware filtering
+    enable_context_filter: bool = True  # Use context to detect anomalies
+    context_window_size: int = 5  # Number of recent segments to track
+    max_similarity_drop: float = 0.5  # Max allowed similarity drop from context
+    
+    # Semantic coherence
+    enable_coherence_check: bool = True  # Check if text makes semantic sense
+    min_word_length: int = 2  # Minimum avg word length for valid text
+    max_gibberish_ratio: float = 0.7  # Max ratio of non-dictionary words
     
     # Text normalization
     enable_normalization: bool = True
@@ -33,7 +45,7 @@ class PostProcessConfig:
     language: Optional[str] = None
     
     # Performance
-    skip_translation_on_empty: bool = True  # Don't translate empty/invalid results
+    skip_translation_on_empty: bool = True
 
 
 @dataclass
@@ -47,17 +59,20 @@ class PostProcessResult:
     should_skip_translation: bool = False
     quality_score: float = 1.0  # 0.0-1.0
     filters_applied: List[str] = field(default_factory=list)
+    context_score: float = 1.0  # How well it fits context
 
 
 class ASRPostProcessor:
     """
-    Post-processor for ASR transcriptions.
+    Post-processor for ASR transcriptions with context-aware filtering.
     
     Provides:
     1. Hallucination detection (repetitive patterns)
-    2. Confidence-based filtering
-    3. Text normalization (filler words, punctuation)
-    4. Language-specific cleaning
+    2. Confidence-based filtering with smoothing
+    3. Context-aware anomaly detection
+    4. Semantic coherence checking
+    5. Text normalization (filler words, punctuation)
+    6. Language-specific cleaning
     
     Example:
         >>> config = PostProcessConfig(language="ja")
@@ -88,8 +103,18 @@ class ASRPostProcessor:
         r'\([\s]*Pause[\s]*\)',
     ]
     
+    # Common words for coherence checking (top words in each language)
+    COMMON_WORDS = {
+        "en": set(["the", "be", "to", "of", "and", "a", "in", "that", "have", "i", "it", "for", "not", "on", "with", "he", "as", "you", "do", "at"]),
+        "ja": set(["の", "に", "は", "を", "た", "が", "で", "て", "と", "し", "れ", "さ", "ある", "いる", "も", "する", "から", "な", "こと", "として"]),
+        "zh": set(["的", "是", "在", "和", "了", "有", "我", "他", "就", "不", "会", "要", "没有", "我们", "这", "那", "吗", "什么", "吧", "呢"]),
+    }
+    
     def __init__(self, config: Optional[PostProcessConfig] = None):
         self.config = config or PostProcessConfig()
+        # Context window for tracking recent transcriptions
+        self._context_window: deque = deque(maxlen=self.config.context_window_size)
+        self._recent_confidences: deque = deque(maxlen=self.config.context_window_size)
     
     def process(self, text: str, confidence: float = 1.0) -> PostProcessResult:
         """
@@ -115,6 +140,7 @@ class ASRPostProcessor:
         filters_applied = []
         is_hallucination = False
         quality_score = 1.0
+        context_score = 1.0
         
         # 1. Hallucination Detection
         if self.config.enable_hallucination_filter:
@@ -133,29 +159,53 @@ class ASRPostProcessor:
                     filters_applied=filters_applied
                 )
         
-        # 2. Confidence Filtering
-        if confidence < self.config.min_confidence:
-            quality_score *= (confidence / self.config.min_confidence)
+        # 2. Confidence Filtering with Smoothing
+        if self.config.enable_confidence_smoothing and self._recent_confidences:
+            # Smooth confidence using recent context
+            avg_confidence = sum(self._recent_confidences) / len(self._recent_confidences)
+            smoothed_confidence = (confidence * 0.7) + (avg_confidence * 0.3)
+            effective_confidence = smoothed_confidence
+        else:
+            effective_confidence = confidence
+        
+        if effective_confidence < self.config.min_confidence:
+            quality_score *= (effective_confidence / self.config.min_confidence)
             filters_applied.append(f"low_confidence:{confidence:.2f}")
         
-        # 3. Text Normalization
+        # 3. Context-Aware Anomaly Detection
+        if self.config.enable_context_filter and len(self._context_window) > 0:
+            context_score = self._check_context_coherence(cleaned)
+            if context_score < self.config.max_similarity_drop:
+                # Significant deviation from context - possible error
+                quality_score *= context_score
+                filters_applied.append(f"context_anomaly:{context_score:.2f}")
+                logger.debug(f"Context anomaly detected: score={context_score:.2f}, text='{cleaned[:30]}...'")
+        
+        # 4. Semantic Coherence Check
+        if self.config.enable_coherence_check:
+            coherence_score = self._check_semantic_coherence(cleaned)
+            if coherence_score < 0.5:
+                quality_score *= coherence_score
+                filters_applied.append(f"low_coherence:{coherence_score:.2f}")
+        
+        # 5. Text Normalization
         if self.config.enable_normalization:
             cleaned = self._normalize_text(cleaned)
             if cleaned != original:
                 filters_applied.append("normalization")
         
-        # 4. Remove ASR Artifacts
+        # 6. Remove ASR Artifacts
         cleaned = self._remove_artifacts(cleaned)
         if cleaned != original:
             filters_applied.append("artifacts")
         
-        # 5. Remove Filler Words
+        # 7. Remove Filler Words
         if self.config.remove_filler_words:
             cleaned = self._remove_filler_words(cleaned)
             if cleaned != original:
                 filters_applied.append("filler_words")
         
-        # 6. Final Cleanup
+        # 8. Final Cleanup
         cleaned = self._final_cleanup(cleaned)
         
         # Check if effectively empty after cleaning
@@ -165,15 +215,20 @@ class ASRPostProcessor:
         if is_effectively_empty:
             quality_score = 0.0
         
+        # Update context window
+        self._context_window.append(cleaned if not is_effectively_empty else original)
+        self._recent_confidences.append(confidence)
+        
         return PostProcessResult(
             original_text=original,
             cleaned_text=cleaned,
             is_hallucination=is_hallucination,
             is_empty=is_effectively_empty,
-            confidence_too_low=confidence < self.config.min_confidence,
+            confidence_too_low=effective_confidence < self.config.min_confidence,
             should_skip_translation=is_effectively_empty or is_hallucination,
             quality_score=quality_score,
-            filters_applied=filters_applied
+            filters_applied=filters_applied,
+            context_score=context_score
         )
     
     def process_result(self, result: TranscriptionResult) -> TranscriptionResult:
@@ -181,12 +236,6 @@ class ASRPostProcessor:
         Process a complete TranscriptionResult.
         
         Applies post-processing to the full text and individual segments.
-        
-        Args:
-            result: Raw ASR transcription result
-            
-        Returns:
-            Processed TranscriptionResult with cleaned text
         """
         # Process the main text
         process_result = self.process(result.text, result.confidence)
@@ -197,7 +246,7 @@ class ASRPostProcessor:
                 text="",
                 language=result.language,
                 confidence=0.0,
-                segments=[],  # Clear segments
+                segments=[],
                 words=result.words,
                 duration=result.duration,
                 processing_time=result.processing_time
@@ -233,12 +282,7 @@ class ASRPostProcessor:
         if len(text) < 5:
             return {"is_hallucination": False}
         
-        # Pattern 1: Character repetition (4+ same chars)
-        # NOTE: Disabled for CJK languages (Chinese, Japanese, Korean)
-        # CJK naturally has character repetition within words (e.g., 貓屎,妈妈)
-        # Only check for alphabetic scripts where repetition indicates hallucination
         from collections import Counter
-        import unicodedata
         
         # Check if text is primarily CJK
         def is_cjk(char):
@@ -248,19 +292,19 @@ class ASRPostProcessor:
         total_chars = len([c for c in text if not c.isspace()])
         is_primarily_cjk = cjk_chars / total_chars > 0.5 if total_chars > 0 else False
         
+        # Pattern 1: Character repetition (for non-CJK only)
         if not is_primarily_cjk:
-            # Only check character repetition for non-CJK text
             char_counts = Counter(c for c in text if c.isalpha())
             if char_counts:
                 most_common_char, count = char_counts.most_common(1)[0]
-                if count >= 4 and count / len(text) > 0.35:  # Increased threshold from 0.3 to 0.35
+                if count >= 4 and count / len(text) > 0.35:
                     return {
                         "is_hallucination": True,
                         "pattern": f"char_repeat:{most_common_char}",
                         "reason": f"Character '{most_common_char}' repeats {count} times ({count/len(text):.1%})"
                     }
         
-        # Pattern 2: Sequence repetition (3+ same sequence)
+        # Pattern 2: Sequence repetition
         for seq_len in range(2, min(21, len(text)//3 + 1)):
             for i in range(len(text) - seq_len * 3):
                 pattern = text[i:i+seq_len]
@@ -278,19 +322,13 @@ class ASRPostProcessor:
                         "reason": f"Sequence '{pattern}' repeats {count} times"
                     }
         
-        # Pattern 3: Low diversity in long text (DISABLED for natural speech)
-        # Note: Character diversity is not a good metric for speech because:
-        # - Common words (the, and, of) have repeated characters
-        # - Filler words (um, uh) lower diversity
-        # - Natural speech has repetition
-        # 
-        # Only check word-level diversity for very repetitive content
-        if len(text) > 100:  # Only check very long text
+        # Pattern 3: Low word diversity in long text
+        if len(text) > 100:
             words = text.lower().split()
             if len(words) > 10:
                 unique_words = len(set(words))
                 word_diversity = unique_words / len(words)
-                if word_diversity < 0.3:  # Same word repeated >70%
+                if word_diversity < 0.3:
                     return {
                         "is_hallucination": True,
                         "pattern": "low_word_diversity",
@@ -313,6 +351,76 @@ class ASRPostProcessor:
                 }
         
         return {"is_hallucination": False}
+    
+    def _check_context_coherence(self, text: str) -> float:
+        """
+        Check how well the text fits with recent context.
+        Returns similarity score 0.0-1.0.
+        """
+        if not self._context_window:
+            return 1.0
+        
+        # Simple n-gram overlap similarity
+        text_words = set(text.lower().split())
+        if not text_words:
+            return 1.0
+        
+        similarities = []
+        for context_text in self._context_window:
+            context_words = set(context_text.lower().split())
+            if not context_words:
+                continue
+            
+            # Jaccard similarity
+            intersection = text_words & context_words
+            union = text_words | context_words
+            if union:
+                similarity = len(intersection) / len(union)
+                similarities.append(similarity)
+        
+        if not similarities:
+            return 1.0
+        
+        # Return average similarity
+        return sum(similarities) / len(similarities)
+    
+    def _check_semantic_coherence(self, text: str) -> float:
+        """
+        Check if the text is semantically coherent.
+        Returns score 0.0-1.0.
+        """
+        words = text.split()
+        if not words:
+            return 1.0
+        
+        # Check 1: Average word length
+        avg_word_len = sum(len(w) for w in words) / len(words)
+        if avg_word_len < self.config.min_word_length:
+            return 0.3  # Too short words = likely gibberish
+        
+        # Check 2: Ratio of common words (language-specific)
+        lang = self.config.language or "en"
+        common_words = self.COMMON_WORDS.get(lang, self.COMMON_WORDS["en"])
+        
+        # Normalize for CJK (characters vs words)
+        if lang in ("ja", "zh"):
+            # For CJK, check character frequency
+            chars = [c for c in text if not c.isspace()]
+            if not chars:
+                return 1.0
+            common_chars = sum(1 for c in chars if c in common_words)
+            common_ratio = common_chars / len(chars)
+        else:
+            common_word_count = sum(1 for w in words if w.lower() in common_words)
+            common_ratio = common_word_count / len(words)
+        
+        # Score based on common word ratio
+        if common_ratio < 0.1:
+            return 0.4  # Very few common words
+        elif common_ratio < 0.2:
+            return 0.6
+        else:
+            return 1.0
     
     def _normalize_text(self, text: str) -> str:
         """Normalize text (punctuation, whitespace)."""
@@ -374,6 +482,11 @@ class ASRPostProcessor:
         # Clean up whitespace
         text = re.sub(r'\s+', ' ', text)
         return text.strip()
+    
+    def reset_context(self):
+        """Reset the context window. Call when starting a new session."""
+        self._context_window.clear()
+        self._recent_confidences.clear()
 
 
 class PostProcessedASR(BaseASR):
@@ -467,11 +580,17 @@ class PostProcessedASR(BaseASR):
             "base_asr": self._base_asr.get_info(),
             "post_process_config": {
                 "enable_hallucination_filter": self._config.enable_hallucination_filter,
+                "enable_context_filter": self._config.enable_context_filter,
+                "enable_coherence_check": self._config.enable_coherence_check,
                 "min_confidence": self._config.min_confidence,
                 "remove_filler_words": self._config.remove_filler_words,
             }
         })
         return info
+    
+    def reset_context(self):
+        """Reset the post-processor context window."""
+        self._processor.reset_context()
 
 
 # Convenience function
@@ -480,25 +599,31 @@ def create_post_processed_asr(
     language: Optional[str] = None,
     remove_filler_words: bool = True,
     enable_hallucination_filter: bool = True,
+    enable_context_filter: bool = True,
+    enable_coherence_check: bool = True,
     min_confidence: float = 0.3
 ) -> PostProcessedASR:
     """
-    Create a post-processed ASR wrapper.
+    Create a post-processed ASR wrapper with enhanced accuracy features.
     
     Args:
         base_asr: Base ASR implementation to wrap
         language: Language code for language-specific processing
         remove_filler_words: Whether to remove filler words
         enable_hallucination_filter: Whether to detect hallucinations
+        enable_context_filter: Whether to use context-aware filtering
+        enable_coherence_check: Whether to check semantic coherence
         min_confidence: Minimum confidence threshold
         
     Returns:
-        PostProcessedASR wrapper
+        PostProcessedASR wrapper with enhanced accuracy
     """
     config = PostProcessConfig(
         language=language,
         remove_filler_words=remove_filler_words,
         enable_hallucination_filter=enable_hallucination_filter,
+        enable_context_filter=enable_context_filter,
+        enable_coherence_check=enable_coherence_check,
         min_confidence=min_confidence
     )
     return PostProcessedASR(base_asr, config)
