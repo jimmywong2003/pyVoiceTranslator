@@ -1,107 +1,99 @@
-# Automatic Audio Tuning - Executive Summary
+# Automatic Audio Tuning - Executive Summary (Revised)
 
 ## 🎯 What Is It?
 
-**Smart Microphone Gain Optimization** - Automatically adjusts your microphone settings for best speech recognition accuracy.
+**Smart Microphone Gain Optimization** - Automatically adjusts your microphone for best speech recognition accuracy.
+
+**Key Innovation:** Works on ALL devices via **dual-mode architecture** (hardware control + digital fallback).
 
 ---
 
-## ❌ Current Problem
+## ⚠️ Critical Discovery from Technical Review
 
-```
-User opens app → Starts translation → ASR accuracy poor
-                ↓
-        "Why isn't it working?"
-                ↓
-    Manually adjusts system settings
-    Trial-and-error for 5+ minutes
-                ↓
-    Maybe gets it working
-```
+> **Many USB microphones ignore OS gain commands.**
+>
+> Microphones like Blue Yeti, Rode NT-USB have hardware gain knobs. The OS reports "100% volume" but changing it has no effect.
 
-**Issues:**
-- Too quiet → ASR misses words
-- Too loud → Clipping causes garbled text
-- Background noise → False triggers
-- Different mics need different settings
+**Solution:** Mandatory digital gain fallback that multiplies audio in software.
 
 ---
 
-## ✅ Proposed Solution
+## ✅ How It Works (Dual-Mode)
 
 ```
-User opens app → Click "Audio Test" → Click "Auto-Tune"
-                                      ↓
-                              5-second automatic calibration
-                              (speak normally)
-                                      ↓
-                            ✅ Settings optimized
-                              Profile saved
-                                      ↓
-                          Start translation with
-                          optimal ASR accuracy
-```
-
----
-
-## 🎨 UI Preview
-
-### Before: Basic Level Meter
-```
-🎤 Audio Test
-
-Microphone: [GO Work USB ▼]
-
-Audio Level: [████░░░░░░] 40%
-Peak: -12 dB
-
-[Start Test]  [Close]
-```
-
-### After: Smart Tuning Interface
-```
-🎤 Audio Test & Auto-Tune
-
-Microphone: [GO Work USB ▼]
-
-┌─ Current Levels ──────────────────────┐
-│ Peak:  [████████░░] -6 dB  🟢       │
-│ RMS:   [████░░░░░░] -18 dB 🟢       │
-│ Noise: [░░░░░░░░░░] -60 dB 🟢       │
-│ Status: ✅ Optimal (SNR: 36 dB)      │
-└─────────────────────────────────────────┘
-
-┌─ Auto-Tune ───────────────────────────┐
-│ [🔧 Quick Tune (5s)]                 │
-│                                       │
-│ Instructions:                         │
-│ 1. Click "Quick Tune"                 │
-│ 2. Speak normally for 5 seconds       │
-│ 3. System optimizes automatically     │
-└─────────────────────────────────────────┘
-
-[⏺ Record & Play Back]  [💾 Save Profile]  [Close]
+User clicks "Auto-Tune"
+        ↓
+┌─────────────────────────────┐
+│  1. Check: Can we control   │
+│     hardware gain?          │
+└─────────────────────────────┘
+        ↓
+   ┌────┴────┐
+   ↓         ↓
+┌──────┐  ┌──────────┐
+│ YES  │  │    NO    │
+│      │  │(USB knob)│
+└──┬───┘  └────┬─────┘
+   ↓           ↓
+┌──────────┐  ┌─────────────────┐
+│ Set      │  │ Apply Digital   │
+│ Hardware │  │ Gain to Audio   │
+│ Gain     │  │ Buffer          │
+└──┬───────┘  └────────┬────────┘
+   ↓                   ↓
+   └─────────┬─────────┘
+             ↓
+┌─────────────────────────────┐
+│  2. Verify: Measure again   │
+│     (within ±2 dB target?)  │
+└─────────────────────────────┘
+        ↓
+   ┌────┴────┐
+   ↓         ↓
+┌──────┐  ┌──────────┐
+│ YES  │  │    NO    │
+└──┬───┘  └────┬─────┘
+   ↓           ↓
+┌──────────┐  ┌─────────────────┐
+│ Done!    │  │ Adjust & Retry  │
+│ Save     │  │ (max 3 tries)   │
+│ Profile  │  │                 │
+└──────────┘  └─────────────────┘
 ```
 
 ---
 
-## 🔧 How It Works
+## 🔄 Hardware vs Digital Mode
 
-### Quick Tune (5 seconds)
-1. **Measure** current audio levels
-2. **Analyze** peak, RMS, noise floor
-3. **Calculate** optimal gain adjustment
-4. **Apply** gain setting automatically
-5. **Verify** with second measurement
+### Hardware Mode (Preferred)
+- Adjusts gain at microphone/input level
+- Better signal-to-noise ratio
+- Works with: Built-in mics, some USB headsets
+- Availability: ~60-70% of devices (estimated)
 
-### Parameters Optimized
+### Digital Mode (Fallback)
+- Multiplies audio samples in software
+- Can amplify noise along with signal
+- Works with: ALL devices (Blue Yeti, etc.)
+- Availability: 100% of devices
 
-| Parameter | Target | Why It Matters |
-|-----------|--------|----------------|
-| **Peak Level** | -6 dB | Prevents clipping/distortion |
-| **RMS Level** | -18 dB | Optimal speech volume |
-| **Noise Floor** | < -50 dB | Clean signal, no background noise |
-| **SNR** | > 30 dB | Clear speech vs noise ratio |
+### User Experience
+```
+┌─ Gain Control ─────────────────────────────────┐
+│                                                │
+│ Mode: 💻 Digital Fallback                      │
+│      (Hardware control not available)          │
+│                                                │
+│ ⚠️ Your microphone has a hardware volume      │
+│    knob. For best results, increase it to      │
+│    75% or higher, then click Auto-Tune.        │
+│                                                │
+│ Gain: [━━━━━●━━━━━━]  -8 dB                   │
+│       -20dB         0dB         +20dB          │
+│                                                │
+│ [🔄 Auto-Tune]  [💾 Save]  [↩️ Reset]          │
+└────────────────────────────────────────────────┘
+```
 
 ---
 
@@ -116,126 +108,248 @@ Microphone: [GO Work USB ▼]
 | Noisy environment | 60% | 78% | +18% |
 | **Average** | **60%** | **82%** | **+22%** |
 
-### User Experience
+### Coverage
 
-| Metric | Before | After |
-|--------|--------|-------|
-| Setup time | 5+ minutes | < 30 seconds |
-| Success rate | ~60% | ~95% |
-| User satisfaction | 3.2/5 | 4.6/5 |
+| Control Method | Coverage | User Experience |
+|----------------|----------|-----------------|
+| Hardware Gain | ~70% | Transparent optimization |
+| Digital Gain | 100% | Works, may show guidance |
+| **Combined** | **100%** | **Everyone benefits** |
 
 ---
 
-## 🏗️ Architecture
+## 🛠️ Technical Architecture
 
 ```
-┌─────────────────────────────────────────┐
-│       AudioAutoTuner                    │
-│  ┌─────────┐ ┌─────────┐ ┌──────────┐ │
-│  │ Analyzer│ │ Gain    │ │ Settings │ │
-│  │         │ │ Control │ │ Manager  │ │
-│  │ • Peak  │ │         │ │          │ │
-│  │ • RMS   │ │ • Set   │ │ • Save   │ │
-│  │ • Noise │ │ • Get   │ │ • Load   │ │
-│  └─────────┘ └─────────┘ └──────────┘ │
+AudioAutoTuner
+├── LevelAnalyzer
+│   ├── calculate_rms()      # Proper float handling
+│   ├── detect_clipping()    # Hardware vs digital
+│   └── iterative_calibrate() # Measure → Adjust → Verify
+├── GainController (Abstract)
+│   ├── supports_hardware_gain()  # NEW: Detection
+│   ├── MacOSCoreAudio            # macOS
+│   ├── WindowsWASAPI             # Windows
+│   └── LinuxPipeWire             # Linux (v2.3.0)
+├── DigitalGainProcessor (NEW)
+│   ├── set_gain_multiplier()     # Software gain
+│   └── process_buffer()          # PCM multiplication
+└── SettingsManager
+    ├── save() / load()           # Per-device profiles
+    └── platformdirs integration  # OS-specific paths
+```
+
+---
+
+## 📅 Revised Timeline: 10 Weeks
+
+### Phase 1: Spike & Validation (Week 1)
+**Critical Decision Point:**
+- Test macOS CoreAudio on 5 devices
+- Test Windows WASAPI on 5 devices
+- Measure hardware gain control success rate
+
+**Decision Matrix:**
+| Success Rate | Strategy |
+|--------------|----------|
+| ≥70% | Dual-mode (hardware primary) |
+| 40-69% | Dual-mode (digital primary) |
+| <40% | Digital-only + manual guidance |
+
+### Phase 2-3: Core Framework (Week 2-4)
+- Level analysis with correct RMS math
+- Digital gain processor (always works)
+- Gain controller abstraction
+
+### Phase 4-5: Platform Support (Week 5-7)
+- macOS implementation (hardware detection)
+- Windows implementation (pycaw + PolicyConfig)
+- Permission handling
+
+### Phase 6: UI Integration (Week 8)
+- Enhanced dialog
+- Hardware limit warnings
+- Manual override
+
+### Phase 7-8: Testing (Week 9-10)
+- 20+ device compatibility matrix
+- Virtual audio devices
+- Edge cases
+
+**Linux:** Deferred to v2.3.0 (focus on macOS/Windows quality)
+
+---
+
+## 🎨 UI Features
+
+### 1. Visual Level Meters
+```
+┌─ Current Levels ──────────────────────┐
+│ Peak:  [████████░░] -6 dB  🟢       │
+│ RMS:   [████░░░░░░] -18 dB 🟢       │
+│ Noise: [░░░░░░░░░░] -60 dB 🟢       │
+│ Status: ✅ Optimal (SNR: 36 dB)      │
 └─────────────────────────────────────────┘
-        ↓
-┌─────────────────────────────────────────┐
-│  Platform Adapters                      │
-│  ┌────────┐ ┌────────┐ ┌─────────┐     │
-│  │ macOS  │ │Windows │ │ Linux   │     │
-│  │CoreAudio│ │ WASAPI │ │  ALSA   │     │
-│  └────────┘ └────────┘ └─────────┘     │
-└─────────────────────────────────────────┘
+```
+
+### 2. Hardware Limit Warning
+```
+⚠️ Hardware Limit Reached
+
+Your microphone is at maximum hardware gain.
+Options:
+1. Apply Digital Gain (+12 dB) - May increase noise
+2. Adjust Physical Knob - Increase volume on mic
+3. Move Closer - Improve signal at source
+
+[Apply Digital]  [Open Settings]  [Cancel]
+```
+
+### 3. Clipping Detection
+```
+🔴 Clipping Detected
+
+Your microphone is distorting.
+This CANNOT be fixed with software.
+
+Solutions:
+• Decrease physical volume knob
+• Move further from microphone
+
+[Re-Test]  [Continue]
+```
+
+### 4. Manual Override
+```
+Mode: 💻 Digital Fallback
+
+Gain: [━━━━━●━━━━━━]  -8 dB
+      -20dB         0dB         +20dB
+
+[🔄 Auto-Tune]  [💾 Save]  [↩️ Reset]
 ```
 
 ---
 
-## 📅 Implementation Timeline
+## 🔑 Key Design Decisions
 
-| Week | Focus | Deliverables |
-|------|-------|--------------|
-| **1** | Core Framework | Level analysis, basic UI |
-| **2** | macOS Support | CoreAudio integration |
-| **3** | Windows/Linux | WASAPI/ALSA support |
-| **4** | Auto-Tune Logic | Algorithms, profiles |
-| **5** | Testing | Cross-platform validation |
+### 1. Digital Gain is Mandatory
+**Why:** Hardware control fails on 30-50% of USB mics  
+**Result:** 100% device coverage
 
-**Total: 5 weeks to v2.2.0**
+### 2. Iterative Calibration
+```
+Attempt 1: Measure → Adjust → Verify (error: 5 dB)
+Attempt 2: Measure → Adjust → Verify (error: 2 dB) ✅
+```
+**Why:** Hardware has latency, need verification
+
+### 3. Hardware Detection First
+```python
+if supports_hardware_gain(device):
+    try_hardware_control()
+else:
+    use_digital_fallback()
+```
+**Why:** Don't promise what we can't deliver
+
+### 4. Platform-Specific Paths
+```python
+from platformdirs import user_config_dir
+config_path = user_config_dir("voicetranslate", "jimmywong")
+```
+**Why:** Correct paths on Windows (AppData), macOS (Application Support), Linux (~/.config)
 
 ---
 
-## 💾 Profile Persistence
+## ⚡ Dependencies
 
-```json
-{
-  "device_name": "GO Work USB",
-  "gain_db": -8.5,
-  "noise_floor_db": -58.2,
-  "peak_level_db": -6.1,
-  "rms_level_db": -17.8,
-  "snr_db": 40.4,
-  "confidence_score": 0.94
-}
+### Required
+```
+numpy>=1.24.0          # Audio math
+platformdirs>=3.0.0    # OS config paths
 ```
 
-**Benefits:**
-- ⚡ Instant setup on next launch
-- 🎤 Per-device settings
-- 🔄 Automatic restoration
-- 📊 Quality tracking
+### Optional (with fallbacks)
+```
+# macOS
+pyobjc-framework-CoreAudio>=9.0  # Optional
+
+# Windows  
+pycaw>=20230407        # Primary
+comtypes>=1.2.0        # Required by pycaw
+# PolicyConfig via ctypes (fallback)
+
+# Linux (v2.3.0)
+pulsectl>=22.3.0       # PulseAudio
+dbus-next>=0.2.3       # PipeWire
+```
 
 ---
 
-## 🚀 Key Features
+## 🧪 Testing Matrix
 
-### 1. Visual Feedback
-- Real-time level meters
-- Color-coded status (🟢🟡🔴)
-- Before/after comparison
-- Quality score (0-100)
+| Device Type | Hardware Gain? | Digital Gain? | Priority |
+|-------------|----------------|---------------|----------|
+| Built-in Mic | Usually ✅ | Always ✅ | High |
+| USB Headset | Sometimes ✅ | Always ✅ | High |
+| USB Mic w/ Knob (Blue Yeti) | ❌ | Always ✅ | Critical |
+| Bluetooth | Sometimes ✅ | Always ✅ | Medium |
+| XLR Interface | Sometimes ✅ | Always ✅ | Medium |
+| Virtual Cable | N/A | Always ✅ | Low |
 
-### 2. Multiple Modes
-- **Quick Tune** (5s) - For most users
-- **Advanced** (15s) - Full analysis
-- **Silent** (10s) - Noise floor only
-
-### 3. Cross-Platform
-- ✅ macOS (CoreAudio)
-- ✅ Windows (WASAPI)
-- ✅ Linux (ALSA)
-
-### 4. Smart Fallback
-- If auto-tune fails → Manual guidance
-- Visual indicators during manual adjustment
-- Clear instructions per platform
+**Minimum 20 devices tested before release**
 
 ---
 
-## 🎯 Success Criteria
+## 📈 Success Criteria
 
-✅ **Must Have:**
-- 5-second quick tune working on macOS
-- Visual level meters with color coding
-- Profile save/load functionality
-- <2% clipping rate after tuning
+### Must Have (v2.2.0)
+- [ ] Digital gain works on 100% of devices
+- [ ] Level analysis accurate ±2 dB
+- [ ] Profile save/load functional
+- [ ] Clear hardware vs digital indicator
+- [ ] macOS support
+- [ ] Windows support
 
-✨ **Nice to Have:**
-- Windows/Linux support
-- Advanced 15-second mode
-- Noise suppression toggle
-- Multiple profiles per device
+### Should Have
+- [ ] Hardware gain works on 70%+ of devices
+- [ ] Iterative calibration (≤3 attempts)
+- [ ] Manual override slider
+- [ ] Clipping warnings
+
+### Nice to Have (v2.3.0)
+- [ ] Linux support
+- [ ] Environment presets
+- [ ] Automatic re-tuning
 
 ---
 
-## 📁 Related Documents
+## 🎯 Bottom Line
 
-- Full Proposal: `AUDIO_AUTO_TUNE_PROPOSAL.md`
-- Technical Specs: See Appendix in full proposal
-- UI Mockups: Included in full proposal
+| Aspect | Original | Revised |
+|--------|----------|---------|
+| **Coverage** | ~70% (hardware only) | **100%** (hardware + digital) |
+| **Timeline** | 5 weeks | **10 weeks** (realistic) |
+| **Risk** | High (hardware dependency) | **Low** (fallback always works) |
+| **Linux** | Week 5 | **v2.3.0** (focus on quality) |
 
 ---
 
-**Status:** Proposal Ready for Review  
-**Target:** v2.2.0 (5 weeks)  
-**Priority:** High (impacts all users)  
+## 📄 Documents
+
+| Document | Purpose |
+|----------|---------|
+| [AUDIO_AUTO_TUNE_PROPOSAL_v2.md](AUDIO_AUTO_TUNE_PROPOSAL_v2.md) | Full technical specification |
+| [AUDIO_AUTO_TUNE_SUMMARY.md](AUDIO_AUTO_TUNE_SUMMARY.md) | This document - Quick reference |
+
+---
+
+**Status:** Revised Proposal Ready  
+**Next Step:** Week 1 Spike Task (validate API availability)  
+**Confidence:** High (digital fallback ensures success)  
+
+---
+
+*Last Updated: 2026-02-21 (Revision 2)*  
+*Changes: Dual-mode architecture, 10-week timeline, mandatory digital fallback*  

@@ -8,8 +8,9 @@ This directory contains proof-of-concept implementations and design proposals fo
 
 | Document | Description | Status | Target Version |
 |----------|-------------|--------|----------------|
-| [AUDIO_AUTO_TUNE_PROPOSAL.md](AUDIO_AUTO_TUNE_PROPOSAL.md) | Smart microphone gain optimization | 📋 Proposal | v2.2.0 |
+| [AUDIO_AUTO_TUNE_PROPOSAL_v2.md](AUDIO_AUTO_TUNE_PROPOSAL_v2.md) | Smart microphone gain optimization (REVISED) | 📋 Proposal | v2.2.0 |
 | [AUDIO_AUTO_TUNE_SUMMARY.md](AUDIO_AUTO_TUNE_SUMMARY.md) | Executive summary of auto-tune feature | 📋 Proposal | v2.2.0 |
+| [AUDIO_AUTO_TUNE_PROPOSAL.md](AUDIO_AUTO_TUNE_PROPOSAL.md) | Original proposal (superseded by v2) | 🗄️ Archived | - |
 
 ### ✅ Completed PoCs
 
