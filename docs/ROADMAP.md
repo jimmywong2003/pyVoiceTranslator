@@ -2564,14 +2564,22 @@
     - Day 6-7: Basic meeting display widget (speaker bubbles)
     - Day 8-10: Export functionality (Markdown, JSON)
 
-    #### Week 3-4: Speaker Recognition & Correction UI
+    #### Week 3-4: Speaker Recognition & Correction UI 🔴 CRITICAL
+    **Priority:** Drag-and-drop speaker merging is the **#1 most important feature** for V1 usability.
+    
     - Day 1-2: Implement `SimpleSpeakerDiarization` with user-configurable speaker count
-    - Day 3-4: **Speaker correction UI (CRITICAL for V1)**
-    - Drag-and-drop speaker merging in legend
-    - Example: Drag "Speaker 2" onto "Speaker 1" → All "Speaker 2" segments update to "Speaker 1"
-    - **Why:** Turn-based diarization will mislabel (e.g., Speaker 1 talking twice in a row). Without correction, minutes require too much manual editing.
-    - Day 5-6: Integration with existing pipeline via QThread
-    - Day 7-10: Speaker visualization in UI (color coding, bubbles)
+    - **Day 3-5: Speaker correction UI (CRITICAL - Do NOT deprioritize)**
+      - **Drag-and-drop speaker merging** (HIGHEST PRIORITY)
+      - Drag "Speaker 2" onto "Speaker 1" → All "Speaker 2" segments instantly update to "Speaker 1"
+      - **Why CRITICAL:** Turn-based diarization WILL mislabel (e.g., Speaker 1 talks twice in a row → shows as Speaker 1, then Speaker 2)
+      - **Without this:** Users must manually edit every mislabeled segment → Feature abandoned
+      - **Success metric:** User can correct speaker in <3 seconds
+    - **Day 6-7: Retroactive speaker rename**
+      - Click "Speaker 1" → type "John" → all segments update
+      - Success metric: Rename all instances in <5 seconds
+    - Day 8-10: Speaker visualization (color coding, bubbles)
+    
+    **Risk:** If drag-and-drop is delayed, V1 will be unusable → Must delay launch until feature is complete
 
     #### Week 5: UI Polish (Conditional on PoC Result)
     - **If PoC 1 PASSED:** Apply PyQt-Fluent-Widgets to Meeting Mode only
@@ -2662,6 +2670,8 @@
     #### Week 10: Voice-Based Diarization Engine
     **Technology Choice: SpeechBrain ECAPA-TDNN (NOT pyannote)**
     
+    **Exact Model:** `speechbrain/spkrec-ecapa-voxceleb` (pre-trained on VoxCeleb)
+    
     | Factor | SpeechBrain | pyannote.audio | Winner |
     |--------|-------------|----------------|--------|
     | Model Size | ~20MB | ~100MB | SpeechBrain ✅ |
@@ -2671,6 +2681,13 @@
     | Accuracy | ⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ | pyannote (acceptable trade-off) |
 
     - Day 1-2: Implement `VoiceBasedDiarization` class with SpeechBrain
+      ```python
+      from speechbrain.pretrained import EncoderClassifier
+      
+      self.classifier = EncoderClassifier.from_hparams(
+          source="speechbrain/spkrec-ecapa-voxceleb"
+      )
+      ```
     - Day 3-4: Create **async worker thread** (QThread-based)
       ```python
       class VoiceBasedDiarization(QThread):
@@ -2684,6 +2701,8 @@
     - Day 7: Similarity threshold tuning (cosine similarity > 0.7)
 
     **Critical:** Diarization runs in background thread - transcription continues uninterrupted
+    
+    **⚠️ PyInstaller Warning:** SpeechBrain requires torch. Update `scripts/build_portable.sh` to include torch dependencies. App size will increase significantly (~200-500MB) compared to V1-only build.
 
     #### Week 11: Speaker Profile Management
     **Persistent Embedding Storage**
@@ -2724,21 +2743,32 @@
 
     ---
 
-    ### Phase V1.5: UX Improvements (Parallel Track)
-    **Timeline:** Weeks 3-4 (parallel with Phase 4/5)  
-    **Goal:** Improve turn-based diarization UX before V2 is ready
+    ### Phase V1.5: UX Improvements (HIGH PRIORITY - Parallel Track)
+    **Timeline:** Weeks 3-4 (parallel with Phase 4/5) - **NOT OPTIONAL**  
+    **Goal:** Make V1 turn-based diarization usable before V2 is ready
+    
+    > **⚠️ Critical Warning:** Without these UX improvements, users will abandon the speaker labeling feature because turn-based rotation is often wrong. This phase is **essential**, not optional.
 
-    **Critical UX Fixes (Compensate for V1 Limitations):**
-    - [ ] **Drag-and-drop speaker merging** (HIGH PRIORITY)
-      - Example: Drag "Speaker 2" onto "Speaker 1" → All segments update
-      - Why: Turn-based WILL mislabel (Speaker 1 talking twice in a row)
-    - [ ] **Retroactive speaker rename**
-      - Click "Speaker 1" → rename to "John" → all segments update
-    - [ ] **Speaker count selector** (2-8 speakers)
-    - [ ] **"Pause Diarization" button** (for offline conversations)
-    - [ ] **Confidence indicators** (show diarization uncertainty)
+    **Priority Order (Week 3-4):**
+    
+    **Week 3: Critical Fixes (Must-Have)**
+    - **Day 1-3: Drag-and-drop speaker merging** 🔴 **HIGHEST PRIORITY**
+      - Drag "Speaker 2" onto "Speaker 1" → All "Speaker 2" segments update to "Speaker 1"
+      - Why: Turn-based WILL mislabel (Speaker 1 talking twice in a row → shows as Speaker 1, Speaker 2)
+      - Without this: Users must manually edit every mislabeled segment
+    - **Day 4-5: Retroactive speaker rename**
+      - Click speaker name → rename to "John" → all segments update retroactively
+      - Why: Users need meaningful names, not "Speaker 1", "Speaker 2"
+    
+    **Week 4: Polish (Should-Have)**
+    - **Day 1-2: Speaker count selector** (2-8 speakers, dropdown in toolbar)
+    - **Day 3-4: "Pause Diarization" button** (for offline conversations during meeting)
+    - **Day 5: Confidence indicators** (show diarization uncertainty when using V2)
 
-    **Rationale:** These UX improvements make V1 usable while V2 is in development
+    **Success Criteria:**
+    - User can correct a mislabeled speaker in <3 seconds
+    - User can rename all instances of a speaker in <5 seconds
+    - Without these: V1 is unusable for real meetings → Delay launch to V2
 
     ---
 

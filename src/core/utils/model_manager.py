@@ -99,6 +99,11 @@ class DownloadThread(QThread):
                     success = self._try_download(url)
                     if success:
                         return
+                except requests.exceptions.SSLError as e:
+                    # Handle SSL errors specifically (common in corporate environments)
+                    last_error = f"SSL Error: {e}"
+                    self.status_changed.emit(f"SSL handshake failed - check corporate firewall/proxy settings")
+                    continue
                 except Exception as e:
                     last_error = e
                     self.status_changed.emit(f"Mirror failed: {e}")
