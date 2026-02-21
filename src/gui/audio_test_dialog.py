@@ -2,9 +2,11 @@
 Audio Test Dialog
 =================
 
-Real-time microphone audio level test with visual meter and loopback recording.
+Real-time microphone audio level test with visual meter, loopback recording,
+and automatic gain tuning.
 """
 
+import logging
 import numpy as np
 from PySide6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
@@ -14,6 +16,19 @@ from PySide6.QtCore import Qt, QTimer, Signal, QThread, Slot
 from PySide6.QtGui import QFont
 
 import sounddevice as sd
+
+# Import auto-tune components
+try:
+    import sys
+    import os
+    sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+    from audio.auto_tune import AudioAutoTuner, SettingsManager, AudioProfile
+    AUTOTUNE_AVAILABLE = True
+except ImportError as e:
+    AUTOTUNE_AVAILABLE = False
+    logging.warning(f"Auto-tune not available: {e}")
+
+logger = logging.getLogger(__name__)
 
 
 class RecordingThread(QThread):
@@ -87,7 +102,7 @@ class AudioTestDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("🎤 Audio Test")
-        self.setMinimumSize(500, 400)
+        self.setMinimumSize(500, 450)
         
         self._stream = None
         self._is_testing = False
@@ -96,8 +111,24 @@ class AudioTestDialog(QDialog):
         self._recording_thread = None
         self._is_recording = False
         
+        # Initialize auto-tuner
+        self._auto_tuner = None
+        self._settings_manager = None
+        self._current_gain_applied = False
+        
+        if AUTOTUNE_AVAILABLE:
+            try:
+                self._auto_tuner = AudioAutoTuner()
+                self._settings_manager = SettingsManager()
+                logger.info("Auto-tuner initialized")
+            except Exception as e:
+                logger.error(f"Failed to initialize auto-tuner: {e}")
+        
         self._setup_ui()
         self._populate_devices()
+        
+        # Load saved profile if exists
+        self._load_saved_profile()
     
     def _setup_ui(self):
         """Setup the dialog UI"""
@@ -205,6 +236,43 @@ class AudioTestDialog(QDialog):
         
         layout.addWidget(level_group)
         
+        # ============ Auto-Tune Section ============
+        autotune_group = QGroupBox("🤖 Auto-Tune (Optimize Gain)")
+        autotune_layout = QVBoxLayout(autotune_group)
+        
+        autotune_desc = QLabel("Automatically optimize microphone gain for best speech recognition. "
+                              "Takes 5 seconds and adjusts gain to optimal levels.")
+        autotune_desc.setWordWrap(True)
+        autotune_desc.setStyleSheet("color: #858585; font-size: 11px;")
+        autotune_layout.addWidget(autotune_desc)
+        
+        # Current gain display
+        self.gain_info_label = QLabel("Current: Not tuned")
+        self.gain_info_label.setAlignment(Qt.AlignCenter)
+        autotune_layout.addWidget(self.gain_info_label)
+        
+        # Auto-tune button
+        autotune_btn_layout = QHBoxLayout()
+        
+        self.autotune_btn = QPushButton("🔧 Quick Tune (5s)")
+        self.autotune_btn.clicked.connect(self._on_auto_tune)
+        autotune_btn_layout.addWidget(self.autotune_btn)
+        
+        self.reset_gain_btn = QPushButton("↩️ Reset Gain")
+        self.reset_gain_btn.clicked.connect(self._on_reset_gain)
+        self.reset_gain_btn.setEnabled(False)
+        autotune_btn_layout.addWidget(self.reset_gain_btn)
+        
+        autotune_layout.addLayout(autotune_btn_layout)
+        
+        # Auto-tune status
+        self.autotune_status = QLabel("Click 'Quick Tune' to optimize")
+        self.autotune_status.setAlignment(Qt.AlignCenter)
+        self.autotune_status.setStyleSheet("color: #858585; font-style: italic;")
+        autotune_layout.addWidget(self.autotune_status)
+        
+        layout.addWidget(autotune_group)
+        
         # ============ Loopback Test Section ============
         loopback_group = QGroupBox("🔄 Loopback Test (Record & Playback)")
         loopback_layout = QVBoxLayout(loopback_group)
@@ -280,11 +348,27 @@ class AudioTestDialog(QDialog):
                 self.device_combo.addItem("❌ No input devices found", -1)
                 self.live_btn.setEnabled(False)
                 self.record_btn.setEnabled(False)
+            else:
+                # Connect device change signal
+                self.device_combo.currentIndexChanged.connect(self._on_device_changed)
         
         except Exception as e:
             self.device_combo.addItem(f"Error: {e}", -1)
             self.live_btn.setEnabled(False)
             self.record_btn.setEnabled(False)
+    
+    def _on_device_changed(self):
+        """Handle device selection change."""
+        # Reset gain info
+        self.gain_info_label.setText("Current: Not tuned")
+        self.gain_info_label.setStyleSheet("")
+        self.autotune_status.setText("Click 'Quick Tune' to optimize")
+        self.autotune_status.setStyleSheet("color: #858585; font-style: italic;")
+        self.reset_gain_btn.setEnabled(False)
+        self._current_gain_applied = False
+        
+        # Load saved profile for new device
+        self._load_saved_profile()
     
     def _on_live_test(self):
         """Start or stop live audio test"""
@@ -500,6 +584,167 @@ class AudioTestDialog(QDialog):
             self.level_bar.setStyleSheet("""
                 QProgressBar::chunk { background-color: #FFAB00; }
             """)  # Yellow - loud
+    
+    # ============ Auto-Tune Methods ============
+    
+    def _load_saved_profile(self):
+        """Load and display saved profile for current device."""
+        if not self._settings_manager:
+            return
+        
+        device_id = self.device_combo.currentData()
+        if device_id is None or device_id < 0:
+            return
+        
+        profile = self._settings_manager.get_profile(device_id)
+        if profile:
+            mode_str = "Hardware" if profile.gain_mode == "hardware" else "Digital"
+            self.gain_info_label.setText(
+                f"Saved: {profile.gain_db:+.1f} dB ({mode_str}) - "
+                f"RMS: {profile.rms_level_db:.1f} dB"
+            )
+            self.gain_info_label.setStyleSheet("color: #4ec9b0;")
+            self.reset_gain_btn.setEnabled(True)
+    
+    def _on_auto_tune(self):
+        """Run auto-tune on current device."""
+        if not AUTOTUNE_AVAILABLE or self._auto_tuner is None:
+            QMessageBox.information(
+                self,
+                "Auto-Tune",
+                "Auto-tune feature is not available.\n\n"
+                "Please adjust microphone gain manually in system settings."
+            )
+            return
+        
+        device_id = self.device_combo.currentData()
+        if device_id is None or device_id < 0:
+            QMessageBox.warning(self, "Error", "Please select a valid microphone")
+            return
+        
+        # Disable buttons during tuning
+        self.autotune_btn.setEnabled(False)
+        self.autotune_btn.setText("🔄 Tuning...")
+        self.autotune_status.setText("🎤 Speak normally for 5 seconds...")
+        self.autotune_status.setStyleSheet("color: #FFAB00;")
+        
+        # Run tuning in separate thread
+        from PySide6.QtCore import QThread, Signal
+        
+        class TuneThread(QThread):
+            finished = Signal(object)
+            
+            def __init__(self, tuner, device_id):
+                super().__init__()
+                self.tuner = tuner
+                self.device_id = device_id
+            
+            def run(self):
+                try:
+                    result = self.tuner.quick_tune(self.device_id)
+                    self.finished.emit(result)
+                except Exception as e:
+                    logger.error(f"Auto-tune error: {e}")
+                    self.finished.emit(None)
+        
+        self._tune_thread = TuneThread(self._auto_tuner, device_id)
+        self._tune_thread.finished.connect(self._on_tune_finished)
+        self._tune_thread.start()
+    
+    def _on_tune_finished(self, result):
+        """Handle auto-tune completion."""
+        self.autotune_btn.setEnabled(True)
+        self.autotune_btn.setText("🔧 Quick Tune (5s)")
+        
+        if result is None:
+            self.autotune_status.setText("❌ Tuning failed. Please try again.")
+            self.autotune_status.setStyleSheet("color: #FF5630;")
+            return
+        
+        if result.success:
+            # Update UI
+            mode_str = "Hardware" if result.mode.value == "hardware" else "Digital"
+            
+            if result.final_metrics:
+                self.gain_info_label.setText(
+                    f"Tuned: {result.gain_change_db:+.1f} dB ({mode_str}) - "
+                    f"RMS: {result.final_metrics.rms_db:.1f} dB"
+                )
+                self.autotune_status.setText(
+                    f"✅ Tuned successfully! Peak: {result.final_metrics.peak_db:.1f} dB, "
+                    f"RMS: {result.final_metrics.rms_db:.1f} dB"
+                )
+            else:
+                self.gain_info_label.setText(f"Tuned: {result.gain_change_db:+.1f} dB ({mode_str})")
+                self.autotune_status.setText("✅ Tuned successfully!")
+            
+            self.gain_info_label.setStyleSheet("color: #4ec9b0;")
+            self.autotune_status.setStyleSheet("color: #4ec9b0;")
+            self.reset_gain_btn.setEnabled(True)
+            self._current_gain_applied = True
+            
+            # Save profile
+            self._save_profile(result)
+            
+        else:
+            self.autotune_status.setText(f"⚠️ {result.message}")
+            self.autotune_status.setStyleSheet("color: #FFAB00;")
+            
+            if result.requires_manual_action:
+                QMessageBox.information(
+                    self,
+                    "Manual Adjustment Needed",
+                    result.manual_instructions or 
+                    "Please adjust microphone gain manually in system settings."
+                )
+    
+    def _save_profile(self, result):
+        """Save tuning profile."""
+        if not self._settings_manager:
+            return
+        
+        device_id = self.device_combo.currentData()
+        device_name = self.device_combo.currentText()
+        
+        profile = AudioProfile(
+            device_id=device_id,
+            device_name=device_name,
+            gain_mode=result.mode.value,
+            gain_db=result.gain_change_db,
+            digital_multiplier=10 ** (result.gain_change_db / 20),
+            noise_floor_db=result.initial_metrics.noise_floor_db if result.initial_metrics else -60.0,
+            peak_level_db=result.final_metrics.peak_db if result.final_metrics else -6.0,
+            rms_level_db=result.final_metrics.rms_db if result.final_metrics else -18.0,
+            snr_db=result.final_metrics.snr_db if result.final_metrics else 40.0,
+            sample_rate=16000,
+            timestamp=__import__('datetime').datetime.now().isoformat(),
+            confidence_score=0.9 if result.success else 0.0
+        )
+        
+        self._settings_manager.save_profile(profile)
+        logger.info(f"Saved profile for device {device_id}")
+    
+    def _on_reset_gain(self):
+        """Reset gain to default."""
+        if not self._auto_tuner:
+            return
+        
+        device_id = self.device_combo.currentData()
+        if device_id is not None and device_id >= 0:
+            self._auto_tuner.reset_device(device_id)
+            
+            # Delete saved profile
+            if self._settings_manager:
+                self._settings_manager.delete_profile(device_id)
+            
+            self.gain_info_label.setText("Current: Not tuned")
+            self.gain_info_label.setStyleSheet("")
+            self.autotune_status.setText("Gain reset to default")
+            self.autotune_status.setStyleSheet("color: #858585; font-style: italic;")
+            self.reset_gain_btn.setEnabled(False)
+            self._current_gain_applied = False
+            
+            logger.info(f"Reset gain for device {device_id}")
     
     def closeEvent(self, event):
         """Clean up on close"""
