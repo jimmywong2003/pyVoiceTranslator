@@ -1,8 +1,8 @@
 # VoiceTranslate Pro - Development Status
 
-**Last Updated:** 2026-02-21 22:45 HKT (Release v2.1.1)  
-**Version:** v2.1.1  
-**Git Tag:** `v2.1.1`  
+**Last Updated:** 2026-02-21 23:35 HKT (Release v2.1.2)  
+**Version:** v2.1.2  
+**Git Tag:** `v2.1.2`  
 **Status:** ✅ **RELEASED - PRODUCTION READY**
 
 ---
@@ -30,6 +30,7 @@ VoiceTranslate Pro is now **production-ready** with:
 | **Phase 3** | User Experience | ✅ COMPLETE | Interview mode, mic selection, JP/CN support |
 | **Phase 4** | Meeting Mode | ✅ COMPLETE | Speaker diarization, meeting minutes |
 | **Phase 5** | Debug & Polish | ✅ COMPLETE | Debug logging, model manager, update check |
+| **Phase 5b** | Audio Test Dialog | ✅ COMPLETE | GUI microphone level meter |
 
 ---
 
@@ -149,7 +150,21 @@ python src/gui/main.py
 
 ---
 
-### 8. Update Checker 🔄 (Phase 5)
+### 8. Audio Test Dialog 🎤 (Phase 5b)
+**File:** `src/gui/audio_test_dialog.py`
+
+**Menu:** Settings → 🎤 Audio Test...
+
+**Features:**
+- Real-time microphone level meter
+- Device selection dropdown
+- Color-coded levels (green/yellow/red)
+- Peak level indicator
+- No additional dependencies (uses existing sounddevice)
+
+---
+
+### 9. Update Checker 🔄 (Phase 5)
 **File:** `src/core/utils/update_checker.py`
 
 **Menu:** Help → Check for Updates
@@ -311,7 +326,9 @@ python cli/demo_streaming_mode.py \
 ## 🔧 Troubleshooting
 
 ### Issue: No audio from microphone
-**Solution:** Grant macOS microphone permission
+**Solution 1:** Test microphone in Settings → 🎤 Audio Test...
+
+**Solution 2:** Grant macOS microphone permission
 ```bash
 # System Settings → Privacy & Security → Microphone → Enable Terminal
 ```
@@ -354,6 +371,7 @@ scripts/run/run_interview_mode.sh
 | Phase 3 | User Experience | ✅ | Interview mode, mic selection, JP/CN support |
 | Phase 4 | Meeting Mode | ✅ | Speaker diarization, meeting minutes, export |
 | Phase 5 | Debug & Polish | ✅ | Debug logging, model manager, update checker |
+| Phase 5b | Audio Test Dialog | ✅ | GUI microphone level meter |
 
 ---
 
